@@ -10,7 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "db:create-admin": "tsx prisma/create-admin.ts",
+    "db:create-admin": "tsx --env-file=.env prisma/create-admin.ts",
     "lint": "next lint"
   },
   "prisma": {
