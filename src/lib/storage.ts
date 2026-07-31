@@ -118,11 +118,11 @@ function blobDriver(): StorageDriver {
         // Blob owns the hostname, so the absolute URL *is* the durable key.
         return { key: url, bytes: body.byteLength };
       } catch (err) {
-        const name = err instanceof Error ? err.name : "UnknownError";
         console.error(`[storage] Blob put failed key=${key}`, err);
-        throw new UserError(
-          `Storage rejected the upload (${name}). Check that a Blob store is connected to this project.`,
-        );
+        // The SDK puts the useful text in `message`; `name` is just "Error",
+        // which is how "(Error)" reached the operator and told them nothing.
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new UserError(`Storage rejected the upload. ${detail}`);
       }
     },
     async deletePrefix(prefix) {
@@ -171,14 +171,14 @@ function s3Driver(): StorageDriver {
           }),
         );
       } catch (err) {
-        // Bucket rejections are configuration problems, not bugs, and the SDK's
-        // error name says exactly which one — InvalidAccessKeyId,
-        // SignatureDoesNotMatch, NoSuchBucket, AccessDenied. Surfacing it turns
-        // a dead end into a one-line fix.
-        const name = err instanceof Error ? err.name : "UnknownError";
+        // Bucket rejections are configuration problems, not bugs, and the SDK
+        // names the exact one — InvalidAccessKeyId, SignatureDoesNotMatch,
+        // NoSuchBucket, AccessDenied. Surfacing it turns a dead end into a
+        // one-line fix, so pass both the name and the message through.
         console.error(`[storage] PutObject failed key=${key} bucket=${S3_BUCKET}`, err);
+        const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
         throw new UserError(
-          `Storage rejected the upload (${name}). Check S3_BUCKET, S3_ENDPOINT, S3_REGION and the access key.`,
+          `Storage rejected the upload. ${detail} — check S3_BUCKET, S3_ENDPOINT, S3_REGION and the access key.`,
         );
       }
       return { key, bytes: body.byteLength };
