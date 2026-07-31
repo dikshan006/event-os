@@ -1,0 +1,17 @@
+node_modules
+.next
+.env
+*.tsbuildinfo
+
+# Local-storage-driver uploads (dev only; production uses the S3 driver)
+/public/uploads
+
+# Vercel
+.vercel
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+.idea
+.vscode

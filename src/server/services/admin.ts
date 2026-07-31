@@ -1,0 +1,73 @@
+import "server-only";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/db";
+import { slugify, inviteCode } from "@/lib/utils";
+import { emails } from "@/lib/email";
+import { logAudit } from "./audit";
+
+export async function createPlanner(input: { studioName: string; ownerName: string; email: string }) {
+  const tempPassword = inviteCode().toLowerCase();
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+  const studio = await prisma.studio.create({
+    data: {
+      name: input.studioName,
+      slug: `${slugify(input.studioName)}-${inviteCode().slice(0, 4).toLowerCase()}`,
+      users: { create: { email: input.email.toLowerCase(), name: input.ownerName, role: "PLANNER", passwordHash } },
+    },
+  });
+  await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", studioId: studio.id, action: `Created planner \u201C${input.studioName}\u201D \u2014 studio generated, login invite emailed` });
+  await emails.plannerInvite({ to: input.email, ownerName: input.ownerName, studio: input.studioName, link: `${process.env.APP_URL}/login`, studioId: studio.id });
+  return { studio, tempPassword }; // shown once to the admin in the UI
+}
+
+/**
+ * Issue a new password for a studio's owner.
+ *
+ * Stored passwords are bcrypt hashes, so an existing password can never be
+ * read back — not by an admin, not by us. The remedy for "the planner lost
+ * their login" is therefore to mint a new credential and show it to the admin
+ * exactly once, which is what this does. `custom` lets the admin choose the
+ * value during a hand-held onboarding call; omitted, one is generated.
+ */
+export async function resetPlannerPassword(studioId: string, custom?: string) {
+  const studio = await prisma.studio.findUnique({
+    where: { id: studioId },
+    include: { users: { where: { role: "PLANNER" }, take: 1 } },
+  });
+  const owner = studio?.users[0];
+  if (!studio || !owner) throw new Error("Not found");
+
+  const password = custom?.trim() || inviteCode().toLowerCase();
+  if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: owner.id },
+      data: { passwordHash: await bcrypt.hash(password, 12) },
+    }),
+    // Any reset link already in the planner's inbox must stop working, or the
+    // old link could silently overwrite the credential just handed out.
+    prisma.passwordResetToken.updateMany({
+      where: { userId: owner.id, usedAt: null },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  await logAudit({
+    actorType: "ADMIN", actorName: "Platform Owner", studioId,
+    action: `Reset the password for ${owner.email} (${studio.name})${custom ? " — set manually" : " — generated"}`,
+  });
+  return { email: owner.email, password };
+}
+
+export async function setPlannerStatus(studioId: string, status: "ACTIVE" | "SUSPENDED") {
+  const studio = await prisma.studio.update({ where: { id: studioId }, data: { status } });
+  await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", studioId, action: `${status === "SUSPENDED" ? "Suspended" : "Reactivated"} planner \u201C${studio.name}\u201D` });
+}
+
+export async function deletePlanner(studioId: string) {
+  const studio = await prisma.studio.findUnique({ where: { id: studioId } });
+  if (!studio) return;
+  await prisma.studio.delete({ where: { id: studioId } }); // cascades users, weddings, guests, payments…
+  await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", action: `Deleted planner \u201C${studio.name}\u201D and all of its data` });
+}

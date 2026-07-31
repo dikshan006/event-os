@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Serverless functions open a connection per invocation, which exhausts a
+  // Postgres server's connection limit fast. DATABASE_URL therefore points at
+  // the POOLED endpoint (Neon's `-pooler` host, Supabase's port 6543).
+  url = env("DATABASE_URL")
+  // Migrations and introspection need a real session, which a transaction
+  // pooler cannot give them — so they use the direct endpoint instead.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  PLANNER
+  MEMBER
+}
+
+enum StudioStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum WeddingStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RsvpStatus {
+  ACCEPTED
+  DECLINED
+  MAYBE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum TemplateKey {
+  BLUSH_ROMANCE
+  MODERN_SAGE
+  CLASSIC_ELEGANCE
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum PhotoSlot {
+  HERO
+  COUPLE
+  STORY
+  GALLERY
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  name         String
+  role         Role
+  studioId     String?
+  studio       Studio?   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  resetTokens  PasswordResetToken[]
+
+  @@index([studioId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Studio {
+  id               String       @id @default(cuid())
+  name             String
+  slug             String       @unique
+  status           StudioStatus @default(ACTIVE)
+  logoUrl          String?
+  brandColor       String       @default("#9D5C64")
+  website          String?
+  instagram        String?
+  contactEmail     String?
+  contactPhone     String?
+  stripeCustomerId String?      @unique
+  freeWeddingUsed  Boolean      @default(false)
+  users            User[]
+  weddings         Wedding[]
+  payments         Payment[]
+  createdAt        DateTime     @default(now())
+}
+
+model Wedding {
+  id          String         @id @default(cuid())
+  studioId    String
+  studio      Studio         @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  slug        String         @unique
+  template    TemplateKey
+  status      WeddingStatus  @default(DRAFT)
+  partnerOne  String
+  partnerTwo  String
+  date        DateTime
+  venue       String?
+  city        String?
+  story       String?        @db.Text
+  // Enabled optional sections, e.g. ["COUNTDOWN","TRAVEL","FAQ","REGISTRY","CASH","GALLERY"]
+  sections    String[]       @default(["COUNTDOWN", "TRAVEL", "FAQ", "REGISTRY", "CASH", "GALLERY"])
+  guests      Guest[]
+  events      Event[]
+  faqs        Faq[]
+  registry    RegistryItem[]
+  funds       CashFund[]
+  photos      Photo[]
+  publishedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([studioId, status])
+}
+
+model Guest {
+  id         String    @id @default(cuid())
+  weddingId  String
+  wedding    Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  studioId   String // denormalized for O(1) tenant checks
+  name       String
+  email      String?
+  phone      String?
+  // V1 pragmatic choice: group names as a Postgres text[] on the guest.
+  // The join-table version in ARCHITECTURE.md is a straight migration later.
+  groups     String[]  @default([])
+  inviteCode String    @unique
+  invitedAt  DateTime?
+  rsvp       Rsvp?
+  createdAt  DateTime  @default(now())
+
+  @@index([weddingId])
+  @@index([studioId])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  weddingId   String
+  wedding     Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  day         String // display day label, e.g. "Saturday, September 25"
+  time        String // display time, e.g. "4:00 PM"
+  sortKey     Int      @default(0)
+  location    String?
+  dressCode   String?
+  isPublic    Boolean  @default(false)
+  audiences   String[] @default([]) // group names; empty + isPublic=false means nobody sees it
+
+  @@index([weddingId, sortKey])
+}
+
+model Rsvp {
+  id          String     @id @default(cuid())
+  guestId     String     @unique
+  guest       Guest      @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  status      RsvpStatus
+  meal        String?
+  dietary     String?
+  notes       String?    @db.Text
+  respondedAt DateTime   @default(now())
+}
+
+model RegistryItem {
+  id        String  @id @default(cuid())
+  weddingId String
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title     String
+  imageUrl  String?
+  price     String?
+  retailer  String?
+  url       String
+  sortOrder Int     @default(0)
+}
+
+model CashFund {
+  id        String  @id @default(cuid())
+  weddingId String
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name      String
+  blurb     String?
+  venmoUrl  String?
+  paypalUrl String?
+  stripeUrl String?
+  goalCents Int?
+}
+
+model Faq {
+  id        String  @id @default(cuid())
+  weddingId String
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  question  String
+  answer    String  @db.Text
+  sortOrder Int     @default(0)
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  studioId              String
+  studio                Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  weddingId             String?
+  amountCents           Int
+  currency              String        @default("usd")
+  status                PaymentStatus
+  description           String
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?       @unique
+  createdAt             DateTime      @default(now())
+
+  @@index([studioId, createdAt])
+}
+
+model PlatformSetting {
+  id                   Int     @id @default(1)
+  pricePerWeddingCents Int     @default(9900)
+  firstWeddingFree     Boolean @default(true)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actorType String // ADMIN | PLANNER | GUEST | SYSTEM
+  actorName String?
+  studioId  String?
+  action    String
+  targetId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([studioId, createdAt])
+  @@index([createdAt])
+}
+
+/**
+ * An uploaded wedding photo.
+ *
+ * `basePath` is the storage prefix owning every derivative of this photo
+ * (e.g. "studios/<sid>/weddings/<wid>/<uuid>"); deleting the row deletes that
+ * whole prefix, so there is exactly one place to clean up. `variants` holds the
+ * generated ladder as [{ format, width, height, key, bytes }] — written once at
+ * upload and read on every render, so the public site never resizes anything.
+ * `blurData` is a ~400-byte inline data URI used as the blur-up placeholder.
+ */
+model Photo {
+  id        String    @id @default(cuid())
+  weddingId String
+  wedding   Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  studioId  String // denormalized for O(1) tenant checks, same as Guest
+  slot      PhotoSlot
+  basePath  String
+  variants  Json
+  blurData  String    @db.Text
+  width     Int
+  height    Int
+  bytes     Int
+  alt       String    @default("")
+  caption   String?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([weddingId, slot, sortOrder])
+  @@index([studioId])
+}
+
+// Every outbound email attempt is recorded — nothing fails silently.
+model EmailLog {
+  id        String      @id @default(cuid())
+  studioId  String?
+  kind      String // GUEST_INVITATION | RSVP_CONFIRMATION | PLANNER_INVITE | PAYMENT_RECEIPT | PASSWORD_RESET
+  toEmail   String
+  subject   String
+  status    EmailStatus
+  provider  String? // resend message id on success
+  error     String? // provider error message on failure
+  createdAt DateTime    @default(now())
+
+  @@index([studioId, createdAt])
+  @@index([status, createdAt])
+}

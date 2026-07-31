@@ -1,0 +1,87 @@
+import { redirect } from "next/navigation";
+import { requireStudio } from "@/server/services/context";
+import { createWedding } from "@/server/services/weddings";
+import { importGuests } from "@/server/services/guests";
+import { PageHead } from "@/components/ui";
+import { zWedding } from "@/lib/validators";
+import { TEMPLATES, SECTIONS } from "@/lib/utils";
+
+export default async function NewWedding() {
+  await requireStudio();
+
+  async function create(formData: FormData) {
+    "use server";
+    const { studioId, user } = await requireStudio();
+    const input = zWedding.parse({
+      partnerOne: formData.get("partnerOne"),
+      partnerTwo: formData.get("partnerTwo"),
+      date: formData.get("date"),
+      venue: formData.get("venue") ?? "",
+      city: formData.get("city") ?? "",
+      story: formData.get("story") ?? "",
+      template: formData.get("template"),
+      sections: formData.getAll("sections").map(String),
+    });
+    const wedding = await createWedding(studioId, user.name, input);
+    const csv = String(formData.get("guests") ?? "").trim();
+    if (csv) await importGuests(studioId, wedding.id, user.name, csv);
+    redirect(`/studio/weddings/${wedding.id}`);
+  }
+
+  return (
+    <>
+      <PageHead eyebrow="New wedding" title="Create New Wedding"
+        sub="Choose a template, add the couple, personalize the content. The layout can never break." />
+      <form action={create} className="frm" style={{ maxWidth: 760 }}>
+        <div className="card pad frm">
+          <h2 className="section-t">Choose Your Template</h2>
+          <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+            {Object.entries(TEMPLATES).map(([key, T], i) => (
+              <label key={key} className="card pad" style={{ cursor: "pointer", display: "grid", gap: 8, borderTop: `6px solid ${T.color}` }}>
+                <div className="row">
+                  <input type="radio" name="template" value={key} defaultChecked={i === 0} required />
+                  <b className="serif" style={{ fontSize: 19 }}>{T.name}</b>
+                </div>
+                <span className="meta">{T.desc}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="card pad frm">
+          <h2 className="section-t">Couple Details</h2>
+          <div className="frm two">
+            <div className="field"><label>Partner one</label><input className="inp" name="partnerOne" required placeholder="e.g. Sarah" /></div>
+            <div className="field"><label>Partner two</label><input className="inp" name="partnerTwo" required placeholder="e.g. James" /></div>
+            <div className="field"><label>Wedding date</label><input className="inp" name="date" type="date" required /></div>
+            <div className="field"><label>City</label><input className="inp" name="city" placeholder="e.g. Charleston, SC" /></div>
+          </div>
+          <div className="field"><label>Venue</label><input className="inp" name="venue" placeholder="e.g. The Magnolia Estate" /></div>
+          <div className="field"><label>Your story</label>
+            <textarea className="inp" name="story" placeholder="Our journey began with a chance meeting…" /></div>
+          <div className="field"><label>Website sections</label>
+            <div className="row wrap">
+              {SECTIONS.map(([value, label]) => (
+                <label key={value} className="check">
+                  <input type="checkbox" name="sections" value={value} defaultChecked /> {label}
+                </label>
+              ))}
+            </div>
+            <span className="hint">Hero, story, timeline and RSVP are always included.</span>
+          </div>
+        </div>
+
+        <div className="card pad frm">
+          <h2 className="section-t">Guests (optional)</h2>
+          <div className="field">
+            <label>Paste guests — one per line: Name, email, Group|Group</label>
+            <textarea className="inp" name="guests" placeholder={"Margaret Ellison, margaret@ellison.com, Family|VIP\nJohn Peterson, john@gmail.com, Friends"} />
+          </div>
+          <div className="note">Every guest receives a unique invitation link with a schedule built automatically from their groups.</div>
+        </div>
+
+        <div><button className="btn btn-accent" type="submit">Create Wedding</button></div>
+      </form>
+    </>
+  );
+}
