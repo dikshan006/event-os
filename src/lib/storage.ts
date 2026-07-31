@@ -73,7 +73,16 @@ function findBlobToken(): string | undefined {
 
 const BLOB_TOKEN = findBlobToken();
 
-export const blobEnabled = Boolean(BLOB_TOKEN);
+/**
+ * A connected Blob store does not necessarily mean a token.
+ *
+ * Running on Vercel, the SDK authenticates over OIDC using the injected
+ * `BLOB_STORE_ID` and the runtime's own identity token; `BLOB_READ_WRITE_TOKEN`
+ * is only issued for code running *outside* Vercel. Gating availability on the
+ * token therefore rejected a perfectly working store. Presence of either signal
+ * is enough — the SDK resolves credentials itself when we pass no token.
+ */
+export const blobEnabled = Boolean(BLOB_TOKEN || process.env.BLOB_STORE_ID);
 export const s3Enabled = Boolean(S3_BUCKET && S3_ACCESS_KEY_ID && S3_SECRET_ACCESS_KEY);
 export const storageEnabled = blobEnabled || s3Enabled;
 
@@ -90,6 +99,10 @@ const IMMUTABLE_SECONDS = 31_536_000;
 /* --------------------------------------------------------- Vercel Blob ---- */
 
 function blobDriver(): StorageDriver {
+  // Omitted entirely when absent, so the SDK falls back to OIDC on Vercel.
+  // Spreading `undefined` would still create the key and defeat that.
+  const auth = BLOB_TOKEN ? { token: BLOB_TOKEN } : {};
+
   return {
     name: "blob",
     async put(key, body, contentType) {
@@ -100,7 +113,7 @@ function blobDriver(): StorageDriver {
           // Keep our own path scheme intact so deletePrefix can find these again.
           addRandomSuffix: false,
           cacheControlMaxAge: IMMUTABLE_SECONDS,
-          token: BLOB_TOKEN,
+          ...auth,
         });
         // Blob owns the hostname, so the absolute URL *is* the durable key.
         return { key: url, bytes: body.byteLength };
@@ -115,8 +128,8 @@ function blobDriver(): StorageDriver {
     async deletePrefix(prefix) {
       let cursor: string | undefined;
       do {
-        const page = await blobList({ prefix, cursor, token: BLOB_TOKEN });
-        if (page.blobs.length) await blobDel(page.blobs.map(b => b.url), { token: BLOB_TOKEN });
+        const page = await blobList({ prefix, cursor, ...auth });
+        if (page.blobs.length) await blobDel(page.blobs.map(b => b.url), { ...auth });
         cursor = page.hasMore ? page.cursor : undefined;
       } while (cursor);
     },
