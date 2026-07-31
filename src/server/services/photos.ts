@@ -4,6 +4,7 @@ import type { PhotoSlot } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { processImage, ImageError, asVariants, srcSet, fallbackSrc } from "@/lib/images";
+import { asTone, toneStyle } from "@/lib/photo-tone";
 import { logAudit } from "./audit";
 import type { PhotoView, PhotoSet } from "@/lib/photo-view";
 
@@ -46,7 +47,7 @@ export async function photosBySlot(weddingId: string) {
 /** Resolve stored keys into browser URLs. The boundary between storage and rendering. */
 export function toPhotoView(photo: {
   id: string; alt: string; caption: string | null; width: number; height: number;
-  blurData: string; variants: unknown;
+  blurData: string; variants: unknown; tone?: unknown;
 }): PhotoView {
   const url = (key: string) => storage().publicUrl(key);
   const variants = asVariants(photo.variants);
@@ -60,6 +61,7 @@ export function toPhotoView(photo: {
     avif: srcSet(variants, "avif", url),
     webp: srcSet(variants, "webp", url),
     src: fallbackSrc(variants, url),
+    style: toneStyle(asTone(photo.tone)),
   };
 }
 
@@ -127,6 +129,7 @@ export async function uploadPhoto(
       basePath,
       variants: processed.variants,
       blurData: processed.blurData,
+      tone: processed.tone,
       width: processed.width,
       height: processed.height,
       bytes: processed.bytes,
@@ -194,6 +197,7 @@ export async function replacePhoto(
       basePath,
       variants: processed.variants,
       blurData: processed.blurData,
+      tone: processed.tone,
       width: processed.width,
       height: processed.height,
       bytes: processed.bytes,

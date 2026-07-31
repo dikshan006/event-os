@@ -20,6 +20,12 @@ export type PhotoView = {
   webp: string;
   /** Largest WebP rendition, used as the plain `src`. */
   src: string;
+  /**
+   * CSS custom properties derived from the photograph's own measurements —
+   * scrim strength, saturation, contrast, vignette and focal point. Computed
+   * server-side so components stay presentational.
+   */
+  style: Record<string, string>;
 };
 
 export type PhotoSet = {

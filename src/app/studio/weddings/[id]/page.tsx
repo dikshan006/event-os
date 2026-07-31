@@ -22,6 +22,9 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
       venue: formData.get("venue") ?? "",
       city: formData.get("city") ?? "",
       story: formData.get("story") ?? "",
+      venueNote: formData.get("venueNote") ?? "",
+      accommodation: formData.get("accommodation") ?? "",
+      travelNote: formData.get("travelNote") ?? "",
       template: formData.get("template"),
       sections: formData.getAll("sections").map(String),
     });
@@ -62,6 +65,29 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
         </div>
         <div className="field"><label>Venue</label><input className="inp" name="venue" defaultValue={w.venue ?? ""} /></div>
         <div className="field"><label>Story</label><textarea className="inp" name="story" defaultValue={w.story ?? ""} /></div>
+
+        <fieldset style={{ border: 0, display: "grid", gap: 16 }}>
+          <legend className="eyebrow" style={{ marginBottom: 4 }}>Travel</legend>
+          <p className="hint" style={{ marginTop: -8 }}>
+            Guests only see what you write here. Leave all three blank and the Travel
+            section is hidden from the website entirely.
+          </p>
+          <div className="field">
+            <label>About the venue</label>
+            <textarea className="inp" name="venueNote" defaultValue={w.venueNote ?? ""}
+              placeholder="Parking, arrival instructions, anything guests should know on the day." />
+          </div>
+          <div className="field">
+            <label>Where to stay</label>
+            <textarea className="inp" name="accommodation" defaultValue={w.accommodation ?? ""}
+              placeholder="Hotels, room blocks and booking codes." />
+          </div>
+          <div className="field">
+            <label>Getting here</label>
+            <textarea className="inp" name="travelNote" defaultValue={w.travelNote ?? ""}
+              placeholder="Nearest airports, transfers, taxis." />
+          </div>
+        </fieldset>
         <div className="field"><label>Template</label>
           <select className="inp" name="template" defaultValue={w.template}>
             {Object.entries(TEMPLATES).map(([k, T]) => <option key={k} value={k}>{T.name}</option>)}

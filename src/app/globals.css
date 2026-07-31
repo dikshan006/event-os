@@ -315,18 +315,40 @@ body:has(dialog[open]){overflow:hidden}
   background-color:rgba(0,0,0,.04)}
 .s-ph.rounded{border-radius:4px}
 
-/* Blend a photograph into the page.
-   Uploads arrive at whatever contrast and colour temperature the camera
-   produced; a bright, saturated frame next to fine serif type fights it. A
-   small desaturation plus a wash of the template's own background settles the
-   image into the palette, and a faint inner edge keeps it from floating. */
-.s-ph.toned img{filter:saturate(.9) contrast(.97) brightness(1.01)}
+/* ------------------------------------------------ photograph treatment ---
+   Every value here comes from the photograph itself. src/lib/images.ts
+   measures each upload once — luminance, saturation, tonal spread and a detail
+   centroid — and src/lib/photo-tone.ts converts those into the custom
+   properties below. A bright frame therefore receives a stronger wash of the
+   template's background than a dark one, a vivid frame is eased back further
+   than a muted one, and the crop favours wherever the detail actually sits.
+
+   The point is that a planner uploads whatever their photographer delivered
+   and it lands looking like it belongs to this template, with nothing to
+   adjust. The defaults are neutral, so photographs uploaded before this
+   existed still render sensibly.
+
+   Fallback values keep the rules valid if a photo has no measurements. */
+.s-ph.toned img{
+  filter:saturate(var(--ph-saturate,.92)) contrast(var(--ph-contrast,.98));
+  /* Intelligent crop: the detail centroid rather than the geometric middle. */
+  object-position:var(--ph-focus-x,50%) var(--ph-focus-y,50%)}
+
+/* Scrim + vignette + inner edge, all scaled per image. */
 .s-ph.toned::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:
-    linear-gradient(to bottom, color-mix(in srgb, var(--sb) 16%, transparent), transparent 34%,
-                    transparent 66%, color-mix(in srgb, var(--sb) 22%, transparent)),
-    radial-gradient(120% 90% at 50% 50%, transparent 58%, color-mix(in srgb, var(--sb) 26%, transparent));
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--si) 8%, transparent)}
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.08) * 130%), transparent),
+      transparent 36%, transparent 64%,
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.08) * 165%), transparent)),
+    radial-gradient(125% 95% at 50% 50%, transparent 55%,
+      color-mix(in srgb, var(--sb) calc(var(--ph-vignette,.12) * 165%), transparent));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--si) 9%, transparent)}
+
+/* Dark photographs are lifted very slightly instead of scrimmed, so low-key
+   frames read as intentional rather than underexposed. */
+.s-ph.toned::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:color-mix(in srgb, var(--sb) calc(var(--ph-lift,0) * 100%), transparent)}
 .s-ph picture,.s-ph img{display:block;width:100%;height:100%}
 .s-ph img{object-fit:cover;animation:ph-in .5s ease-out}
 .s-ph figcaption{position:absolute;left:0;right:0;bottom:0;padding:26px 16px 12px;
@@ -458,6 +480,15 @@ body:has(dialog[open]){overflow:hidden}
 .gal-item{width:min(860px,100%);margin:0}
 .gal-item figcaption{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7;
   letter-spacing:.04em;opacity:.6;margin-top:var(--sp-4);text-align:center}
+
+/* ------------------------------------------------------------ travel notes --
+   Prose the planner wrote, set as an editorial column rather than boxed cards.
+   Cards implied equal, interchangeable facts; these are paragraphs. */
+.s-notes{display:grid;gap:var(--sp-7);max-width:56ch;margin-inline:auto;text-align:center}
+.s-note h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  color:var(--sd);letter-spacing:.02em;margin-bottom:var(--sp-3)}
+.s-note p{font-family:var(--serif);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:.85;white-space:pre-line}
 
 .s-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:720px;margin:0 auto;text-align:left}
 .s-card{background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.07);border-radius:10px;padding:20px}

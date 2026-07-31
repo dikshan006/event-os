@@ -121,6 +121,11 @@ model Wedding {
   venue       String?
   city        String?
   story       String?        @db.Text
+  // Travel details, written by the planner. All optional; the Travel section
+  // hides itself when every one of them is empty rather than inventing copy.
+  venueNote     String? @db.Text
+  accommodation String? @db.Text
+  travelNote    String? @db.Text
   // Enabled optional sections, e.g. ["COUNTDOWN","TRAVEL","FAQ","REGISTRY","CASH","GALLERY"]
   sections    String[]       @default(["COUNTDOWN", "TRAVEL", "FAQ", "REGISTRY", "CASH", "GALLERY"])
   guests      Guest[]
@@ -272,6 +277,15 @@ model Photo {
   slot      PhotoSlot
   basePath  String
   variants  Json
+  /**
+   * Measurements taken from the photograph at upload time — luminance,
+   * saturation, tonal spread, dominant colour and a focal point. The rendering
+   * layer derives its scrim strength, desaturation and crop position from
+   * these, so the treatment adapts to each image instead of applying one fixed
+   * overlay that only suits some of them. Null on photos uploaded before this
+   * existed; the renderer falls back to neutral defaults.
+   */
+  tone      Json?
   blurData  String    @db.Text
   width     Int
   height    Int

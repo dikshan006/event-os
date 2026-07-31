@@ -1,6 +1,7 @@
 import "server-only";
 import sharp from "sharp";
 import { UserError } from "./errors";
+import { NEUTRAL_TONE, type PhotoTone } from "./photo-tone";
 
 /**
  * Upload-time image pipeline.
@@ -47,10 +48,92 @@ export type Variant = {
 export type ProcessedImage = {
   variants: Variant[];
   blurData: string;
+  tone: PhotoTone;
   width: number;
   height: number;
   bytes: number;
 };
+
+/**
+ * Measure a photograph so the site can present it consistently.
+ *
+ * Runs on a 64px-wide greyscale-plus-colour sample rather than the full image,
+ * so the whole analysis is a few thousand pixels of arithmetic — negligible
+ * next to the eight AVIF/WebP encodes happening around it.
+ *
+ * The focal point is a detail centroid: neighbouring-pixel differences
+ * approximate local detail, and their weighted centre lands on the subject far
+ * more often than the geometric middle does. Faces, being high-detail against
+ * smoother backgrounds, attract it naturally. It is a heuristic, not face
+ * detection — but the failure mode is simply the centre of the frame, which is
+ * where a fixed crop would have been anyway.
+ */
+async function analyseImage(img: sharp.Sharp): Promise<PhotoTone> {
+  const W = 64;
+  const { data, info } = await img
+    .clone()
+    .resize({ width: W, fit: "inside" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const w = info.width;
+  const h = info.height;
+  const px = w * h;
+  if (!px) return NEUTRAL_TONE;
+
+  const lumAt = (i: number) => {
+    const o = i * 3;
+    // Rec. 709 luma: matches how the eye weights the channels.
+    return (0.2126 * data[o] + 0.7152 * data[o + 1] + 0.0722 * data[o + 2]) / 255;
+  };
+
+  let lumSum = 0;
+  let lumSq = 0;
+  let satSum = 0;
+  for (let i = 0; i < px; i++) {
+    const o = i * 3;
+    const r = data[o] / 255, g = data[o + 1] / 255, b = data[o + 2] / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    // HSL saturation, guarded at the extremes where it is meaningless.
+    const l = (max + min) / 2;
+    satSum += max === min ? 0 : (max - min) / (l > 0.5 ? 2 - max - min : max + min || 1);
+    const y = lumAt(i);
+    lumSum += y;
+    lumSq += y * y;
+  }
+
+  const lum = lumSum / px;
+  const spread = Math.sqrt(Math.max(0, lumSq / px - lum * lum));
+
+  // Detail centroid.
+  let wx = 0, wy = 0, wsum = 0;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const dx = Math.abs(lumAt(i + 1) - lumAt(i - 1));
+      const dy = Math.abs(lumAt(i + w) - lumAt(i - w));
+      // Squared so genuinely detailed regions dominate mild texture.
+      const weight = (dx + dy) ** 2;
+      wx += x * weight;
+      wy += y * weight;
+      wsum += weight;
+    }
+  }
+
+  const focusX = wsum > 0 ? (wx / wsum / (w - 1)) * 100 : 50;
+  const focusY = wsum > 0 ? (wy / wsum / (h - 1)) * 100 : 50;
+
+  return {
+    lum,
+    sat: satSum / px,
+    spread,
+    // Pulled toward centre: a centroid is a rough signal, and an aggressive
+    // crop offset is far more noticeable when wrong than a gentle one.
+    focusX: 50 + (focusX - 50) * 0.6,
+    focusY: 50 + (focusY - 50) * 0.6,
+  };
+}
 
 /** A problem with the submitted image that the planner can act on. */
 export class ImageError extends UserError {}
@@ -128,7 +211,10 @@ export async function processImage(
   const blur = await normalized.clone().resize({ width: 20 }).webp({ quality: 30 }).toBuffer();
   const blurData = `data:image/webp;base64,${blur.toString("base64")}`;
 
-  return { variants, blurData, width: srcW, height: srcH, bytes };
+  // Measured from the normalised image so orientation is already applied.
+  const tone = await analyseImage(normalized);
+
+  return { variants, blurData, tone, width: srcW, height: srcH, bytes };
 }
 
 /* ------------------------------------------------- rendering helpers ------ */

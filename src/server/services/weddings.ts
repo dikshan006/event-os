@@ -25,6 +25,9 @@ export async function createWedding(studioId: string, actorName: string, input: 
       venue: input.venue || null,
       city: input.city || null,
       story: input.story || null,
+      venueNote: input.venueNote || null,
+      accommodation: input.accommodation || null,
+      travelNote: input.travelNote || null,
       sections: input.sections,
       faqs: {
         create: [
@@ -50,6 +53,9 @@ export async function updateWedding(studioId: string, weddingId: string, input: 
       venue: input.venue || null,
       city: input.city || null,
       story: input.story || null,
+      venueNote: input.venueNote || null,
+      accommodation: input.accommodation || null,
+      travelNote: input.travelNote || null,
       sections: input.sections,
     },
   });

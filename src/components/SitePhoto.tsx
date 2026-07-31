@@ -50,7 +50,10 @@ export function SitePhoto({
       style={{
         aspectRatio: String(aspect),
         backgroundImage: `url("${photo.blurData}")`,
-      }}
+        // Per-image measurements, resolved server-side. The CSS below reads
+        // these rather than hard-coding one treatment for every photograph.
+        ...(tone ? photo.style : undefined),
+      } as React.CSSProperties}
     >
       <picture>
         <source type="image/avif" srcSet={photo.avif} sizes={sizes} />

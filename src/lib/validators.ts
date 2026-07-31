@@ -7,6 +7,11 @@ export const zWedding = z.object({
   venue: z.string().max(120).optional().or(z.literal("")),
   city: z.string().max(120).optional().or(z.literal("")),
   story: z.string().max(4000).optional().or(z.literal("")),
+  // Travel details. Optional throughout — the Travel section hides itself when
+  // all three are blank rather than filling the gap with invented copy.
+  venueNote: z.string().max(1200).optional().or(z.literal("")),
+  accommodation: z.string().max(1200).optional().or(z.literal("")),
+  travelNote: z.string().max(1200).optional().or(z.literal("")),
   template: z.enum(["BLUSH_ROMANCE", "MODERN_SAGE", "CLASSIC_ELEGANCE"]),
   sections: z.array(z.string()).default([]),
 });

@@ -58,13 +58,20 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
     ...photos.story,
   ].filter((p, i, all) => p.id !== portrait?.id && all.findIndex(q => q.id === p.id) === i);
 
+  // Travel: heading/body pairs for whatever the planner filled in. An empty
+  // list hides the section entirely rather than showing invented detail.
+  const travelEntries = ([
+    [wedding.venue || "The venue", wedding.venueNote],
+    ["Where to stay", wedding.accommodation],
+    ["Getting here", wedding.travelNote],
+  ] as const).filter((e): e is readonly [string, string] => Boolean(e[1]?.trim()));
+
   const dateLine = fmtDate(wedding.date);
   const placeLine = [wedding.venue, wedding.city].filter(Boolean).join(" · ");
 
   const navLinks = [
     ["#home", "Home"],
     ["#events", "Events"],
-    ...(has("GALLERY") && galleryPhotos.length ? [["#gallery", "Gallery"] as const] : []),
     ...(has("TRAVEL") ? [["#travel", "Travel"] as const] : []),
     ...(has("FAQ") && wedding.faqs.length ? [["#faq", "FAQ"] as const] : []),
   ] as const;
@@ -195,15 +202,19 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           </section>
         )}
 
-        {has("TRAVEL") && (
+        {/* Only what the planner actually wrote. The previous version shipped
+            invented copy — valet parking, a room block — to real guests. */}
+        {has("TRAVEL") && travelEntries.length > 0 && (
           <section className="s-sec" id="travel">
             <h2 className="s-h">Travel</h2>
             <div className="s-hs">getting here &amp; staying nearby</div>
-            <div className="s-cards">
-              <div className="s-card"><b>{wedding.venue ?? "The Venue"}</b>
-                <p>{wedding.city ?? ""}. Valet parking available; ride shares drop at the main gate.</p></div>
-              <div className="s-card"><b>Where to stay</b>
-                <p>A room block is reserved under the couple's name — details in your invitation email.</p></div>
+            <div className="s-notes">
+              {travelEntries.map(([heading, body]) => (
+                <Reveal key={heading} className="s-note">
+                  <h3>{heading}</h3>
+                  <p>{body}</p>
+                </Reveal>
+              ))}
             </div>
           </section>
         )}
