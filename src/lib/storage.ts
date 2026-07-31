@@ -7,29 +7,38 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { put as blobPut, list as blobList, del as blobDel } from "@vercel/blob";
 import { UserError } from "./errors";
 
 /**
  * Object storage behind one small interface.
  *
- * Two drivers ship:
+ * Three drivers ship, selected automatically by which credentials are present:
+ *  - `blob`  — Vercel Blob. Preferred on Vercel because the platform injects
+ *              BLOB_READ_WRITE_TOKEN when the store is connected: no API token
+ *              to mint, no account id, no endpoint, no separate public URL.
  *  - `s3`    — any S3-compatible endpoint. Cloudflare R2, AWS S3, Backblaze B2
  *              and MinIO all work by changing env vars only; no code branches
- *              on the vendor.
- *  - `local` — writes under `public/uploads` and is selected automatically when
- *              no bucket credentials are present. Same contract as the Stripe
- *              and Resend dev fallbacks already in this codebase: the whole app
- *              stays runnable on a laptop with an empty .env.
+ *              on the vendor. Cheaper at scale (R2 charges no egress).
+ *  - `local` — writes under `public/uploads`, chosen when neither of the above
+ *              is configured. Same contract as the Stripe and Resend dev
+ *              fallbacks already here: the app stays runnable with an empty .env.
  *
- * Everything above this module (the image pipeline, the photo service, the
- * rendering components) only ever sees storage *keys* and public URLs, so
- * switching providers — or adding a CDN in front — never touches them.
+ * Everything above this module only ever sees an opaque storage key and the URL
+ * `publicUrl()` derives from it, so switching providers never touches the image
+ * pipeline, the photo service, or the rendering components.
+ *
+ * One wrinkle the interface absorbs: S3 keys are paths we choose, whereas Blob
+ * mints the URL server-side. The Blob driver therefore returns the absolute URL
+ * as the key and `publicUrl()` passes absolute keys straight through — which is
+ * why `put()` returns the stored key rather than the caller assuming it.
  */
 
 export type StoredObject = { key: string; bytes: number };
 
 export interface StorageDriver {
-  readonly name: "s3" | "local";
+  readonly name: "blob" | "s3" | "local";
+  /** Returns the canonical key to persist — not necessarily the one passed in. */
   put(key: string, body: Buffer, contentType: string): Promise<StoredObject>;
   /** Delete every object under a prefix. Must be safe to call twice. */
   deletePrefix(prefix: string): Promise<void>;
@@ -38,6 +47,7 @@ export interface StorageDriver {
 }
 
 const {
+  BLOB_READ_WRITE_TOKEN,
   S3_BUCKET,
   S3_ACCESS_KEY_ID,
   S3_SECRET_ACCESS_KEY,
@@ -46,7 +56,50 @@ const {
   S3_PUBLIC_URL,
 } = process.env;
 
-export const storageEnabled = Boolean(S3_BUCKET && S3_ACCESS_KEY_ID && S3_SECRET_ACCESS_KEY);
+export const blobEnabled = Boolean(BLOB_READ_WRITE_TOKEN);
+export const s3Enabled = Boolean(S3_BUCKET && S3_ACCESS_KEY_ID && S3_SECRET_ACCESS_KEY);
+export const storageEnabled = blobEnabled || s3Enabled;
+
+/** Derivatives are content-addressed and never rewritten — cache them forever. */
+const IMMUTABLE_SECONDS = 31_536_000;
+
+/* --------------------------------------------------------- Vercel Blob ---- */
+
+function blobDriver(): StorageDriver {
+  return {
+    name: "blob",
+    async put(key, body, contentType) {
+      try {
+        const { url } = await blobPut(key, body, {
+          access: "public",
+          contentType,
+          // Keep our own path scheme intact so deletePrefix can find these again.
+          addRandomSuffix: false,
+          cacheControlMaxAge: IMMUTABLE_SECONDS,
+        });
+        // Blob owns the hostname, so the absolute URL *is* the durable key.
+        return { key: url, bytes: body.byteLength };
+      } catch (err) {
+        const name = err instanceof Error ? err.name : "UnknownError";
+        console.error(`[storage] Blob put failed key=${key}`, err);
+        throw new UserError(
+          `Storage rejected the upload (${name}). Check that a Blob store is connected to this project.`,
+        );
+      }
+    },
+    async deletePrefix(prefix) {
+      let cursor: string | undefined;
+      do {
+        const page = await blobList({ prefix, cursor });
+        if (page.blobs.length) await blobDel(page.blobs.map(b => b.url));
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+    },
+    publicUrl(key) {
+      return key; // already absolute
+    },
+  };
+}
 
 /* ------------------------------------------------------------------ S3 ---- */
 
@@ -159,22 +212,23 @@ export function storage(): StorageDriver {
   // invisible to every other running instance in the meantime. Failing loudly
   // here is far kinder than silently losing a client's wedding photographs.
   if (!storageEnabled && process.env.NODE_ENV === "production") {
-    const missing = [
-      !S3_BUCKET && "S3_BUCKET",
-      !S3_ACCESS_KEY_ID && "S3_ACCESS_KEY_ID",
-      !S3_SECRET_ACCESS_KEY && "S3_SECRET_ACCESS_KEY",
-    ].filter(Boolean).join(", ");
     throw new UserError(
-      `Photo storage is not configured — missing ${missing}. Add it in the Vercel ` +
-        `project's environment variables and redeploy. (The local-disk driver is development only.)`,
+      "Photo storage is not configured. Connect a Blob store in the Vercel dashboard " +
+        "(Storage → Create → Blob → Connect to project) and redeploy — Vercel injects " +
+        "BLOB_READ_WRITE_TOKEN for you. Alternatively set the S3_* variables for an " +
+        "S3-compatible bucket. (The local-disk driver is development only.)",
     );
   }
-  // A bucket without a public URL uploads fine and then renders blank images,
-  // which is far more confusing than failing here.
-  if (storageEnabled && !S3_PUBLIC_URL && !S3_ENDPOINT) {
+  // An S3 bucket without a public URL uploads fine and then renders blank
+  // images, which is far more confusing than failing here. Blob is exempt: it
+  // returns its own absolute URLs.
+  if (!blobEnabled && s3Enabled && !S3_PUBLIC_URL && !S3_ENDPOINT) {
     throw new UserError("Photo storage is missing S3_PUBLIC_URL — uploads would save but never display.");
   }
 
-  cached = storageEnabled ? s3Driver() : localDriver();
+  // Blob wins when both are present: on Vercel it needs no manual configuration,
+  // so it is the safer default if someone leaves half-finished S3 vars behind.
+  cached = blobEnabled ? blobDriver() : s3Enabled ? s3Driver() : localDriver();
+  console.log(`[storage] driver=${cached.name}`);
   return cached;
 }

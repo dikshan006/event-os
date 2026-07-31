@@ -135,9 +135,10 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
 
       {!storageEnabled && (
         <div className="note" style={{ marginBottom: 20 }}>
-          <b>Local storage mode.</b> No bucket is configured, so images are written to{" "}
-          <code>public/uploads</code> on this machine — fine for development, but set the{" "}
-          <code>S3_*</code> variables before going live so photos survive a deploy.
+          <b>Local storage mode.</b> No object store is connected, so images are written to{" "}
+          <code>public/uploads</code> on this machine — fine for development, but connect a
+          Vercel Blob store (or set the <code>S3_*</code> variables) before going live so
+          photos survive a deploy.
         </div>
       )}
 

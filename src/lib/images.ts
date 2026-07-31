@@ -66,7 +66,7 @@ export async function processImage(
   input: Buffer,
   slot: keyof typeof SLOT_MAX_WIDTH,
   basePath: string,
-  emit: (key: string, body: Buffer, contentType: string) => Promise<{ bytes: number }>,
+  emit: (key: string, body: Buffer, contentType: string) => Promise<{ key: string; bytes: number }>,
 ): Promise<ProcessedImage> {
   if (input.byteLength > MAX_UPLOAD_BYTES) {
     throw new ImageError(`Image is larger than ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.`);
@@ -115,8 +115,10 @@ export async function processImage(
           : await resized.clone().webp({ quality: 78 }).toBuffer();
 
       const key = `${basePath}/${width}.${format}`;
+      // Persist the key the driver actually stored under: S3 echoes ours back,
+      // Vercel Blob returns its own absolute URL.
       const stored = await emit(key, body, `image/${format}`);
-      variants.push({ format, width, height, key, bytes: stored.bytes });
+      variants.push({ format, width, height, key: stored.key, bytes: stored.bytes });
       bytes += stored.bytes;
     }
   }
