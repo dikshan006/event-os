@@ -57,9 +57,16 @@ a{color:inherit;text-decoration:none}
    its heading hidden underneath the bar. */
 :target{scroll-margin-top:calc(var(--nav-h,64px) + var(--sp-5))}
 
+/* Native smooth scrolling for the dashboards, which do not run Lenis. */
 @media (prefers-reduced-motion:no-preference){
   html{scroll-behavior:smooth}
 }
+
+/* Lenis puts `.lenis` on <html> while it is attached. CSS smooth scrolling and
+   a JS scroll loop fight each other — the browser animates toward the anchor
+   while Lenis animates from the position it believes it is at — so hand
+   control over entirely whenever Lenis is live. */
+html.lenis{scroll-behavior:auto}
 
 /* Keyboard users get a way past the navigation; visible only on focus. */
 .skip{position:absolute;left:var(--sp-4);top:-100px;z-index:100;

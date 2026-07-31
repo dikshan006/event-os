@@ -3,6 +3,7 @@ import { Countdown } from "./Countdown";
 import { RsvpForm } from "./RsvpForm";
 import { SitePhoto } from "./SitePhoto";
 import { InvitationHero } from "./InvitationHero";
+import { SmoothScroll } from "./SmoothScroll";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 
 const THEMES = {
@@ -53,6 +54,8 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
   return (
     <div className="site" style={vars}>
+      {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
+      <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
       <div className="s-wrap">
         {theme.rule && <div className="s-rule" />}
