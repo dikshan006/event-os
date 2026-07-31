@@ -47,7 +47,6 @@ export interface StorageDriver {
 }
 
 const {
-  BLOB_READ_WRITE_TOKEN,
   S3_BUCKET,
   S3_ACCESS_KEY_ID,
   S3_SECRET_ACCESS_KEY,
@@ -56,9 +55,34 @@ const {
   S3_PUBLIC_URL,
 } = process.env;
 
-export const blobEnabled = Boolean(BLOB_READ_WRITE_TOKEN);
+/**
+ * Find the Blob token however Vercel chose to name it.
+ *
+ * Connecting a store normally injects `BLOB_READ_WRITE_TOKEN`, but if an
+ * environment-variable *prefix* was entered during setup the name becomes
+ * `<PREFIX>_BLOB_READ_WRITE_TOKEN` — at which point a hard-coded lookup finds
+ * nothing and the app reports "not configured" while the store sits there
+ * perfectly connected. Matching on the suffix removes that whole failure mode.
+ */
+function findBlobToken(): string | undefined {
+  const exact = process.env.BLOB_READ_WRITE_TOKEN;
+  if (exact) return exact;
+  const key = Object.keys(process.env).find(k => k.endsWith("BLOB_READ_WRITE_TOKEN"));
+  return key ? process.env[key] : undefined;
+}
+
+const BLOB_TOKEN = findBlobToken();
+
+export const blobEnabled = Boolean(BLOB_TOKEN);
 export const s3Enabled = Boolean(S3_BUCKET && S3_ACCESS_KEY_ID && S3_SECRET_ACCESS_KEY);
 export const storageEnabled = blobEnabled || s3Enabled;
+
+/** Names of the storage-related variables actually present — for diagnostics only, never values. */
+export function storageEnvKeys() {
+  return Object.keys(process.env)
+    .filter(k => k.includes("BLOB") || k.startsWith("S3_"))
+    .sort();
+}
 
 /** Derivatives are content-addressed and never rewritten — cache them forever. */
 const IMMUTABLE_SECONDS = 31_536_000;
@@ -76,6 +100,7 @@ function blobDriver(): StorageDriver {
           // Keep our own path scheme intact so deletePrefix can find these again.
           addRandomSuffix: false,
           cacheControlMaxAge: IMMUTABLE_SECONDS,
+          token: BLOB_TOKEN,
         });
         // Blob owns the hostname, so the absolute URL *is* the durable key.
         return { key: url, bytes: body.byteLength };
@@ -90,8 +115,8 @@ function blobDriver(): StorageDriver {
     async deletePrefix(prefix) {
       let cursor: string | undefined;
       do {
-        const page = await blobList({ prefix, cursor });
-        if (page.blobs.length) await blobDel(page.blobs.map(b => b.url));
+        const page = await blobList({ prefix, cursor, token: BLOB_TOKEN });
+        if (page.blobs.length) await blobDel(page.blobs.map(b => b.url), { token: BLOB_TOKEN });
         cursor = page.hasMore ? page.cursor : undefined;
       } while (cursor);
     },
@@ -212,11 +237,21 @@ export function storage(): StorageDriver {
   // invisible to every other running instance in the meantime. Failing loudly
   // here is far kinder than silently losing a client's wedding photographs.
   if (!storageEnabled && process.env.NODE_ENV === "production") {
+    // Names only, never values: this is what turns "not configured" from a dead
+    // end into a diagnosis — either the list is empty (the store was never
+    // connected to this project) or it shows a name we failed to match.
+    const present = storageEnvKeys();
+    console.error(
+      `[storage] no driver available. storage-related env keys present: ${
+        present.length ? present.join(", ") : "(none)"
+      }`,
+    );
     throw new UserError(
-      "Photo storage is not configured. Connect a Blob store in the Vercel dashboard " +
-        "(Storage → Create → Blob → Connect to project) and redeploy — Vercel injects " +
-        "BLOB_READ_WRITE_TOKEN for you. Alternatively set the S3_* variables for an " +
-        "S3-compatible bucket. (The local-disk driver is development only.)",
+      "Photo storage is not configured. " +
+        (present.length
+          ? `The environment has ${present.join(", ")} but no usable credentials in them.`
+          : "This deployment has no storage variables at all, so the Blob store is not connected to this project.") +
+        " In Vercel: Storage → your Blob store → Projects → connect event-os (Production), then redeploy.",
     );
   }
   // An S3 bucket without a public URL uploads fine and then renders blank
