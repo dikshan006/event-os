@@ -7,6 +7,7 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { UserError } from "./errors";
 
 /**
  * Object storage behind one small interface.
@@ -68,15 +69,27 @@ function s3Driver(): StorageDriver {
   return {
     name: "s3",
     async put(key, body, contentType) {
-      await client.send(
-        new PutObjectCommand({
-          Bucket: S3_BUCKET,
-          Key: key,
-          Body: body,
-          ContentType: contentType,
-          CacheControl: IMMUTABLE,
-        }),
-      );
+      try {
+        await client.send(
+          new PutObjectCommand({
+            Bucket: S3_BUCKET,
+            Key: key,
+            Body: body,
+            ContentType: contentType,
+            CacheControl: IMMUTABLE,
+          }),
+        );
+      } catch (err) {
+        // Bucket rejections are configuration problems, not bugs, and the SDK's
+        // error name says exactly which one — InvalidAccessKeyId,
+        // SignatureDoesNotMatch, NoSuchBucket, AccessDenied. Surfacing it turns
+        // a dead end into a one-line fix.
+        const name = err instanceof Error ? err.name : "UnknownError";
+        console.error(`[storage] PutObject failed key=${key} bucket=${S3_BUCKET}`, err);
+        throw new UserError(
+          `Storage rejected the upload (${name}). Check S3_BUCKET, S3_ENDPOINT, S3_REGION and the access key.`,
+        );
+      }
       return { key, bytes: body.byteLength };
     },
     async deletePrefix(prefix) {
@@ -146,10 +159,20 @@ export function storage(): StorageDriver {
   // invisible to every other running instance in the meantime. Failing loudly
   // here is far kinder than silently losing a client's wedding photographs.
   if (!storageEnabled && process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Photo storage is not configured. Set S3_BUCKET, S3_ACCESS_KEY_ID and " +
-        "S3_SECRET_ACCESS_KEY (see .env.example) — the local-disk driver is for development only.",
+    const missing = [
+      !S3_BUCKET && "S3_BUCKET",
+      !S3_ACCESS_KEY_ID && "S3_ACCESS_KEY_ID",
+      !S3_SECRET_ACCESS_KEY && "S3_SECRET_ACCESS_KEY",
+    ].filter(Boolean).join(", ");
+    throw new UserError(
+      `Photo storage is not configured — missing ${missing}. Add it in the Vercel ` +
+        `project's environment variables and redeploy. (The local-disk driver is development only.)`,
     );
+  }
+  // A bucket without a public URL uploads fine and then renders blank images,
+  // which is far more confusing than failing here.
+  if (storageEnabled && !S3_PUBLIC_URL && !S3_ENDPOINT) {
+    throw new UserError("Photo storage is missing S3_PUBLIC_URL — uploads would save but never display.");
   }
 
   cached = storageEnabled ? s3Driver() : localDriver();

@@ -170,6 +170,30 @@ Each step depends on the one above it.
 
 ---
 
+## Troubleshooting photo uploads
+
+Uploads run through a **server action**, not a REST route — so Vercel's access
+log always shows `POST /studio/weddings/[id]/photos → 200` regardless of
+outcome, and there is no JSON body to inspect. The real result is in the
+**runtime logs**, tagged for grepping:
+
+| Log line | Meaning |
+|---|---|
+| `[storage] PutObject failed …` | R2 rejected the write. The SDK error name says which: `InvalidAccessKeyId`, `SignatureDoesNotMatch`, `NoSuchBucket`, `AccessDenied`. |
+| `[photo-upload] Photo storage is not configured — missing …` | Those variables are absent from the Vercel environment. Add and redeploy. |
+| `[photo-upload] ref=abc123` | An unexpected fault. The same reference appears in the on-screen message, and the full stack sits next to it in the log. |
+
+**Maximum upload size on Vercel is 4.5 MB**, enforced at the platform edge
+before any application code runs — `serverActions.bodySizeLimit` cannot raise
+it. `MAX_UPLOAD_BYTES` is set to 4 MB to stay inside it. Modern phone
+photographs regularly exceed this; lifting the ceiling means switching to
+presigned direct-to-R2 uploads, where the browser sends the file straight to
+the bucket and the server only signs the request.
+
+If uploads succeed but images render blank, `S3_PUBLIC_URL` is wrong — the
+bytes are in the bucket but the public URL doesn't resolve. Open one derivative
+URL directly to confirm, and check the bucket allows public reads.
+
 ## Known limitations to revisit after launch
 
 - **Rate limiting is per-instance.** `src/lib/ratelimit.ts` uses an in-memory

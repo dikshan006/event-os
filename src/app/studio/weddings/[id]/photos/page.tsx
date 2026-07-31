@@ -9,6 +9,7 @@ import {
 } from "@/server/services/photos";
 import { storageEnabled } from "@/lib/storage";
 import { ImageError, MAX_UPLOAD_BYTES } from "@/lib/images";
+import { reportError } from "@/lib/errors";
 import { PageHead } from "@/components/ui";
 
 const SLOTS: PhotoSlot[] = ["HERO", "COUPLE", "STORY", "GALLERY"];
@@ -47,7 +48,7 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
       await uploadPhoto(studioId, weddingId, slot, file, String(formData.get("alt") ?? ""), user.name);
       await flash(`${SLOT_META[slot].label} updated.`, "ok");
     } catch (err) {
-      await flash(err instanceof ImageError ? err.message : "That image could not be processed.", "err");
+      await flash(reportError("photo-upload", err, "That image could not be processed."), "err");
     }
     revalidatePath(`/studio/weddings/${weddingId}/photos`);
     revalidatePath(`/w/${String(formData.get("slug"))}`);
@@ -62,7 +63,7 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
       await replacePhoto(studioId, String(formData.get("photoId")), file, user.name);
       await flash("Photo replaced.", "ok");
     } catch (err) {
-      await flash(err instanceof ImageError ? err.message : "That image could not be processed.", "err");
+      await flash(reportError("photo-replace", err, "That image could not be processed."), "err");
     }
     revalidatePath(`/studio/weddings/${String(formData.get("weddingId"))}/photos`);
     revalidatePath(`/w/${String(formData.get("slug"))}`);

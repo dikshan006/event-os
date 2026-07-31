@@ -1,5 +1,6 @@
 import "server-only";
 import sharp from "sharp";
+import { UserError } from "./errors";
 
 /**
  * Upload-time image pipeline.
@@ -25,7 +26,14 @@ export const SLOT_MAX_WIDTH = {
   GALLERY: 1600,
 } as const;
 
-export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // 15 MB
+/**
+ * Vercel caps a serverless function's *request body* at 4.5 MB, and that cap
+ * sits in front of the application — `serverActions.bodySizeLimit` cannot raise
+ * it. Anything larger is rejected before this code runs, so advertising a
+ * bigger limit would just produce an unexplained failure at the platform edge.
+ * Lifting this properly means presigned direct-to-R2 uploads (see DEPLOYMENT.md).
+ */
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024; // 4 MB
 const ACCEPTED = new Set(["jpeg", "jpg", "png", "webp", "avif", "tiff", "heif"]);
 
 export type Variant = {
@@ -44,7 +52,8 @@ export type ProcessedImage = {
   bytes: number;
 };
 
-export class ImageError extends Error {}
+/** A problem with the submitted image that the planner can act on. */
+export class ImageError extends UserError {}
 
 /**
  * Decode, validate, and render the full derivative ladder for one upload.
