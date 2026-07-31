@@ -5,6 +5,7 @@ import { SitePhoto } from "./SitePhoto";
 import { InvitationHero } from "./InvitationHero";
 import { SmoothScroll } from "./SmoothScroll";
 import { Reveal } from "./Reveal";
+import { Gallery } from "./Gallery";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
 
@@ -159,35 +160,38 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           </section>
         )}
 
+        {/* --- The programme.
+            Set like a printed wedding programme: time, then event, then place,
+            then dress. No rules, no connectors, no icons — hierarchy and space
+            do the work. Each entry stands on its own. ------------------- */}
         <section className="s-sec" id="events">
           <h2 className="s-h">Events</h2>
           <div className="s-hs">{guest ? `your personal schedule, ${first}` : "the celebration weekend"}</div>
+
           {days.map(day => (
-            <div key={day}>
-              <div className="s-day">{day.split(",")[0]}</div>
+            <div className="s-prog-day" key={day}>
+              <p className="s-prog-date">{day}</p>
               {events.filter(e => e.day === day).map(e => (
-                <div className="s-ev" key={e.id}>
-                  <div className="t">{e.time} — {e.title}</div>
-                  <div className="d">{[e.location, e.dressCode].filter(Boolean).join(" · ")}</div>
-                </div>
+                <Reveal key={e.id} className="s-prog-item">
+                  <p className="s-prog-time">{e.time}</p>
+                  <h3 className="s-prog-title">{e.title}</h3>
+                  {e.location && <p className="s-prog-where">{e.location}</p>}
+                  {e.dressCode && <p className="s-prog-dress">{e.dressCode}</p>}
+                  {e.description && <p className="s-prog-note">{e.description}</p>}
+                </Reveal>
               ))}
             </div>
           ))}
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
         </section>
 
+        {/* --- The gallery is a separate experience, reached deliberately.
+            One quiet line on the page; the photographs live behind it. --- */}
         {has("GALLERY") && galleryPhotos.length > 0 && (
-          <section className="s-sec" id="gallery">
-            <h2 className="s-h">Gallery</h2>
-            <div className="s-hs">moments we love</div>
-            <div className="s-gallery">
-              {galleryPhotos.map(p => (
-                /* Untoned: inside the gallery the photographs are the subject,
-                   so they are shown as taken rather than blended into the page. */
-                <SitePhoto key={p.id} photo={p} ratio={1} tone={false} rounded={false}
-                  sizes="(max-width: 560px) 100vw, (max-width: 960px) 50vw, 300px" />
-              ))}
-            </div>
+          <section className="s-sec s-sec-quiet" id="gallery">
+            <Reveal>
+              <Gallery photos={galleryPhotos} />
+            </Reveal>
           </section>
         )}
 
