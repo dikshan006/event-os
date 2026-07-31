@@ -4,14 +4,24 @@ import { RsvpForm } from "./RsvpForm";
 import { SitePhoto } from "./SitePhoto";
 import { InvitationHero } from "./InvitationHero";
 import { SmoothScroll } from "./SmoothScroll";
+import { Reveal } from "./Reveal";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
+import { fmtDate } from "@/lib/utils";
 
+/**
+ * Template palettes.
+ *
+ * The `lace`, `heart` and `rule` flags are gone: repeating-dot borders, a ♥
+ * glyph and a double rule are the visual signature of a 2010s wedding
+ * template, and they were the loudest thing on the page. Distinction now comes
+ * from typography, rhythm and how the photography is toned.
+ */
 const THEMES = {
-  BLUSH_ROMANCE: { bg: "#F6EFEA", ink: "#211E1B", accent: "#9D5C64", deep: "#211E1B", names: "caps", lace: true, heart: false, rule: false,
+  BLUSH_ROMANCE: { bg: "#F6EFEA", ink: "#211E1B", accent: "#9D5C64", deep: "#211E1B", names: "caps",
     photo: "linear-gradient(120deg,#4a4340,#7c655b 60%,#a3897a)" },
-  MODERN_SAGE: { bg: "#FFFFFF", ink: "#4a5544", accent: "#87A07A", deep: "#75906A", names: "caps", lace: false, heart: true, rule: true,
+  MODERN_SAGE: { bg: "#FFFFFF", ink: "#4a5544", accent: "#87A07A", deep: "#75906A", names: "caps",
     photo: "linear-gradient(120deg,#1f2a22,#3c5240 55%,#6e8264)" },
-  CLASSIC_ELEGANCE: { bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42", names: "script", lace: false, heart: true, rule: false,
+  CLASSIC_ELEGANCE: { bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42", names: "script",
     photo: "linear-gradient(120deg,#241f24,#57404a 55%,#8d6f72)" },
 } as const;
 
@@ -30,6 +40,33 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
   const days = [...new Set(events.map(e => e.day))];
   const first = guest?.name.split(" ")[0];
   const vars = { "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep } as React.CSSProperties;
+
+  /**
+   * Exactly two photographs on the homepage.
+   *
+   * Previously this rendered the hero plus every couple photo (up to six) plus
+   * every story photo (up to four) plus the gallery — as many as eleven images
+   * before a guest reached the RSVP, which reads as a photo album rather than
+   * an invitation. The hero and one editorial portrait stay; everything else
+   * moves into the Gallery section, where photographs are the point.
+   */
+  const portrait = photos.couple[0] ?? photos.story[0] ?? null;
+  const galleryPhotos = [
+    ...photos.gallery,
+    ...photos.couple,
+    ...photos.story,
+  ].filter((p, i, all) => p.id !== portrait?.id && all.findIndex(q => q.id === p.id) === i);
+
+  const dateLine = fmtDate(wedding.date);
+  const placeLine = [wedding.venue, wedding.city].filter(Boolean).join(" · ");
+
+  const navLinks = [
+    ["#home", "Home"],
+    ["#events", "Events"],
+    ...(has("GALLERY") && galleryPhotos.length ? [["#gallery", "Gallery"] as const] : []),
+    ...(has("TRAVEL") ? [["#travel", "Travel"] as const] : []),
+    ...(has("FAQ") && wedding.faqs.length ? [["#faq", "FAQ"] as const] : []),
+  ] as const;
 
   // The couple's names are the page's h1 — previously three unlabelled divs,
   // which left the document with no heading outline at all for screen readers.
@@ -57,60 +94,62 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
+      {/* Navigation leads the page rather than sitting between the names and
+          the hero image, which split the masthead in two. */}
+      <nav className="s-nav" aria-label="Sections">
+        {navLinks.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+        <a className="s-nav-cta" href="#rsvp">RSVP</a>
+      </nav>
+
       <div className="s-wrap">
-        {theme.rule && <div className="s-rule" />}
-        <div className="s-hero">
-          {theme.lace && <div className="lace" />}
-          <div className="s-hero-mid">{Names}</div>
-          {theme.lace && <div className="lace" />}
-        </div>
-        <nav className="s-nav">
-          <a href="#home">Home</a>
-          <a href="#rsvp">RSVP</a>
-          <a href="#events">Events</a>
-          {has("GALLERY") && photos.gallery.length > 0 && <a href="#gallery">Gallery</a>}
-          <a href="#faq">FAQ</a>
-        </nav>
         <main id="main">
-        {/* The hero is the only above-the-fold image, so it loads eagerly at
-            high priority; everything below it is lazy. Falls back to the
-            template's gradient until the planner uploads a photograph. */}
-        {photos.hero ? (
-          <div id="home" className="s-hero-photo">
-            <SitePhoto photo={photos.hero} ratio={16 / 9} priority sizes="(max-width: 920px) 100vw, 872px" />
-          </div>
-        ) : (
-          <div id="home" className="s-photo" style={{ background: theme.photo }} />
-        )}
+          {/* --- Masthead: type first, generous air, no ornament. --------- */}
+          <header className="s-masthead" id="home">
+            <Reveal>
+              <p className="s-kicker">The wedding of</p>
+              {Names}
+              <p className="s-meta">
+                <time dateTime={wedding.date.toISOString().slice(0, 10)}>{dateLine}</time>
+                {placeLine && <><span className="s-dot" aria-hidden="true">·</span>{placeLine}</>}
+              </p>
+            </Reveal>
+          </header>
 
-        <div className="s-invite">
-          <InvitationHero guestName={guest?.name} groups={guest?.groups} date={wedding.date} />
-        </div>
-
-        {photos.couple.length > 0 && (
-          <div className="s-couple">
-            {photos.couple.map(p => (
-              <SitePhoto key={p.id} photo={p} ratio={4 / 5}
-                sizes="(max-width: 520px) 100vw, (max-width: 920px) 50vw, 260px" />
-            ))}
-          </div>
-        )}
-
-        {theme.heart && <div className="s-heart">♥</div>}
-
-        {(wedding.story || photos.story.length > 0) && (
-          <div className="s-story-wrap">
-            {photos.story.length > 0 && (
-              <div className="s-story-photos">
-                {photos.story.map(p => (
-                  <SitePhoto key={p.id} photo={p} ratio={3 / 2}
-                    sizes="(max-width: 520px) 100vw, (max-width: 920px) 50vw, 260px" />
-                ))}
-              </div>
+          {/* --- Hero plate: one photograph, inset, toned into the palette.
+              Eager and high-priority because it is the only above-the-fold
+              image; everything below it is lazy. Falls back to the template
+              gradient until a photograph is uploaded. -------------------- */}
+          <Reveal as="figure" className="s-plate" delay={80}>
+            {photos.hero ? (
+              <SitePhoto photo={photos.hero} ratio={16 / 9} priority rounded={false}
+                sizes="(max-width: 1120px) 100vw, 1080px" />
+            ) : (
+              <div className="s-plate-fallback" style={{ background: theme.photo }} />
             )}
-            {wedding.story && <div className="s-band">{wedding.story}</div>}
-          </div>
-        )}
+          </Reveal>
+
+          <Reveal className="s-invite">
+            <InvitationHero guestName={guest?.name} groups={guest?.groups} date={wedding.date} />
+          </Reveal>
+
+          {/* --- Story: the second and final homepage photograph, set beside
+              the text as an editorial spread rather than a grid of thumbs. */}
+          {(wedding.story || portrait) && (
+            <section className="s-story">
+              {portrait && (
+                <Reveal as="figure" className="s-portrait">
+                  <SitePhoto photo={portrait} ratio={4 / 5} rounded={false}
+                    sizes="(max-width: 760px) 78vw, 380px" />
+                </Reveal>
+              )}
+              {wedding.story && (
+                <Reveal className="s-story-text">
+                  <h2 className="s-h">Our Story</h2>
+                  {wedding.story.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
+                </Reveal>
+              )}
+            </section>
+          )}
 
         {has("COUNTDOWN") && (
           <section className="s-sec">
@@ -137,21 +176,23 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
         </section>
 
-        {has("GALLERY") && photos.gallery.length > 0 && (
+        {has("GALLERY") && galleryPhotos.length > 0 && (
           <section className="s-sec" id="gallery">
             <h2 className="s-h">Gallery</h2>
             <div className="s-hs">moments we love</div>
             <div className="s-gallery">
-              {photos.gallery.map(p => (
-                <SitePhoto key={p.id} photo={p} ratio={1}
-                  sizes="(max-width: 520px) 100vw, (max-width: 920px) 50vw, 264px" />
+              {galleryPhotos.map(p => (
+                /* Untoned: inside the gallery the photographs are the subject,
+                   so they are shown as taken rather than blended into the page. */
+                <SitePhoto key={p.id} photo={p} ratio={1} tone={false} rounded={false}
+                  sizes="(max-width: 560px) 100vw, (max-width: 960px) 50vw, 300px" />
               ))}
             </div>
           </section>
         )}
 
         {has("TRAVEL") && (
-          <section className="s-sec">
+          <section className="s-sec" id="travel">
             <h2 className="s-h">Travel</h2>
             <div className="s-hs">getting here &amp; staying nearby</div>
             <div className="s-cards">

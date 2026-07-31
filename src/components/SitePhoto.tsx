@@ -19,6 +19,7 @@ export function SitePhoto({
   ratio,
   className = "",
   rounded = true,
+  tone = true,
 }: {
   photo: PhotoView;
   /** Tells the browser how wide this image renders, so it picks the right rendition. */
@@ -29,12 +30,23 @@ export function SitePhoto({
   ratio?: number;
   className?: string;
   rounded?: boolean;
+  /**
+   * Blend the photograph into the page palette.
+   *
+   * Uploaded photos arrive at whatever contrast and colour temperature the
+   * camera produced, and a bright, saturated frame next to fine serif type
+   * fights it. A small desaturation plus a wash of the template's own
+   * background colour settles the image into the layout so it reads as art
+   * direction rather than an asset dropped onto the page. Disabled inside the
+   * gallery, where the photographs are the subject.
+   */
+  tone?: boolean;
 }) {
   const aspect = ratio ?? photo.width / photo.height;
 
   return (
     <figure
-      className={`s-ph${rounded ? " rounded" : ""} ${className}`.trim()}
+      className={`s-ph${rounded ? " rounded" : ""}${tone ? " toned" : ""} ${className}`.trim()}
       style={{
         aspectRatio: String(aspect),
         backgroundImage: `url("${photo.blurData}")`,
