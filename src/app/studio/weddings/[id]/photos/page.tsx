@@ -8,7 +8,7 @@ import {
   SLOT_META,
 } from "@/server/services/photos";
 import { storageEnabled } from "@/lib/storage";
-import { ImageError, MAX_UPLOAD_BYTES } from "@/lib/images";
+import { ImageError, MAX_UPLOAD_BYTES, asVariants } from "@/lib/images";
 import { reportError } from "@/lib/errors";
 import { PageHead } from "@/components/ui";
 
@@ -27,11 +27,40 @@ async function flash(message: string, tone: "ok" | "err") {
   });
 }
 
-export default async function PhotosPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PhotosPage({
+  params, searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ probe?: string }>;
+}) {
   const { id } = await params;
   const { studioId } = await requireStudio();
   const w = await ownWedding(studioId, id);
   const bySlot = await photosBySlot(w.id);
+
+  // TEMPORARY (remove once serving is confirmed): `?probe=1` asks the server to
+  // HEAD every stored derivative and log the status. Runs from inside the
+  // deployment, so it answers "does this object exist and is it public?"
+  // without depending on anything reachable from a laptop.
+  const { probe } = await searchParams;
+  if (probe === "1") {
+    const all = [...bySlot.HERO, ...bySlot.COUPLE, ...bySlot.STORY, ...bySlot.GALLERY];
+    for (const p of all) {
+      const view = toPhotoView(p);
+      console.log(`[probe] photo=${p.id} slot=${p.slot} storedSrc=${view.src}`);
+      for (const v of asVariants(p.variants)) {
+        try {
+          const res = await fetch(v.key, { method: "HEAD", cache: "no-store" });
+          console.log(
+            `[probe]   ${v.format} ${v.width}w -> ${res.status} ${res.headers.get("content-type") ?? "-"} len=${res.headers.get("content-length") ?? "-"} key=${v.key}`,
+          );
+        } catch (err) {
+          console.error(`[probe]   ${v.format} ${v.width}w -> FETCH FAILED key=${v.key}`, err);
+        }
+      }
+    }
+    if (!all.length) console.log("[probe] no photos stored for this wedding");
+  }
 
   const jar = await cookies();
   const raw = jar.get("photo_flash")?.value;
