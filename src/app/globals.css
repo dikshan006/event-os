@@ -45,6 +45,16 @@
 
   --gutter:clamp(20px,5vw,48px);
   --measure:66ch;
+
+  /* ---- Text contrast floor -------------------------------------------------
+     Secondary guest-site text was being dimmed with ad-hoc opacities between
+     .45 and .65. Measured against all three template palettes, anything below
+     .78 drops small text under WCAG AA (4.5:1) — Modern Sage worst at 2.86:1
+     before its accent was darkened. .80 is the floor used everywhere below and
+     clears AA on every template with headroom. Larger display text may go
+     quieter, since AA allows 3:1 at that size. */
+  --muted:.8;
+  --muted-lg:.62;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -74,6 +84,13 @@ html.lenis{scroll-behavior:auto}
   border-radius:10px;padding:10px 16px;font:500 13px var(--sans);
   transition:top var(--dur-fast) var(--ease)}
 .skip:focus{top:var(--sp-4)}
+
+/* One focus treatment for the whole guest site. Applied with :focus-visible so
+   it appears for keyboard and assistive input without following mouse clicks.
+   Individual components may override the offset, never remove the ring. */
+.site a:focus-visible,.site button:focus-visible,.site summary:focus-visible,
+.site input:focus-visible,.site select:focus-visible,.site textarea:focus-visible{
+  outline:2px solid var(--sa);outline-offset:3px;border-radius:2px}
 
 /* Present to assistive technology, absent visually. */
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
@@ -225,7 +242,7 @@ body:has(dialog[open]){overflow:hidden}
   background:color-mix(in srgb, var(--sb) 88%, transparent);
   -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
   border-bottom:1px solid rgba(0,0,0,.06)}
-.s-nav a{position:relative;color:var(--si);opacity:.72;padding:6px 2px;
+.s-nav a{position:relative;color:var(--si);opacity:var(--muted);padding:6px 2px;
   transition:opacity var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
 .s-nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:currentColor;transform:scaleX(0);transform-origin:center;
@@ -254,6 +271,11 @@ body:has(dialog[open]){overflow:hidden}
 .reveal.armed.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){
   .reveal.armed{opacity:1;transform:none;transition:none}
+  /* Blanket rule: anything still animating is decorative, and the preference
+     is a request to stop, not to slow down. Lenis is separately not mounted at
+     all under this preference (see SmoothScroll.tsx). */
+  .site *,.gal *{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 
 /* Section anchors sit under the sticky bar without this. */
@@ -271,10 +293,10 @@ body:has(dialog[open]){overflow:hidden}
    them. The vertical space is the luxury signal. */
 .s-masthead{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
 .s-kicker{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
-  letter-spacing:.42em;text-transform:uppercase;color:var(--si);opacity:.5;
+  letter-spacing:.42em;text-transform:uppercase;color:var(--si);opacity:var(--muted-lg);
   text-indent:.42em;margin-bottom:var(--sp-6)}
 .s-meta{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;
-  text-transform:uppercase;color:var(--si);opacity:.62;text-indent:.18em;
+  text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.18em;
   margin-top:var(--sp-6);line-height:1.9}
 .s-dot{margin:0 .7em;opacity:.5}
 
@@ -296,7 +318,7 @@ body:has(dialog[open]){overflow:hidden}
 .s-story-text{text-align:left}
 .s-story-text .s-h{text-align:left;text-indent:0;margin-bottom:var(--sp-6)}
 .s-story-text p{font-family:var(--serif);font-size:var(--t-lead);line-height:1.85;
-  color:var(--si);opacity:.9;max-width:52ch}
+  color:var(--si);opacity:1;max-width:52ch}
 .s-story-text p + p{margin-top:var(--sp-5)}
 
 @media (max-width:760px){
@@ -367,7 +389,7 @@ body:has(dialog[open]){overflow:hidden}
   display:flex;flex-direction:column;align-items:center}
 .inv-personal{display:flex;flex-direction:column;align-items:center;width:100%}
 .inv-eyebrow{font:500 clamp(9px,1.6vw,11px)/1.6 var(--sans);
-  letter-spacing:.38em;text-transform:uppercase;color:var(--si);opacity:.55;
+  letter-spacing:.38em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
   /* the trailing letter-space would otherwise push the line off-centre */
   text-indent:.38em;margin:0}
 .inv-guest{font-family:var(--script);font-weight:400;
@@ -376,7 +398,7 @@ body:has(dialog[open]){overflow:hidden}
   margin:clamp(14px,2.4vw,22px) 0 0;padding-bottom:.08em;
   word-break:break-word;hyphens:none}
 .inv-groups{font:400 clamp(11px,1.9vw,13px)/1.7 var(--sans);
-  letter-spacing:.16em;color:var(--si);opacity:.6;text-indent:.16em;
+  letter-spacing:.16em;color:var(--si);opacity:var(--muted);text-indent:.16em;
   margin:clamp(10px,1.8vw,16px) 0 0;max-width:34ch}
 .inv-divider{display:flex;align-items:center;justify-content:center;gap:14px;
   width:min(240px,60%);margin:clamp(28px,5vw,44px) 0}
@@ -408,7 +430,7 @@ body:has(dialog[open]){overflow:hidden}
    frequency it stops reading as a flourish. It is now a smaller, quieter
    line — the display script is spent on the names and the invitation only. */
 .s-hs{font-family:var(--sans);font-size:var(--t-micro);font-weight:400;
-  letter-spacing:.2em;text-transform:lowercase;color:var(--si);opacity:.55;
+  letter-spacing:.2em;text-transform:lowercase;color:var(--si);opacity:var(--muted);
   text-indent:.2em;margin-top:var(--sp-3)!important}
 
 /* Content inside a section gets a larger gap than the heading pair. */
@@ -423,7 +445,7 @@ body:has(dialog[open]){overflow:hidden}
    in weight — and the space between entries is what separates them. */
 .s-prog-day + .s-prog-day{margin-top:var(--sp-9)}
 .s-prog-date{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
-  letter-spacing:.4em;text-transform:uppercase;color:var(--si);opacity:.45;
+  letter-spacing:.4em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
   text-indent:.4em;margin-bottom:var(--sp-8)}
 
 .s-prog-item + .s-prog-item{margin-top:var(--sp-8)}
@@ -433,12 +455,12 @@ body:has(dialog[open]){overflow:hidden}
 .s-prog-title{font-family:var(--serif);font-size:clamp(24px,3.6vw,36px);font-weight:500;
   line-height:1.2;color:var(--sd);letter-spacing:.01em;margin:0}
 .s-prog-where{font-family:var(--serif);font-size:var(--t-lead);line-height:1.5;
-  color:var(--si);opacity:.85;margin-top:var(--sp-3)}
+  color:var(--si);opacity:1;margin-top:var(--sp-3)}
 .s-prog-dress{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
-  text-transform:uppercase;color:var(--si);opacity:.5;text-indent:.2em;
+  text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.2em;
   margin-top:var(--sp-3)}
 .s-prog-note{font-family:var(--serif);font-size:var(--t-body);line-height:1.8;
-  color:var(--si);opacity:.75;max-width:44ch;margin:var(--sp-4) auto 0}
+  color:var(--si);opacity:var(--muted);max-width:44ch;margin:var(--sp-4) auto 0}
 
 /* ---------------------------------------------------------- gallery link --
    The gallery is entered deliberately, so the invitation carries one quiet
@@ -451,7 +473,7 @@ body:has(dialog[open]){overflow:hidden}
   border-bottom:1px solid color-mix(in srgb, var(--sa) 35%, transparent);
   transition:border-color var(--dur) var(--ease),opacity var(--dur) var(--ease)}
 .s-gallery-link:hover,.s-gallery-link:focus-visible{border-color:var(--sa);outline:none}
-.s-gallery-count{font-size:var(--t-eyebrow);letter-spacing:.1em;opacity:.55;text-indent:0}
+.s-gallery-count{font-size:var(--t-eyebrow);letter-spacing:.1em;opacity:var(--muted);text-indent:0}
 
 /* --------------------------------------------------------------- gallery --
    A scrolling editorial column, one photograph at a time. No thumbnail grid,
@@ -467,7 +489,7 @@ body:has(dialog[open]){overflow:hidden}
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(0,0,0,.06)}
 .gal-title{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
-  letter-spacing:.36em;text-transform:uppercase;opacity:.6;text-indent:.36em}
+  letter-spacing:.36em;text-transform:uppercase;opacity:var(--muted);text-indent:.36em}
 .gal-close{background:none;border:0;cursor:pointer;padding:6px 2px;
   font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
   letter-spacing:.28em;text-transform:uppercase;color:var(--sa);text-indent:.28em;
@@ -488,25 +510,126 @@ body:has(dialog[open]){overflow:hidden}
 .s-note h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
   color:var(--sd);letter-spacing:.02em;margin-bottom:var(--sp-3)}
 .s-note p{font-family:var(--serif);font-size:var(--t-body);line-height:1.85;
-  color:var(--si);opacity:.85;white-space:pre-line}
+  color:var(--si);opacity:1;white-space:pre-line}
 
-.s-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:720px;margin:0 auto;text-align:left}
-.s-card{background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.07);border-radius:10px;padding:20px}
-.s-card b,.s-card h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
-  display:block;margin-bottom:var(--sp-2);line-height:1.3}
 .s-empty{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7;
-  color:var(--si);opacity:.6;max-width:46ch;margin-inline:auto}
-.s-card p{font:400 13px var(--sans);opacity:.8}
-.s-btn{display:inline-flex;justify-content:center;background:var(--sa);color:#fff;border:none;border-radius:8px;
-  padding:11px 22px;font:500 12px var(--sans);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
-.s-btn.ghost{background:transparent;border:1px solid var(--sa);color:var(--sa)}
-.s-form{max-width:460px;margin:0 auto;display:grid;gap:14px;text-align:left;font-family:var(--sans)}
-.s-form label{font-size:12px;font-weight:500;opacity:.75}
-.s-inp{border:1px solid rgba(0,0,0,.15);border-radius:10px;padding:11px 14px;font:400 13px var(--sans);width:100%;background:#fff}
-.s-opts{display:flex;gap:10px}
-.s-opt{flex:1;border:1px solid rgba(0,0,0,.15);border-radius:10px;padding:11px;background:#fff;font:500 13px var(--sans);cursor:pointer}
-.s-opt.on{background:var(--sa);border-color:var(--sa);color:#fff}
-.s-foot{padding:60px 20px 50px;text-align:center}
+  color:var(--si);opacity:var(--muted);max-width:46ch;margin-inline:auto}
+/* --------------------------------------------------------- quiet inline link
+   One link treatment for the whole guest site: a letterspaced label over a
+   hairline that firms up on hover and focus. Replaces the filled and ghost
+   buttons, which read as application chrome inside an invitation. */
+.s-quiet-link{display:inline-block;font-family:var(--sans);font-size:var(--t-micro);
+  font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--sa);
+  text-indent:.24em;padding:var(--sp-2) 0;
+  border-bottom:1px solid color-mix(in srgb, var(--sa) 32%, transparent);
+  transition:border-color var(--dur) var(--ease)}
+.s-quiet-link:hover,.s-quiet-link:focus-visible{border-color:var(--sa)}
+
+/* ------------------------------------------------- registry & cash gifts --
+   A printed gift list, not a grid of boxes: title, quiet detail line, link.
+   Separation comes from space, with one hairline to mark the row. */
+.s-list{list-style:none;max-width:640px;margin-inline:auto;text-align:center}
+.s-list-item{padding-block:var(--sp-7)}
+.s-list-item + .s-list-item{border-top:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-list-item h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  color:var(--sd);line-height:1.3}
+.s-list-detail{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;
+  color:var(--si);opacity:var(--muted);margin-top:var(--sp-3);line-height:1.7}
+.s-pay{display:flex;flex-wrap:wrap;gap:var(--sp-6);justify-content:center;margin-top:var(--sp-4)}
+
+/* -------------------------------------------------------------- questions --
+   Native <details>: keyboard operable, findable with in-page search, and works
+   without JavaScript. No plugin, no state, no icon set. */
+.s-qa{max-width:640px;margin-inline:auto;text-align:left}
+.s-q{border-top:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-q:last-child{border-bottom:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-q summary{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-5);
+  padding:var(--sp-6) 0;cursor:pointer;list-style:none;
+  font-family:var(--serif);font-size:var(--t-h3);font-weight:500;color:var(--sd);line-height:1.35}
+.s-q summary::-webkit-details-marker{display:none}
+/* A hairline cross that becomes a minus when open — quieter than a chevron. */
+.s-q summary::after{content:"";flex:0 0 11px;height:11px;position:relative;top:-1px;
+  background:
+    linear-gradient(var(--sa),var(--sa)) center/11px 1px no-repeat,
+    linear-gradient(var(--sa),var(--sa)) center/1px 11px no-repeat;
+  opacity:.7;transition:transform var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.s-q[open] summary::after{transform:rotate(90deg);
+  background:linear-gradient(var(--sa),var(--sa)) center/11px 1px no-repeat}
+.s-q summary:focus-visible{outline:2px solid var(--sa);outline-offset:4px;border-radius:2px}
+.s-q p{font-family:var(--serif);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:1;padding-bottom:var(--sp-6);max-width:58ch}
+
+/* ------------------------------------------------------------------ rsvp --
+   The only interactive surface on the page, so the controls are sized for a
+   thumb and the states are unambiguous. */
+.s-form{max-width:480px;margin-inline:auto;display:grid;gap:var(--sp-6);text-align:left}
+.s-choice{border:0}
+.s-choice legend,.s-field label{display:block;font-family:var(--sans);
+  font-size:var(--t-eyebrow);font-weight:500;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--si);opacity:var(--muted);text-indent:.24em;margin-bottom:var(--sp-4)}
+.s-field{display:grid}
+.s-opts{display:grid;gap:var(--sp-3)}
+.s-opt{position:relative;display:flex;align-items:center;gap:var(--sp-4);
+  padding:var(--sp-5);cursor:pointer;background:transparent;
+  border:1px solid color-mix(in srgb, var(--si) 14%, transparent);border-radius:2px;
+  font-family:var(--serif);font-size:var(--t-lead);color:var(--si);
+  transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+/* The native control stays in the accessibility tree and keeps arrow-key
+   behaviour; only its rendering is replaced. */
+.s-opt input{position:absolute;opacity:0;width:1px;height:1px}
+.s-opt::before{content:"";flex:0 0 9px;height:9px;border-radius:50%;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--si) 34%, transparent);
+  transition:box-shadow var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+.s-opt:hover{border-color:color-mix(in srgb, var(--sa) 45%, transparent)}
+.s-opt.on{border-color:var(--sa);background:color-mix(in srgb, var(--sa) 6%, transparent)}
+.s-opt.on::before{background:var(--sa);box-shadow:inset 0 0 0 1px var(--sa)}
+.s-opt:has(input:focus-visible){outline:2px solid var(--sa);outline-offset:3px}
+
+.s-inp{width:100%;background:color-mix(in srgb, #fff 60%, transparent);
+  border:1px solid color-mix(in srgb, var(--si) 16%, transparent);border-radius:2px;
+  padding:var(--sp-4);font-family:var(--serif);font-size:var(--t-body);color:var(--si);
+  /* 16px minimum on iOS, or focusing the field zooms the page. */
+  transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.s-inp:focus{outline:none;border-color:var(--sa);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--sa) 14%, transparent)}
+textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
+@media (max-width:520px){ .s-inp{font-size:16px} }
+
+.s-btn{display:inline-flex;align-items:center;justify-content:center;
+  min-height:52px;padding:0 var(--sp-7);cursor:pointer;
+  background:var(--sa);color:#fff;border:1px solid var(--sa);border-radius:2px;
+  font-family:var(--sans);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.24em;text-transform:uppercase;text-indent:.24em;
+  transition:opacity var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
+.s-btn:hover:not(:disabled){opacity:.88}
+.s-btn:active:not(:disabled){transform:scale(.99)}
+.s-btn:focus-visible{outline:2px solid var(--sa);outline-offset:3px}
+.s-btn:disabled{opacity:.4;cursor:not-allowed}
+.s-btn[aria-busy="true"]{cursor:progress}
+
+.s-rsvp-hint,.s-rsvp-error{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7}
+.s-rsvp-hint{opacity:var(--muted);text-align:center}
+.s-rsvp-error{color:var(--sd);padding:var(--sp-4);border-radius:2px;
+  border:1px solid color-mix(in srgb, var(--sd) 30%, transparent);
+  background:color-mix(in srgb, var(--sd) 6%, transparent)}
+
+.s-rsvp-done{max-width:480px;margin-inline:auto}
+.s-rsvp-done:focus{outline:none}
+.s-rsvp-thanks{font-family:var(--serif);font-size:var(--t-h2);font-weight:500;color:var(--sd)}
+.s-rsvp-note{font-family:var(--serif);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:1;margin-top:var(--sp-4)}
+.s-rsvp-change{margin-top:var(--sp-6);background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:var(--t-micro);font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sa);text-indent:.24em;padding:var(--sp-2) 0;
+  border-bottom:1px solid color-mix(in srgb, var(--sa) 32%, transparent);
+  transition:border-color var(--dur) var(--ease)}
+.s-rsvp-change:hover,.s-rsvp-change:focus-visible{border-color:var(--sa);outline:none}
+
+.s-foot{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
+.s-foot-names{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  letter-spacing:.14em;color:var(--sd)}
+.s-foot-date{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
+  text-transform:uppercase;opacity:var(--muted-lg);text-indent:.2em;margin-top:var(--sp-3)}
 .s-foot .by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-top:8px}
 
 /* --------------------------------------------------- planner photo manager */

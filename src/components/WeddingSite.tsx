@@ -18,9 +18,12 @@ import { fmtDate } from "@/lib/utils";
  * from typography, rhythm and how the photography is toned.
  */
 const THEMES = {
-  BLUSH_ROMANCE: { bg: "#F6EFEA", ink: "#211E1B", accent: "#9D5C64", deep: "#211E1B", names: "caps",
+  BLUSH_ROMANCE: { bg: "#F6EFEA", ink: "#211E1B", accent: "#9B5B63", deep: "#211E1B", names: "caps",
     photo: "linear-gradient(120deg,#4a4340,#7c655b 60%,#a3897a)" },
-  MODERN_SAGE: { bg: "#FFFFFF", ink: "#4a5544", accent: "#87A07A", deep: "#75906A", names: "caps",
+  // Sage was #87A07A on white: 2.86:1, which fails WCAG AA even for large
+  // text, and it carried every link and the RSVP button. Darkened until both
+  // the text-on-background and white-on-button directions pass.
+  MODERN_SAGE: { bg: "#FFFFFF", ink: "#414B3C", accent: "#5E7052", deep: "#54654A", names: "caps",
     photo: "linear-gradient(120deg,#1f2a22,#3c5240 55%,#6e8264)" },
   CLASSIC_ELEGANCE: { bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42", names: "script",
     photo: "linear-gradient(120deg,#241f24,#57404a 55%,#8d6f72)" },
@@ -219,47 +222,63 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           </section>
         )}
 
+        {/* FAQ as a question-and-answer column. Native <details> gives keyboard
+            operation, in-page find, and works with JavaScript disabled. */}
         {has("FAQ") && wedding.faqs.length > 0 && (
           <section className="s-sec" id="faq">
-            <h2 className="s-h">FAQ</h2>
+            <h2 className="s-h">Questions</h2>
             <div className="s-hs">good things to know</div>
-            <div className="s-cards" style={{ gridTemplateColumns: "1fr" }}>
-              {wedding.faqs.map(f => <div className="s-card" key={f.id}><h3>{f.question}</h3><p>{f.answer}</p></div>)}
+            <div className="s-qa">
+              {wedding.faqs.map(f => (
+                <details className="s-q" key={f.id}>
+                  <summary><span>{f.question}</span></summary>
+                  <p>{f.answer}</p>
+                </details>
+              ))}
             </div>
           </section>
         )}
 
+        {/* Registry as a gift list, set like a printed page: title, then the
+            quiet detail line, then a restrained link. No boxes. */}
         {has("REGISTRY") && wedding.registry.length > 0 && (
-          <section className="s-sec">
+          <section className="s-sec" id="registry">
             <h2 className="s-h">Registry</h2>
-            <div className="s-hs">gifts we&apos;d love</div>
-            <div className="s-cards">
+            <div className="s-hs">gifts we would love</div>
+            <ul className="s-list">
               {wedding.registry.map(g => (
-                <div className="s-card" key={g.id}>
-                  <b>{g.title}</b><p>{[g.price, g.retailer].filter(Boolean).join(" · ")}</p>
-                  <a className="s-btn ghost" style={{ marginTop: 12 }} href={g.url} target="_blank" rel="noopener noreferrer">Buy Gift ↗</a>
-                </div>
+                <li className="s-list-item" key={g.id}>
+                  <h3>{g.title}</h3>
+                  {[g.price, g.retailer].filter(Boolean).length > 0 && (
+                    <p className="s-list-detail">{[g.price, g.retailer].filter(Boolean).join(" · ")}</p>
+                  )}
+                  <a className="s-quiet-link" href={g.url} target="_blank" rel="noopener noreferrer">
+                    View gift<span aria-hidden="true"> ↗</span>
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
 
         {has("CASH") && wedding.funds.length > 0 && (
-          <section className="s-sec">
+          <section className="s-sec" id="funds">
             <h2 className="s-h">Cash Gifts</h2>
             <div className="s-hs">or contribute to our next chapter</div>
-            <div className="s-cards">
+            <ul className="s-list">
               {wedding.funds.map(f => (
-                <div className="s-card" key={f.id}>
-                  <b>{f.name}</b><p>{f.blurb}</p>
-                  <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                    {f.stripeUrl && <a className="s-btn ghost" href={f.stripeUrl} target="_blank" rel="noopener noreferrer">Card</a>}
-                    {f.venmoUrl && <a className="s-btn ghost" href={f.venmoUrl} target="_blank" rel="noopener noreferrer">Venmo</a>}
-                    {f.paypalUrl && <a className="s-btn ghost" href={f.paypalUrl} target="_blank" rel="noopener noreferrer">PayPal</a>}
-                  </div>
-                </div>
+                <li className="s-list-item" key={f.id}>
+                  <h3>{f.name}</h3>
+                  {f.blurb && <p className="s-list-detail">{f.blurb}</p>}
+                  <p className="s-pay">
+                    {f.stripeUrl && <a className="s-quiet-link" href={f.stripeUrl} target="_blank" rel="noopener noreferrer">Card</a>}
+                    {f.venmoUrl && <a className="s-quiet-link" href={f.venmoUrl} target="_blank" rel="noopener noreferrer">Venmo</a>}
+                    {f.paypalUrl && <a className="s-quiet-link" href={f.paypalUrl} target="_blank" rel="noopener noreferrer">PayPal</a>}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
 
@@ -282,9 +301,12 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         </main>
 
+        {/* Understated: names in the page's own display face rather than a
+            script flourish, and the studio credit kept quiet. */}
         <footer className="s-foot">
-          <div className="script" style={{ fontSize: 30, color: theme.accent }}>{wedding.partnerOne} &amp; {wedding.partnerTwo}</div>
-          <div className="by">Designed by {studio.name}</div>
+          <p className="s-foot-names">{wedding.partnerOne} &amp; {wedding.partnerTwo}</p>
+          <p className="s-foot-date">{dateLine}</p>
+          <p className="by">Designed by {studio.name}</p>
         </footer>
       </div>
     </div>
