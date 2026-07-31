@@ -40,31 +40,19 @@ export function SitePhoto({
         backgroundImage: `url("${photo.blurData}")`,
       }}
     >
-      {/*
-        WebP only, deliberately.
-
-        `<picture>` does not fall back when a browser *claims* to support a
-        format and then fails to decode the file — it renders a broken image.
-        That made the AVIF source a single point of failure: desktop Safari
-        selected it and broke, while mobile Safari fell back to WebP and worked,
-        on byte-identical URLs the server was returning 200 for.
-
-        WebP is supported by every browser released this decade and still gives
-        most of the saving over JPEG. The AVIF derivatives are still generated
-        and stored, so re-enabling this source is a one-line change once the
-        encoder settings have been verified against Safari.
-      */}
-      <img
-        src={photo.src}
-        srcSet={photo.webp}
-        sizes={sizes}
-        alt={photo.alt}
-        width={photo.width}
-        height={photo.height}
-        loading={priority ? "eager" : "lazy"}
-        decoding={priority ? "sync" : "async"}
-        fetchPriority={priority ? "high" : "auto"}
-      />
+      <picture>
+        <source type="image/avif" srcSet={photo.avif} sizes={sizes} />
+        <source type="image/webp" srcSet={photo.webp} sizes={sizes} />
+        <img
+          src={photo.src}
+          alt={photo.alt}
+          width={photo.width}
+          height={photo.height}
+          loading={priority ? "eager" : "lazy"}
+          decoding={priority ? "sync" : "async"}
+          fetchPriority={priority ? "high" : "auto"}
+        />
+      </picture>
       {photo.caption && <figcaption>{photo.caption}</figcaption>}
     </figure>
   );

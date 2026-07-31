@@ -186,9 +186,11 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
                     return (
                       <div key={p.id} className="ph-item">
                         <div className="ph-thumb" style={{ backgroundImage: `url("${view.blurData}")` }}>
-                          {/* WebP only — see the note in SitePhoto.tsx. */}
-                          <img src={view.src} srcSet={view.webp} sizes="320px"
-                            alt={view.alt} loading="lazy" decoding="async" />
+                          <picture>
+                            <source type="image/avif" srcSet={view.avif} sizes="320px" />
+                            <source type="image/webp" srcSet={view.webp} sizes="320px" />
+                            <img src={view.src} alt={view.alt} loading="lazy" decoding="async" />
+                          </picture>
                         </div>
 
                         <div className="ph-meta">
