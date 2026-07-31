@@ -62,7 +62,7 @@ export function Gallery({ photos, label = "View gallery" }: { photos: PhotoView[
               until a guest asks for them. */}
           {open && photos.map(p => (
             <figure className="gal-item" key={p.id}>
-              <SitePhoto photo={p} tone={false} rounded={false}
+              <SitePhoto photo={p} tone={false}
                 sizes="(max-width: 900px) 92vw, 860px" />
               {p.caption && <figcaption>{p.caption}</figcaption>}
             </figure>

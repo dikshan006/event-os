@@ -132,7 +132,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
               gradient until a photograph is uploaded. -------------------- */}
           <Reveal as="figure" className="s-plate" delay={80}>
             {photos.hero ? (
-              <SitePhoto photo={photos.hero} ratio={16 / 9} priority rounded={false}
+              <SitePhoto photo={photos.hero} ratio={16 / 9} priority
                 sizes="(max-width: 1120px) 100vw, 1080px" />
             ) : (
               <div className="s-plate-fallback" style={{ background: theme.photo }} />
@@ -149,7 +149,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
             <section className="s-story">
               {portrait && (
                 <Reveal as="figure" className="s-portrait">
-                  <SitePhoto photo={portrait} ratio={4 / 5} rounded={false}
+                  <SitePhoto photo={portrait} ratio={4 / 5}
                     sizes="(max-width: 760px) 78vw, 380px" />
                 </Reveal>
               )}

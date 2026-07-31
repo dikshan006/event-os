@@ -18,7 +18,6 @@ export function SitePhoto({
   priority = false,
   ratio,
   className = "",
-  rounded = true,
   tone = true,
 }: {
   photo: PhotoView;
@@ -29,7 +28,6 @@ export function SitePhoto({
   /** Crop to a fixed aspect ratio (e.g. 16 / 9). Omit to keep the natural ratio. */
   ratio?: number;
   className?: string;
-  rounded?: boolean;
   /**
    * Blend the photograph into the page palette.
    *
@@ -46,7 +44,7 @@ export function SitePhoto({
 
   return (
     <figure
-      className={`s-ph${rounded ? " rounded" : ""}${tone ? " toned" : ""} ${className}`.trim()}
+      className={`s-ph${tone ? " toned" : ""} ${className}`.trim()}
       style={{
         aspectRatio: String(aspect),
         backgroundImage: `url("${photo.blurData}")`,

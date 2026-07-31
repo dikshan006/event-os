@@ -83,12 +83,23 @@ export function toneStyle(tone: PhotoTone): Record<string, string> {
   // the corners would otherwise glare.
   const vignette = clamp(0.1 + (tone.lum - 0.4) * 0.2, 0.08, 0.22);
 
+  // --- Edge feather ------------------------------------------------------
+  // How far the photograph dissolves into the page, as a percentage of its
+  // own size. This is the inverse of the scrim rule, and for the opposite
+  // reason: every template background is light, so a *dark* photograph has the
+  // harder edge against it and needs the longer fade to stop reading as a
+  // rectangle pasted onto the page. A bright frame already meets the
+  // background halfway and needs almost none — feathering it heavily would
+  // just look like a smudge.
+  const feather = clamp(6 + (0.55 - tone.lum) * 17, 4.5, 15);
+
   return {
     "--ph-scrim": String(round(scrim)),
     "--ph-lift": String(round(lift)),
     "--ph-saturate": String(round(saturate)),
     "--ph-contrast": String(round(contrast)),
     "--ph-vignette": String(round(vignette)),
+    "--ph-feather": `${round(feather, 1)}%`,
     "--ph-focus-x": `${round(clamp(tone.focusX, 12, 88), 1)}%`,
     "--ph-focus-y": `${round(clamp(tone.focusY, 12, 88), 1)}%`,
   };
