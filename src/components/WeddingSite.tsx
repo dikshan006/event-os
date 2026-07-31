@@ -30,22 +30,30 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
   const first = guest?.name.split(" ")[0];
   const vars = { "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep } as React.CSSProperties;
 
-  const Names = theme.names === "script" ? (
-    <div>
-      <div className="s-name script">{wedding.partnerOne}</div>
-      <div className="s-and">and</div>
-      <div className="s-name script">{wedding.partnerTwo}</div>
-    </div>
-  ) : (
-    <div>
-      <div className="s-name" style={{ color: wedding.template === "MODERN_SAGE" ? theme.deep : theme.ink }}>{wedding.partnerOne.toUpperCase()}</div>
-      <div className="s-and">and</div>
-      <div className="s-name" style={{ color: wedding.template === "MODERN_SAGE" ? theme.deep : theme.ink }}>{wedding.partnerTwo.toUpperCase()}</div>
-    </div>
+  // The couple's names are the page's h1 — previously three unlabelled divs,
+  // which left the document with no heading outline at all for screen readers.
+  const nameInk = wedding.template === "MODERN_SAGE" ? theme.deep : theme.ink;
+  const Names = (
+    <h1 className="s-names" aria-label={`${wedding.partnerOne} and ${wedding.partnerTwo}`}>
+      {theme.names === "script" ? (
+        <>
+          <span className="s-name script">{wedding.partnerOne}</span>
+          <span className="s-and" aria-hidden="true">and</span>
+          <span className="s-name script">{wedding.partnerTwo}</span>
+        </>
+      ) : (
+        <>
+          <span className="s-name" style={{ color: nameInk }}>{wedding.partnerOne.toUpperCase()}</span>
+          <span className="s-and" aria-hidden="true">and</span>
+          <span className="s-name" style={{ color: nameInk }}>{wedding.partnerTwo.toUpperCase()}</span>
+        </>
+      )}
+    </h1>
   );
 
   return (
     <div className="site" style={vars}>
+      <a className="skip" href="#main">Skip to content</a>
       <div className="s-wrap">
         {theme.rule && <div className="s-rule" />}
         <div className="s-hero">
@@ -60,6 +68,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           {has("GALLERY") && photos.gallery.length > 0 && <a href="#gallery">Gallery</a>}
           <a href="#faq">FAQ</a>
         </nav>
+        <main id="main">
         {/* The hero is the only above-the-fold image, so it loads eagerly at
             high priority; everything below it is lazy. Falls back to the
             template's gradient until the planner uploads a photograph. */}
@@ -102,13 +111,14 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         {has("COUNTDOWN") && (
           <section className="s-sec">
+            <h2 className="s-h sr-only">Countdown</h2>
             <div className="s-hs">counting down the days</div>
             <Countdown target={wedding.date.toISOString()} />
           </section>
         )}
 
         <section className="s-sec" id="events">
-          <div className="s-h">Events</div>
+          <h2 className="s-h">Events</h2>
           <div className="s-hs">{guest ? `your personal schedule, ${first}` : "the celebration weekend"}</div>
           {days.map(day => (
             <div key={day}>
@@ -121,12 +131,12 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
               ))}
             </div>
           ))}
-          {!events.length && <p style={{ fontFamily: "'Inter',sans-serif", opacity: 0.7, fontSize: 13 }}>The schedule will appear here soon.</p>}
+          {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
         </section>
 
         {has("GALLERY") && photos.gallery.length > 0 && (
           <section className="s-sec" id="gallery">
-            <div className="s-h">Gallery</div>
+            <h2 className="s-h">Gallery</h2>
             <div className="s-hs">moments we love</div>
             <div className="s-gallery">
               {photos.gallery.map(p => (
@@ -139,7 +149,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         {has("TRAVEL") && (
           <section className="s-sec">
-            <div className="s-h">Travel</div>
+            <h2 className="s-h">Travel</h2>
             <div className="s-hs">getting here &amp; staying nearby</div>
             <div className="s-cards">
               <div className="s-card"><b>{wedding.venue ?? "The Venue"}</b>
@@ -152,17 +162,17 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         {has("FAQ") && wedding.faqs.length > 0 && (
           <section className="s-sec" id="faq">
-            <div className="s-h">FAQ</div>
+            <h2 className="s-h">FAQ</h2>
             <div className="s-hs">good things to know</div>
             <div className="s-cards" style={{ gridTemplateColumns: "1fr" }}>
-              {wedding.faqs.map(f => <div className="s-card" key={f.id}><b>{f.question}</b><p>{f.answer}</p></div>)}
+              {wedding.faqs.map(f => <div className="s-card" key={f.id}><h3>{f.question}</h3><p>{f.answer}</p></div>)}
             </div>
           </section>
         )}
 
         {has("REGISTRY") && wedding.registry.length > 0 && (
           <section className="s-sec">
-            <div className="s-h">Registry</div>
+            <h2 className="s-h">Registry</h2>
             <div className="s-hs">gifts we&apos;d love</div>
             <div className="s-cards">
               {wedding.registry.map(g => (
@@ -177,7 +187,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         {has("CASH") && wedding.funds.length > 0 && (
           <section className="s-sec">
-            <div className="s-h">Cash Gifts</div>
+            <h2 className="s-h">Cash Gifts</h2>
             <div className="s-hs">or contribute to our next chapter</div>
             <div className="s-cards">
               {wedding.funds.map(f => (
@@ -195,7 +205,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         )}
 
         <section className="s-sec" id="rsvp">
-          <div className="s-h">RSVP</div>
+          <h2 className="s-h">RSVP</h2>
           <div className="s-hs">kindly reply</div>
           {guest && rsvpAction ? (
             <RsvpForm
@@ -205,11 +215,13 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
               action={rsvpAction}
             />
           ) : (
-            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, opacity: 0.75, maxWidth: 420, margin: "0 auto" }}>
+            <p className="s-empty">
               RSVP is available through your personal invitation link. Check your email for a link made just for you.
             </p>
           )}
         </section>
+
+        </main>
 
         <footer className="s-foot">
           <div className="script" style={{ fontSize: 30, color: theme.accent }}>{wedding.partnerOne} &amp; {wedding.partnerTwo}</div>
