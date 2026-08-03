@@ -33,7 +33,7 @@ type Props = {
   wedding: Wedding & { faqs: Faq[]; registry: RegistryItem[]; funds: CashFund[] };
   studio: Studio;
   events: Event[]; // already filtered: public site → isPublic only; portal → personalized
-  guest?: (Guest & { rsvp: Rsvp | null }) | null;
+  guest?: (Guest & { rsvp: Rsvp | null; table?: { name: string } | null }) | null;
   photos?: PhotoSet;
   rsvpAction?: (code: string, input: { status: string; meal: string; dietary: string; notes: string }) => Promise<void>;
 };
@@ -193,6 +193,16 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
             </div>
           ))}
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
+
+          {/* Shown only to a guest who has been seated. Placed with the
+              programme, because a table number is something you look up on the
+              day rather than while browsing. */}
+          {guest?.table && (
+            <Reveal className="s-seat">
+              <p className="s-seat-label">Reception</p>
+              <p className="s-seat-table">{guest.table.name}</p>
+            </Reveal>
+          )}
         </section>
 
         {/* --- The gallery is a separate experience, reached deliberately.

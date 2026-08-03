@@ -134,6 +134,7 @@ model Wedding {
   registry    RegistryItem[]
   funds       CashFund[]
   photos      Photo[]
+  tables      Table[]
   publishedAt DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -149,6 +150,17 @@ model Guest {
   name       String
   email      String?
   phone      String?
+  /**
+   * Seating. A guest belongs to at most one table, which the nullable
+   * foreign key enforces structurally — there is no way to represent the same
+   * guest at two tables, so the rule cannot be broken by a bug in a service.
+   * `onDelete: SetNull` means deleting a table returns its guests to the
+   * unassigned pool rather than deleting them.
+   */
+  tableId    String?
+  table      Table?    @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  /** Position within the table. Reserved for drag-and-drop ordering later. */
+  seatOrder  Int       @default(0)
   // V1 pragmatic choice: group names as a Postgres text[] on the guest.
   // The join-table version in ARCHITECTURE.md is a straight migration later.
   groups     String[]  @default([])
@@ -159,6 +171,48 @@ model Guest {
 
   @@index([weddingId])
   @@index([studioId])
+}
+
+/**
+ * A reception table.
+ *
+ * Shaped for the features that come next, so none of them need a migration
+ * that moves existing data:
+ *  - `shape` and `seats` describe the table itself, which a printable chart
+ *    and a floor plan both need.
+ *  - `x`/`y` are normalised 0–1 canvas coordinates, null until someone places
+ *    the table on a plan. Normalised rather than pixels so a layout survives
+ *    a change of canvas size.
+ *  - `Guest.seatOrder` carries drag-and-drop ordering within a table.
+ *
+ * Automatic seating optimisation needs no schema at all: it reads guest
+ * groups and RSVPs, which already exist, and writes `tableId`.
+ */
+model Table {
+  id        String     @id @default(cuid())
+  weddingId String
+  wedding   Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  studioId  String // denormalized for O(1) tenant checks, as on Guest
+  name      String
+  seats     Int        @default(8)
+  shape     TableShape @default(ROUND)
+  note      String?
+  /** Normalised floor-plan position, null until placed. */
+  x         Float?
+  y         Float?
+  sortOrder Int        @default(0)
+  guests    Guest[]
+  createdAt DateTime   @default(now())
+
+  @@index([weddingId, sortOrder])
+  @@index([studioId])
+}
+
+enum TableShape {
+  ROUND
+  RECTANGLE
+  SQUARE
+  HEAD
 }
 
 model Event {

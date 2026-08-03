@@ -17,6 +17,7 @@ export default async function GuestPortal({ params }: { params: Promise<{ code: 
     where: { inviteCode: code },
     include: {
       rsvp: true,
+      table: { select: { name: true } },
       wedding: {
         include: {
           studio: true,

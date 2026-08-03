@@ -38,6 +38,7 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
     [`/studio/weddings/${w.id}`, "Content"],
     [`/studio/weddings/${w.id}/photos`, "Photos"],
     [`/studio/weddings/${w.id}/guests`, "Guests"],
+    [`/studio/weddings/${w.id}/seating`, "Seating"],
     [`/studio/weddings/${w.id}/schedule`, "Schedule"],
     [`/studio/weddings/${w.id}/registry`, "Registry"],
     [`/studio/weddings/${w.id}/rsvps`, "RSVPs"],

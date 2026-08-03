@@ -493,6 +493,18 @@ body:has(dialog[open]){overflow:hidden}
 .s-prog-note{font-family:var(--serif);font-size:var(--t-body);line-height:1.8;
   color:var(--si);opacity:var(--muted);max-width:44ch;margin:var(--sp-4) auto 0}
 
+/* The guest's table, shown only once a planner has seated them. Set apart from
+   the programme by space and a hairline, since it is the one line a guest
+   looks for on the day rather than while browsing. */
+.s-seat{margin-top:var(--sp-9);padding-top:var(--sp-7);
+  border-top:1px solid color-mix(in srgb, var(--si) 10%, transparent);
+  max-width:420px;margin-inline:auto}
+.s-seat-label{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.4em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
+  text-indent:.4em}
+.s-seat-table{font-family:var(--serif);font-size:clamp(26px,4.2vw,40px);font-weight:500;
+  line-height:1.25;color:var(--sd);margin-top:var(--sp-4)}
+
 /* ---------------------------------------------------------- gallery link --
    The gallery is entered deliberately, so the invitation carries one quiet
    line rather than a grid of thumbnails. */
@@ -679,6 +691,43 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .ph-upload{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:10px;align-items:center;
   border-top:1px solid var(--line);padding-top:18px}
 .ph-upload .inp[type=file]{padding:8px 11px;font-size:12px}
+
+/* ---------------------------------------------------------------- seating --
+   Cards a planner can scan at arm's length rather than a dense grid. Each
+   table states its own occupancy; the eye goes to the fill bar first. */
+.seat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.seat-table{display:flex;flex-direction:column}
+.seat-list{list-style:none;display:grid;gap:2px}
+.seat-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.seat-list li:last-child{border-bottom:none}
+.seat-name{font-size:13px;display:flex;align-items:baseline;gap:8px;min-width:0}
+.seat-flag{font-size:11px;color:var(--wine);white-space:nowrap}
+.seat-flag.quiet{color:var(--faint)}
+
+.seat-unassigned{list-style:none;display:grid;gap:1px;max-height:420px;overflow-y:auto;
+  overscroll-behavior:contain}
+.seat-unassigned li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.seat-unassigned li:last-child{border-bottom:none}
+
+/* Guest picker inside the dialog. Its own scroller, so a long guest list does
+   not push the dialog past the viewport. */
+.seat-picker{max-height:46vh;overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid var(--line);border-radius:12px}
+.seat-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+  padding:10px 14px;background:none;border:0;border-bottom:1px solid var(--line);
+  cursor:pointer;text-align:left;font:inherit;
+  transition:background-color var(--dur-fast) var(--ease)}
+.seat-pick:hover,.seat-pick:focus-visible{background:var(--bg);outline:none}
+.seat-picker form:last-child .seat-pick{border-bottom:none}
+.seat-pick-name{font-size:13px;font-weight:500}
+.seat-pick-groups{font-size:11px;color:var(--faint)}
+
+@media (max-width:700px){
+  .seat-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr!important}
+}
 
 /* Dashboard-only breakpoint. The guest site scales fluidly via clamp() and no
    longer needs size overrides here. */
