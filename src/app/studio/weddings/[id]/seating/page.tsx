@@ -11,10 +11,24 @@ import { PageHead } from "@/components/ui";
 
 const FLASH = "seating_flash";
 
+/**
+ * Both helpers live at module scope, not inside the component.
+ *
+ * A server action handed to a Client Component has its captured scope
+ * serialized, and every captured function must itself be a server action. A
+ * plain closure defined in the component body therefore crashes the render
+ * with "Functions cannot be passed directly to Client Components" — which is
+ * exactly what took the seating page down. Hoisted, they are ordinary module
+ * imports and never cross the boundary.
+ */
 async function flash(message: string, tone: "ok" | "err") {
   (await cookies()).set(FLASH, `${tone}:${message}`, {
     httpOnly: true, sameSite: "lax", path: "/", maxAge: 15,
   });
+}
+
+function refresh(weddingId: string) {
+  revalidatePath(`/studio/weddings/${weddingId}/seating`);
 }
 
 export default async function SeatingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,8 +40,6 @@ export default async function SeatingPage({ params }: { params: Promise<{ id: st
   const jar = await cookies();
   const raw = jar.get(FLASH)?.value;
   const notice = raw ? { tone: raw.slice(0, raw.indexOf(":")), message: raw.slice(raw.indexOf(":") + 1) } : null;
-
-  const refresh = (weddingId: string) => revalidatePath(`/studio/weddings/${weddingId}/seating`);
 
   async function addTable(formData: FormData) {
     "use server";
@@ -176,15 +188,15 @@ export default async function SeatingPage({ params }: { params: Promise<{ id: st
                     )}
 
                     <div className="row wrap" style={{ marginTop: 16, gap: 6 }}>
-                      <AddGuestDialogWrapper
+                      <AddGuestDialog
                         action={seat} weddingId={w.id} tableId={t.id} tableName={t.name}
                         remaining={remaining} guests={pickable}
                       />
-                      <EditTableDialogWrapper
+                      <EditTableDialog
                         action={editTable} weddingId={w.id} tableId={t.id}
                         name={t.name} seats={t.seats} seated={seated}
                       />
-                      <DeleteTableDialogWrapper
+                      <DeleteTableDialog
                         action={removeTable} weddingId={w.id} tableId={t.id}
                         name={t.name} seated={seated}
                       />
@@ -234,45 +246,4 @@ export default async function SeatingPage({ params }: { params: Promise<{ id: st
       </div>
     </>
   );
-}
-
-/* Thin server wrappers so each dialog gets the weddingId in its form data
-   without the client components needing to know about routing. */
-
-function AddGuestDialogWrapper(props: {
-  action: (fd: FormData) => Promise<void>; weddingId: string; tableId: string;
-  tableName: string; remaining: number; guests: { id: string; name: string; groups: string[] }[];
-}) {
-  const bound = async (fd: FormData) => {
-    "use server";
-    fd.set("weddingId", props.weddingId);
-    await props.action(fd);
-  };
-  return <AddGuestDialog action={bound} tableId={props.tableId} tableName={props.tableName}
-    remaining={props.remaining} guests={props.guests} />;
-}
-
-function EditTableDialogWrapper(props: {
-  action: (fd: FormData) => Promise<void>; weddingId: string; tableId: string;
-  name: string; seats: number; seated: number;
-}) {
-  const bound = async (fd: FormData) => {
-    "use server";
-    fd.set("weddingId", props.weddingId);
-    await props.action(fd);
-  };
-  return <EditTableDialog action={bound} tableId={props.tableId} name={props.name}
-    seats={props.seats} seated={props.seated} />;
-}
-
-function DeleteTableDialogWrapper(props: {
-  action: (fd: FormData) => Promise<void>; weddingId: string; tableId: string;
-  name: string; seated: number;
-}) {
-  const bound = async (fd: FormData) => {
-    "use server";
-    fd.set("weddingId", props.weddingId);
-    await props.action(fd);
-  };
-  return <DeleteTableDialog action={bound} tableId={props.tableId} name={props.name} seated={props.seated} />;
 }

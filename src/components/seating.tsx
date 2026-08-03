@@ -17,9 +17,10 @@ type GuestOption = { id: string; name: string; groups: string[] };
  * interface rather than only enforced on the server.
  */
 export function AddGuestDialog({
-  action, tableId, tableName, remaining, guests,
+  action, weddingId, tableId, tableName, remaining, guests,
 }: {
   action: (formData: FormData) => Promise<void>;
+  weddingId: string;
   tableId: string;
   tableName: string;
   remaining: number;
@@ -63,6 +64,7 @@ export function AddGuestDialog({
           <div className="seat-picker" data-lenis-prevent>
             {matches.map(g => (
               <form action={action} key={g.id}>
+                <input type="hidden" name="weddingId" value={weddingId} />
                 <input type="hidden" name="tableId" value={tableId} />
                 <input type="hidden" name="guestId" value={g.id} />
                 <button type="submit" className="seat-pick">
@@ -88,9 +90,10 @@ export function AddGuestDialog({
 
 /** Rename a table or change its capacity. */
 export function EditTableDialog({
-  action, tableId, name, seats, seated,
+  action, weddingId, tableId, name, seats, seated,
 }: {
   action: (formData: FormData) => Promise<void>;
+  weddingId: string;
   tableId: string;
   name: string;
   seats: number;
@@ -105,6 +108,7 @@ export function EditTableDialog({
         <div className="dlg-body" onSubmit={() => ref.current?.close()}>
           <h3 className="dlg-title">Edit {name}</h3>
           <form action={action} className="frm">
+            <input type="hidden" name="weddingId" value={weddingId} />
             <input type="hidden" name="tableId" value={tableId} />
             <div className="field">
               <label htmlFor={`n-${tableId}`}>Table name</label>
@@ -132,9 +136,10 @@ export function EditTableDialog({
 
 /** Deleting a table returns its guests to the unassigned list. */
 export function DeleteTableDialog({
-  action, tableId, name, seated,
+  action, weddingId, tableId, name, seated,
 }: {
   action: (formData: FormData) => Promise<void>;
+  weddingId: string;
   tableId: string;
   name: string;
   seated: number;
@@ -153,6 +158,7 @@ export function DeleteTableDialog({
               : "This table has no guests seated at it."}
           </p>
           <form action={action}>
+            <input type="hidden" name="weddingId" value={weddingId} />
             <input type="hidden" name="tableId" value={tableId} />
             <button className="btn btn-danger" type="submit">Delete table</button>
           </form>
