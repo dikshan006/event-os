@@ -45,6 +45,7 @@ Variables**, scoped to *Production* (and *Preview*, if you want previews to work
 | `EMAIL_FROM` | yes | `EventOS <hello@yourdomain.com>` — must be on a domain verified in Resend |
 | `STRIPE_SECRET_KEY` | yes | Stripe → Developers → API keys (`sk_live_…`) |
 | `STRIPE_WEBHOOK_SECRET` | yes | From step 5 below (`whsec_…`) |
+| `SHOWCASE_WEDDING_SLUGS` | no | Comma-separated slugs shown in "View an example wedding" on /weddings, in the order given. Left unset, the most recently published weddings are used. Only PUBLISHED weddings are ever eligible. |
 | `ACCESS_REQUEST_TO` | no | Where "Request access" submissions are emailed. Falls back to the address inside `EMAIL_FROM`. Requests are stored either way — only the notification is lost. |
 
 **Without `S3_BUCKET` the app now refuses to start the storage driver in
@@ -156,6 +157,7 @@ Each step depends on the one above it.
 
 - [ ] `/` — the public homepage loads, signed out, and the nav offers Sign in
 - [ ] `/weddings` — the hero photograph renders (AVIF in Chrome, WebP in Safari)
+- [ ] `/weddings#example` — links to a real published wedding, or says none is published yet
 - [ ] `/request-access` — submit the form → success view appears, a row lands in
       `AccessRequest`, and two emails are logged in `EmailLog`
 - [ ] `/login` — sign in with the admin from step 2 → lands on `/admin`

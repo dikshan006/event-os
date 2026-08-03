@@ -27,7 +27,7 @@ export function SiteNav({
 }) {
   const pathname = usePathname();
   const [stuck, setStuck] = useState(false);
-  const [overDark, setOverDark] = useState(false);
+  const [tone, setTone] = useState<"light" | "dark" | "warm">("light");
 
   // The bar is transparent over the hero, so it has to take the hero's tone or
   // it disappears into it. Rather than teach the nav which routes are dark —
@@ -35,7 +35,8 @@ export function SiteNav({
   // tone and the nav reads it. One DOM query per navigation, no route coupling.
   useEffect(() => {
     const hero = document.querySelector<HTMLElement>("[data-hero-tone]");
-    setOverDark(hero?.dataset.heroTone === "dark");
+    const t = hero?.dataset.heroTone;
+    setTone(t === "dark" || t === "warm" ? t : "light");
   }, [pathname]);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export function SiteNav({
   const on = (href: string) => (pathname === href ? "page" : undefined);
 
   return (
-    <header className={`m-nav${stuck ? " is-stuck" : ""}${overDark ? " m-nav-dark" : ""}`}>
+    <header className={`m-nav${stuck ? " is-stuck" : ""}${tone === "dark" ? " m-nav-dark" : tone === "warm" ? " m-nav-warm" : ""}`}>
       <nav className="m-nav-inner" aria-label="Primary">
         <Link href="/" className="m-mark" aria-label="EventOS — home">
           Event<span>OS</span>

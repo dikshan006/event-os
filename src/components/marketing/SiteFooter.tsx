@@ -19,7 +19,7 @@ export function SiteFooter() {
               Event<span>OS</span>
             </Link>
             <p className="m-small" style={{ maxWidth: "26ch" }}>
-              The operating system for professional wedding planners.
+              The operating system for modern events.
             </p>
           </div>
 
@@ -27,8 +27,9 @@ export function SiteFooter() {
             <div className="m-foot-col">
               <span className="m-eyebrow">Product</span>
               <Link href="/weddings">Weddings</Link>
-              <Link href="/#invitation">Guest invitations</Link>
-              <Link href="/#studio">Your studio</Link>
+              <Link href="/weddings#demo">Demo</Link>
+              <Link href="/weddings#tour">What&rsquo;s included</Link>
+              <Link href="/weddings#example">Example wedding</Link>
             </div>
             <div className="m-foot-col">
               <span className="m-eyebrow">Access</span>

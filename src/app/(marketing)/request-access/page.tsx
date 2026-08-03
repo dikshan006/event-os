@@ -46,8 +46,10 @@ async function submit(_state: AccessFormState, formData: FormData): Promise<Acce
 
 export default function RequestAccessPage() {
   return (
-    <section className="m-paper">
-      <div className="m-wrap m-chapter">
+    <div className="m-plate m-ink" data-hero-tone="dark">
+      <div className="m-plate-field" aria-hidden="true" />
+      <section>
+      <div className="m-wrap m-chapter" style={{ paddingTop: "calc(var(--m-nav-h, 4.25rem) + var(--m-chapter))" }}>
         <div className="m-two-wide m-two" style={{ alignItems: "start" }}>
           <Reveal className="m-col">
             <span className="m-eyebrow">Request access</span>
@@ -88,6 +90,7 @@ export default function RequestAccessPage() {
           </Reveal>
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }

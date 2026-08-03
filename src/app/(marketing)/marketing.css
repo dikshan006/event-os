@@ -346,7 +346,19 @@
 
 /* Over a dark hero. Dropped the moment the bar becomes solid, at which point
    it belongs to the page palette again. */
-.m-nav-dark:not(.is-stuck) {
+.m-nav-dark.is-stuck { background: var(--ink); border-bottom-color: var(--ink-rule); }
+.m-nav-warm.is-stuck { background: #14110d; border-bottom-color: rgba(245, 241, 232, 0.14); }
+.m-nav-dark.is-stuck, .m-nav-warm.is-stuck {
+  --fg: var(--ink-paper);
+  --bg: var(--ink);
+  --soft: var(--ink-soft);
+  --rule: var(--ink-rule);
+  color: var(--fg);
+}
+.m-nav-warm.is-stuck { --bg: #14110d; --soft: #b3ab9a; --rule: rgba(245, 241, 232, 0.14); }
+
+.m-nav-dark:not(.is-stuck),
+.m-nav-warm:not(.is-stuck) {
   --fg: var(--ink-paper);
   /* --bg has to flip with it: .m-btn-solid paints `background: var(--fg);
      color: var(--bg)`, so leaving --bg on paper produced a white pill with
@@ -517,8 +529,8 @@
 @supports not (container-type: inline-size) {
   @media (min-width: 46rem) { .m-row { grid-template-columns: 3rem minmax(0, 15rem) minmax(0, 1fr); } }
 }
-.m-row h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
-.m-row p { color: var(--soft); max-width: 52ch; }
+.m-row > h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
+.m-row > p { color: var(--soft); max-width: 52ch; }
 
 /* Figures: numbers that carry weight. Set in the display face, not in a badge. */
 .m-figs {
@@ -551,38 +563,38 @@
 .m-quote { max-width: 34ch; margin-inline: auto; text-align: center; }
 
 /* ============================================================== weddings ==
-   The warm chapter. Same grid and scale, different palette and display face. */
+   One palette for the entire page.
+
+   The first version alternated ivory and near-black the way the homepage does,
+   and scrolling it felt like moving between two different products. A wedding
+   film does not change stock halfway through. Deep warm charcoal throughout,
+   with the photograph as the only thing that changes. */
 .m-wed {
-  --bg: #f6f4ee;
-  --fg: #1c1a16;
-  --soft: #58544a;
-  --faint: #6d6759;
-  --rule: rgba(28, 26, 22, 0.15);
+  --bg: #14110d;
+  --fg: #f5f1e8;
+  --soft: #b3ab9a;
+  --faint: #8d8474;
+  --rule: rgba(245, 241, 232, 0.14);
+  /* A second, quieter surface for panels sitting on the page. */
+  --raise: #1b1712;
   background: var(--bg);
   color: var(--fg);
 }
-.m-wed-dark {
-  --bg: #17150f;
-  --fg: #f4f1e8;
-  --soft: #a9a394;
-  --faint: #8b8574;
-  --rule: rgba(244, 241, 232, 0.16);
-  background: var(--bg);
-  color: var(--fg);
-}
+/* Retained so a section can sit a shade above the page without changing key. */
+.m-wed-raise { background: var(--raise); }
 
 /* The cinematic hero. The photograph is a real <img> underneath, not a CSS
    background, so it can be preloaded, sized, and given an empty alt — and so
    the browser can pick AVIF over WebP. */
 .m-cine { position: relative; isolation: isolate; min-height: min(100svh, 58rem); display: grid; }
-.m-cine-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #b2b096; }
+.m-cine-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #3d3a2c; }
 .m-cine-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   /* The couple sit low in the frame; this keeps them under the type rather
      than behind it. */
-  object-position: 50% 34%;
+  object-position: 50% 42%;
 }
 /* Two washes. The first lifts the whole frame further toward paper so the
    photograph reads as atmosphere; the second is a soft vertical fade that
@@ -591,10 +603,21 @@
   content: "";
   position: absolute;
   inset: 0;
+  /* Measured, not guessed. The photograph peaks at 225 luminance; white type
+     needs the brightest region pushed to about 118 to clear 4.5:1, which is a
+     52% wash. It is applied as a gradient rather than a flat layer so the
+     picture stays open at the top and closes down where the words are, and so
+     the bottom edge hands over to the page with no visible seam. */
   background:
-    radial-gradient(120% 85% at 50% 42%, rgba(246, 244, 238, 0.34) 0%, rgba(246, 244, 238, 0.72) 62%, rgba(246, 244, 238, 0.9) 100%),
-    linear-gradient(to bottom, rgba(246, 244, 238, 0.5) 0%, rgba(246, 244, 238, 0) 26%, rgba(246, 244, 238, 0) 68%, var(--bg) 100%);
+    radial-gradient(78% 62% at 50% 52%, rgba(14, 11, 8, 0.34) 0%, rgba(14, 11, 8, 0.58) 68%, rgba(14, 11, 8, 0.72) 100%),
+    linear-gradient(to bottom,
+      rgba(14, 11, 8, 0.52) 0%,
+      rgba(14, 11, 8, 0.34) 22%,
+      rgba(14, 11, 8, 0.5) 58%,
+      rgba(20, 17, 13, 0.92) 88%,
+      var(--bg) 100%);
 }
+
 .m-cine-body {
   position: relative;
   z-index: 2;
@@ -644,7 +667,7 @@
   .m-step-flip > :first-child { order: 2; }
 }
 .m-step-copy { display: grid; gap: 1rem; align-content: start; max-width: 44ch; }
-.m-step-copy h3 { font-family: var(--serif); font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 300; line-height: 1.1; letter-spacing: -0.01em; }
+.m-step-copy > h3 { font-family: var(--serif); font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 300; line-height: 1.1; letter-spacing: -0.01em; }
 .m-step-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; padding-top: 0.5rem; }
 .m-step-meta span { font-size: var(--m-small); color: var(--soft); }
 .m-step-meta span::before { content: "— "; color: var(--faint); }
@@ -819,3 +842,267 @@ select.m-input { appearance: none; cursor: pointer; }
 }
 .m-spec-line { color: var(--soft); max-width: 30ch; margin-inline: auto; }
 .m-spec-quiet { font-size: var(--m-micro); letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+
+/* ======================================================= continuous field ==
+   The homepage is one uninterrupted blue plate from the masthead to the footer.
+
+   The field is fixed to the viewport rather than drawn per section: it cannot
+   drift out of alignment, it costs one composited layer instead of six, and the
+   page reads as a single surface that content moves across — which is the whole
+   point of not breaking it up with white sections. */
+.m-plate { position: relative; background: var(--ink); isolation: isolate; }
+.m-plate > section { position: relative; z-index: 2; }
+.m-plate-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--blue-black);
+}
+.m-plate-field::before {
+  content: "";
+  position: absolute;
+  inset: -35% -15% -35% -45%;
+  background:
+    radial-gradient(58% 52% at 52% 58%, rgba(7, 10, 18, 0.92) 0%, rgba(7, 10, 18, 0.58) 40%, rgba(7, 10, 18, 0) 74%),
+    radial-gradient(62% 56% at 36% 44%, var(--blue-deep) 0%, rgba(16, 28, 78, 0) 78%),
+    radial-gradient(74% 66% at 28% 34%, var(--blue) 0%, rgba(27, 63, 214, 0.5) 44%, rgba(27, 63, 214, 0) 80%),
+    radial-gradient(48% 40% at 20% 22%, var(--blue-lit) 0%, rgba(74, 118, 239, 0.42) 34%, rgba(74, 118, 239, 0) 72%);
+  filter: blur(26px);
+}
+/* Settles the right and lower edges so type further down the page always has a
+   dark floor, without a second bloom competing with the first. */
+.m-plate-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(104deg, rgba(7, 10, 18, 0) 38%, rgba(8, 11, 19, 0.66) 84%, var(--ink) 100%),
+    linear-gradient(to bottom, rgba(7, 10, 18, 0) 40%, rgba(7, 10, 18, 0.42) 100%);
+}
+
+/* ------------------------------------------------------------- products ---
+   The whole homepage, really. Five rows: what exists, and what is coming.
+   Shipped things are links; unshipped things are not — a dead link that looks
+   live is the fastest way to lose the trust the rest of the page is buying. */
+.m-products { display: grid; border-top: 1px solid var(--rule); }
+.m-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 1.5rem;
+  padding: clamp(1.4rem, 3vw, 2.1rem) 0;
+  border-bottom: 1px solid var(--rule);
+  color: inherit;
+}
+.m-product > h3 {
+  font-size: clamp(1.375rem, 2.6vw, 2rem);
+  font-weight: 250;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+}
+.m-product > p { grid-column: 1; font-size: var(--m-small); color: var(--soft); max-width: 46ch; }
+.m-product-state {
+  grid-row: 1;
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--m-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+/* The one available product. A dot rather than a badge: a filled pill here
+   would be the loudest object on an otherwise very quiet page. */
+.m-product-dot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--blue-lit);
+  box-shadow: 0 0 0 4px rgba(74, 118, 239, 0.16);
+}
+a.m-product { transition: opacity var(--m-fast) var(--m-ease); }
+a.m-product .m-arrow { color: var(--fg); }
+a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+.m-product-soon { opacity: 0.72; }
+.m-product-soon > h3 { color: var(--soft); }
+
+/* Three short claims, no icons, no boxes. */
+.m-claims {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+.m-claim { display: grid; gap: 0.5rem; align-content: start; }
+.m-claim b { font-weight: 450; font-size: var(--m-body); }
+.m-claim span { font-size: var(--m-small); color: var(--soft); max-width: 30ch; }
+
+/* ======================================================== product tour ====
+   Nine capabilities. Deliberately not nine bordered cards: the specimen is the
+   visual, and the only chrome is the hairline that separates one from the next. */
+.m-tour {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  gap: clamp(2rem, 4vw, 3.25rem) clamp(1.5rem, 3vw, 2.75rem);
+}
+.m-tour-item { display: grid; gap: 0.9rem; align-content: start; }
+@supports (grid-template-rows: subgrid) {
+  .m-tour-item {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    align-content: initial;
+  }
+  /* Shorter specimens sit at the top of their track rather than stretching to
+     fill it — a half-empty panel reads as a bug, a short one reads as design. */
+  .m-tour-item > * { align-self: start; }
+}
+/* Direct children only.
+   Written as `.m-tour-item p` this scored (0,1,1) and captured every paragraph
+   *inside* the specimens too — the invitation's couple names were being set at
+   13px in the caption colour instead of 40px of Cormorant. A descendant
+   selector on a container that holds other components is a trap; the child
+   combinator says what was actually meant. */
+.m-tour-item > h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
+.m-tour-item > p { font-size: var(--m-small); color: var(--soft); max-width: 34ch; }
+.m-tour-item > .m-spec { margin-bottom: 0.35rem; }
+
+/* ============================================================== video =====
+   Built now, filled later. Sized by aspect-ratio so dropping a file in cannot
+   move the page, and shipped as a real <button>/<a> so the placeholder is
+   never a div pretending to be interactive. */
+.m-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 70% at 50% 45%, rgba(245, 241, 232, 0.07) 0%, rgba(245, 241, 232, 0) 70%),
+    var(--raise, #1b1712);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.m-video video, .m-video img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.m-video-body { position: relative; z-index: 2; display: grid; justify-items: center; gap: 0.9rem; padding: var(--m-gutter); }
+.m-play {
+  inline-size: 3.75rem;
+  block-size: 3.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  display: grid;
+  place-items: center;
+  color: var(--fg);
+}
+.m-play::after {
+  content: "";
+  inline-size: 0;
+  block-size: 0;
+  border-left: 11px solid currentColor;
+  border-block: 7px solid transparent;
+  margin-left: 3px;
+}
+
+/* Slots for promotional stills that do not exist yet. Reserving the space now
+   means adding them later is a content change, not a layout change. */
+.m-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+.m-slot {
+  aspect-ratio: 4 / 5;
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 1rem;
+  color: var(--faint);
+  font-size: var(--m-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.m-slot:nth-child(2) { aspect-ratio: 4 / 3; }
+
+/* ====================================================== example weddings ==
+   Real, published weddings — resolved from the database, never invented. */
+.m-examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem); }
+.m-example {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--raise, transparent);
+  color: inherit;
+  transition: border-color var(--m-fast) var(--m-ease);
+}
+.m-example:hover { border-color: var(--soft); }
+.m-example b { font-family: var(--serif); font-size: clamp(1.375rem, 2.2vw, 1.75rem); font-weight: 300; letter-spacing: -0.008em; }
+.m-example span { font-size: var(--m-small); color: var(--soft); }
+.m-example em { font-style: normal; font-size: var(--m-micro); letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint); }
+.m-example-foot { display: flex; align-items: center; gap: 0.5rem; font-size: var(--m-small); padding-top: 0.35rem; }
+
+/* The invitation specimen stays light wherever it is placed: what a guest opens
+   is a piece of stationery, and showing it in the page's dark key would be
+   showing something the product does not actually do. */
+.m-spec-invite {
+  /* Redeclare the palette rather than recolouring each child. Every rule in
+     this stylesheet reads these variables, so flipping them here flips the
+     whole card — including parts added later, which is the point. Patching
+     children one at a time is how the "Dear" label ended up at 3.4:1 in the
+     dark theme's muted colour on a light card. */
+  --fg: #1c1a16;
+  --soft: #58544a;
+  --faint: #6d6759;
+  --rule: rgba(28, 26, 22, 0.18);
+  background: #f7f4ed;
+  border-color: var(--rule);
+  color: var(--fg);
+}
+
+/* RSVP tally */
+.m-spec-tally { display: grid; gap: 0.7rem; }
+.m-spec-tally-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.3rem 0.75rem; align-items: baseline; }
+.m-spec-tally-row span { color: var(--soft); }
+.m-spec-tally-row b { font-weight: 400; color: var(--fg); font-variant-numeric: tabular-nums; }
+.m-spec-tally-row i { grid-column: 1 / -1; display: block; block-size: 1px; background: var(--fg); opacity: 0.3; }
+.m-spec-tally-row.is-on i { opacity: 0.7; }
+
+/* Gallery tiles.
+   Fixed row heights rather than per-tile aspect-ratio: inside a `1fr` track an
+   aspect-ratio box contributes an intrinsic width, and the whole specimen grew
+   wider than its column and spilled across the one beside it. `minmax(0, 1fr)`
+   removes the automatic min-content floor for the same reason. */
+.m-spec-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 3rem;
+  gap: 0.4rem;
+}
+.m-spec-tiles span {
+  display: block;
+  block-size: 100%;
+  min-inline-size: 0;
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+  border-radius: 2px;
+}
+.m-spec-tiles span[data-tall] { grid-row: span 2; }
+
+/* A grid child may not force its parent wider than the track it was given. */
+.m-spec > * { min-inline-size: 0; }
+
+/* Email */
+.m-spec-subject { font-family: var(--serif); font-size: 1.125rem; font-weight: 400; }
+.m-spec-fauxlink {
+  align-self: start;
+  font-size: var(--m-small);
+  color: var(--fg);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 2px;
+}

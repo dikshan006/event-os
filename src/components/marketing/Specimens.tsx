@@ -112,3 +112,104 @@ export function InvitationSpecimen() {
     </div>
   );
 }
+
+export function RsvpSpecimen() {
+  return (
+    <div className="m-spec" aria-hidden="true">
+      <div className="m-spec-bar">
+        <span>RSVP</span>
+        <span>96 of 124 replied</span>
+      </div>
+      <div className="m-spec-tally">
+        {([["Attending", 78, "on"], ["Declined", 18, ""], ["Awaiting", 28, ""]] as const).map(([l, n, s]) => (
+          <div key={l} className={`m-spec-tally-row${s ? " is-on" : ""}`}>
+            <span>{l}</span>
+            <b>{n}</b>
+            <i style={{ inlineSize: `${(n / 124) * 100}%` }} />
+          </div>
+        ))}
+      </div>
+      <p className="m-spec-quiet">Dietary and access notes captured with every reply</p>
+    </div>
+  );
+}
+
+export function GallerySpecimen() {
+  // A mosaic rather than photographs: inventing images of a wedding that never
+  // happened would be the wrong kind of lie, and the point being made is the
+  // arrangement, not the pictures.
+  const tall = new Set([0, 4]);
+  return (
+    <div className="m-spec" aria-hidden="true">
+      <div className="m-spec-bar">
+        <span>Gallery</span>
+        <span>32 photographs</span>
+      </div>
+      <div className="m-spec-tiles">
+        {Array.from({ length: 7 }, (_, i) => (
+          <span key={i} {...(tall.has(i) ? { "data-tall": "" } : {})} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function DashboardSpecimen() {
+  return (
+    <div className="m-spec" aria-hidden="true">
+      <div className="m-spec-bar">
+        <span>Your studio</span>
+        <span>4 weddings</span>
+      </div>
+      <ul className="m-spec-rows">
+        {([["Amelia & Theodore", "12 Sep", "Published"], ["Rosa & Ines", "4 Oct", "Draft"], ["Nour & Adam", "22 Nov", "Published"]] as const).map(
+          ([n, d, s]) => (
+            <li key={n}>
+              <span className="m-spec-name">{n}</span>
+              <span className="m-spec-tags">
+                <i>{d}</i>
+              </span>
+              <span className={`m-spec-status${s === "Draft" ? " is-off" : ""}`}>{s}</span>
+            </li>
+          ),
+        )}
+      </ul>
+    </div>
+  );
+}
+
+export function RegistrySpecimen() {
+  return (
+    <div className="m-spec" aria-hidden="true">
+      <div className="m-spec-bar">
+        <span>Registry</span>
+        <span>Gifts and funds</span>
+      </div>
+      <ul className="m-spec-rows">
+        {([["Honeymoon fund", "£2,400 of £3,000"], ["Copper pans", "Reserved"], ["Garden table", "Available"]] as const).map(([n, s]) => (
+          <li key={n}>
+            <span className="m-spec-name">{n}</span>
+            <span className="m-spec-status">{s}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function EmailSpecimen() {
+  return (
+    <div className="m-spec m-spec-mail" aria-hidden="true">
+      <div className="m-spec-bar">
+        <span>To Priya Raghunathan</span>
+        <span>Sent</span>
+      </div>
+      <p className="m-spec-subject">You&rsquo;re invited — Amelia &amp; Theodore</p>
+      <p className="m-spec-line">
+        Dear Priya, you are warmly invited to the wedding of Amelia &amp; Theodore.
+      </p>
+      <span className="m-spec-fauxlink">Open your invitation</span>
+      <p className="m-spec-quiet">Sent from your studio, not from EventOS</p>
+    </div>
+  );
+}
