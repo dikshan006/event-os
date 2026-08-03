@@ -30,9 +30,12 @@ async function setFlash(value: Flash) {
   });
 }
 
-export default async function PlannersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
+export default async function PlannersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; name?: string; email?: string; studio?: string }> }) {
   await requireAdmin();
-  const { q, status } = await searchParams;
+  const { q, status, name: preName, email: preEmail, studio: preStudio } = await searchParams;
+  // Arrives from the requests inbox: approving a request should not mean
+  // retyping what the person already told us.
+  const prefilled = Boolean(preEmail || preName || preStudio);
 
   // Temp credentials travel via a short-lived httpOnly cookie — never the URL
   // (URLs land in browser history, proxies, and access logs).
@@ -200,9 +203,10 @@ export default async function PlannersPage({ searchParams }: { searchParams: Pro
 
         <form action={create} className="card pad frm work-panel">
           <h2 className="section-t">New planner</h2>
-          <div className="field"><label>Studio name</label><input className="inp" name="studioName" required placeholder="e.g. Atelier Blanc" /></div>
-          <div className="field"><label>Owner name</label><input className="inp" name="ownerName" required /></div>
-          <div className="field"><label>Login email</label><input className="inp" name="email" type="email" required /></div>
+          {prefilled && <p className="hint" style={{ marginTop: -8 }}>Filled in from an access request. Check it before creating.</p>}
+          <div className="field"><label>Studio name</label><input className="inp" name="studioName" required defaultValue={preStudio ?? ""} placeholder="e.g. Atelier Blanc" /></div>
+          <div className="field"><label>Owner name</label><input className="inp" name="ownerName" required defaultValue={preName ?? ""} /></div>
+          <div className="field"><label>Login email</label><input className="inp" name="email" type="email" required defaultValue={preEmail ?? ""} /></div>
           <div className="note">The studio is generated instantly; an invite email goes out and their first published wedding is free.</div>
           <button className="btn btn-primary" type="submit">Create planner</button>
         </form>

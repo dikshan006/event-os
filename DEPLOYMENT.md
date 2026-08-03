@@ -45,6 +45,7 @@ Variables**, scoped to *Production* (and *Preview*, if you want previews to work
 | `EMAIL_FROM` | yes | `EventOS <hello@yourdomain.com>` — must be on a domain verified in Resend |
 | `STRIPE_SECRET_KEY` | yes | Stripe → Developers → API keys (`sk_live_…`) |
 | `STRIPE_WEBHOOK_SECRET` | yes | From step 5 below (`whsec_…`) |
+| `ACCESS_REQUEST_TO` | no | Where "Request access" submissions are emailed. Falls back to the address inside `EMAIL_FROM`. Requests are stored either way — only the notification is lost. |
 
 **Without `S3_BUCKET` the app now refuses to start the storage driver in
 production** rather than writing photos to a disk that disappears on the next
@@ -61,6 +62,10 @@ deploy. That guard is deliberate.
 ```bash
 DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npx prisma migrate deploy
 ```
+
+This includes `20260803170000_access_request`, which adds the `AccessRequest`
+table behind the public site's Request access form. Until it is applied that
+form will error, so run migrations before pointing a domain at the site.
 
 4. Create the platform admin. **Do not run `db:seed` in production** — that is
    demo data with a shared `password123`.
@@ -149,7 +154,15 @@ Node 20+ is pinned in `package.json`; Vercel will honour it.
 
 Each step depends on the one above it.
 
+- [ ] `/` — the public homepage loads, signed out, and the nav offers Sign in
+- [ ] `/weddings` — the hero photograph renders (AVIF in Chrome, WebP in Safari)
+- [ ] `/request-access` — submit the form → success view appears, a row lands in
+      `AccessRequest`, and two emails are logged in `EmailLog`
 - [ ] `/login` — sign in with the admin from step 2 → lands on `/admin`
+- [ ] **Admin → Requests** → the submission is listed → *Create their studio*
+      opens New Planner with the name, email and studio prefilled
+- [ ] `/` while signed in — the nav now offers Dashboard, and `/dashboard`
+      resolves to `/admin` or `/studio` by role
 - [ ] **Admin → Planners → Create planner** → temp password appears for 90s
 - [ ] **Check email** — planner invite arrives (proves Resend + domain)
 - [ ] Sign out, sign in as that planner → lands on `/studio`

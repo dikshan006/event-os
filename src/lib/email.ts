@@ -6,7 +6,9 @@ const FROM = process.env.EMAIL_FROM ?? "EventOS <onboarding@resend.dev>";
 
 export type EmailKind =
   | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE"
-  | "PAYMENT_RECEIPT" | "PASSWORD_RESET";
+  | "PAYMENT_RECEIPT" | "PASSWORD_RESET"
+  | "ACCESS_REQUEST"
+  | "ACCESS_REQUEST_ACK";
 
 type SendArgs = { to: string; subject: string; html: string; kind: EmailKind; studioId?: string };
 
@@ -108,6 +110,42 @@ export const emails = {
       subject: `Receipt \u2014 ${o.desc}`,
       html: shell("EventOS", "#9D5C64",
         `Payment received for <b>${esc(o.desc)}</b>: ${esc(o.amount)}. A copy is stored in your Billing page.`),
+    }),
+
+  /**
+   * Sent to the platform owner when somebody asks for access. Deliberately
+   * plain and complete: it should be answerable from a phone without opening
+   * the admin dashboard first.
+   */
+  accessRequest: (o: {
+    to: string; name: string; email: string; company?: string | null;
+    website?: string | null; volume?: string | null; message?: string | null; link: string;
+  }) =>
+    sendEmail({
+      to: o.to, kind: "ACCESS_REQUEST",
+      subject: `Access request \u2014 ${o.name}${o.company ? ` (${o.company})` : ""}`,
+      html: shell("EventOS", "#9D5C64",
+        `<b>${esc(o.name)}</b> asked for access to EventOS.<br/><br/>
+         <b>Email</b> ${esc(o.email)}<br/>
+         ${o.company ? `<b>Studio</b> ${esc(o.company)}<br/>` : ""}
+         ${o.website ? `<b>Website</b> ${esc(o.website)}<br/>` : ""}
+         ${o.volume ? `<b>Weddings a year</b> ${esc(o.volume)}<br/>` : ""}
+         ${o.message ? `<br/>${esc(o.message).replace(/\n/g, "<br/>")}<br/>` : ""}
+         <br/><a href="${o.link}">Open the requests inbox</a>`),
+    }),
+
+  /**
+   * Sent to the requester. Its only job is to prove the form worked and to set
+   * an honest expectation \u2014 nothing is promised, because nothing has been decided.
+   */
+  accessRequestAck: (o: { to: string; name: string }) =>
+    sendEmail({
+      to: o.to, kind: "ACCESS_REQUEST_ACK",
+      subject: "We have your request \u2014 EventOS",
+      html: shell("EventOS", "#9D5C64",
+        `Hi ${esc(o.name)},<br/><br/>Thank you \u2014 we have your request for access to EventOS.<br/><br/>
+         We set up each studio by hand, so this is read by a person rather than a queue.
+         You will hear back from us either way.`),
     }),
 
   passwordReset: (o: { to: string; name: string; link: string }) =>

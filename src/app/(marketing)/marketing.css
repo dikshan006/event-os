@@ -1,0 +1,821 @@
+/* ===========================================================================
+   EventOS — public site
+   ---------------------------------------------------------------------------
+   Scoped to the (marketing) route group and imported by its layout, so none of
+   this reaches the planner studio, the platform admin, or the guest wedding
+   sites. Those have their own established system in globals.css and are not
+   touched here.
+
+   The whole site is one editorial document set in alternating chapters: warm
+   paper, then ink. Two palettes, one grid, one type scale, one easing curve.
+   A section declares which palette it is in with .m-paper or .m-ink, and every
+   colour below resolves through variables — so a chapter can be flipped
+   without touching a single component.
+   ========================================================================= */
+
+.m {
+  /* -- Paper ---------------------------------------------------------------
+     Warm off-white, sampled from the reference and lifted. Not #FFF: pure
+     white next to a photograph reads as a browser default, not as paper. */
+  --paper: #f0efea;
+  --paper-2: #e7e5df;
+  --paper-ink: #14161a;
+  --paper-soft: #5b5f66;
+  --paper-faint: #63686f;
+  --paper-rule: rgba(20, 22, 26, 0.14);
+
+  /* -- Ink -----------------------------------------------------------------
+     Near-black with a trace of blue, so it sits in the same family as the
+     bloom rather than reading as a neutral grey. */
+  --ink: #0a0c10;
+  --ink-2: #10131a;
+  --ink-paper: #f2f2ef;
+  --ink-soft: #9ba1ac;
+  --ink-faint: #838a98;
+  --ink-rule: rgba(242, 242, 239, 0.16);
+
+  /* -- Signal --------------------------------------------------------------
+     Sampled from the reference bloom: a saturated cobalt that falls away
+     through navy into black. Used once per page, as a field — never as a
+     button fill, never as a border. */
+  --blue: #1b3fd6;
+  --blue-lit: #4a76ef;
+  --blue-deep: #101c4e;
+  --blue-black: #070a12;
+
+  /* -- Warmth --------------------------------------------------------------
+     The wedding side of the product. Derived from the hero photograph's own
+     average so type, rules and the image agree. */
+  --warm: #b2b096;
+  --warm-deep: #4a4536;
+  --gold: #8c7a4f;
+
+  /* Every --faint above was measured against its own background and moved
+     until it cleared 4.5:1 at 10px, the smallest size on the site. The first
+     pass was chosen by eye and sat between 2.8:1 and 4.1:1 — invisible to me
+     on a good screen, unreadable to plenty of people. Quiet type still has to
+     be legible type; if a value needs to go lighter than this, the answer is
+     to make it larger, not fainter.
+
+     Resolved per chapter. Every rule below reads these, never the raw values. */
+  --bg: var(--paper);
+  --fg: var(--paper-ink);
+  --soft: var(--paper-soft);
+  --faint: var(--paper-faint);
+  --rule: var(--paper-rule);
+
+  /* -- Type ----------------------------------------------------------------
+     Two families, both already loaded by the root layout — no new download.
+     Inter carries the product voice (light weights, wide tracking, an
+     architectural grotesque); Cormorant carries the wedding voice.
+
+     Sizes interpolate between a 360px phone and a 1600px desktop, so there are
+     no breakpoint jumps in the typography. */
+  --m-display: clamp(2.75rem, 7.4vw, 6.5rem);
+  --m-title: clamp(2rem, 4.6vw, 3.75rem);
+  --m-head: clamp(1.5rem, 2.6vw, 2.25rem);
+  --m-lead: clamp(1.0625rem, 1.55vw, 1.375rem);
+  --m-body: clamp(0.9375rem, 1.05vw, 1.0625rem);
+  --m-small: clamp(0.8125rem, 0.9vw, 0.875rem);
+  --m-micro: clamp(0.625rem, 0.72vw, 0.6875rem);
+
+  /* -- Space ---------------------------------------------------------------
+     Chapter rhythm is the loudest signal of production value. Generous, and
+     scaling faster than the type does. */
+  --m-gutter: clamp(1.25rem, 5vw, 5rem);
+  --m-chapter: clamp(5.5rem, 12vw, 11.5rem);
+  --m-block: clamp(2.5rem, 5vw, 4.5rem);
+  --m-max: 78rem;
+
+  /* Shared with globals.css by value, deliberately: the public site and the
+     guest sites should move identically. Nothing overshoots, nothing bounces. */
+  --m-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --m-fast: 200ms;
+  --m-dur: 380ms;
+  --m-slow: 640ms;
+
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: var(--m-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Chapter palettes. Applying one re-points every variable underneath it. */
+.m-paper {
+  --bg: var(--paper);
+  --fg: var(--paper-ink);
+  --soft: var(--paper-soft);
+  --faint: var(--paper-faint);
+  --rule: var(--paper-rule);
+  background: var(--bg);
+  color: var(--fg);
+}
+.m-ink {
+  --bg: var(--ink);
+  --fg: var(--ink-paper);
+  --soft: var(--ink-soft);
+  --faint: var(--ink-faint);
+  --rule: var(--ink-rule);
+  background: var(--bg);
+  color: var(--fg);
+}
+.m-paper-2 { --bg: var(--paper-2); background: var(--bg); }
+
+/* --------------------------------------------------------------- primitives
+   Wrapped in :where() so the whole reset carries zero specificity.
+
+   Written as `.m h1 { margin: 0 }` it scored (0,1,1) and quietly outranked
+   every single-class utility below it — `.m-cine-title { margin-inline: auto }`
+   lost, and the weddings hero rendered flush left instead of centred. A reset
+   should never win an argument with the thing it is resetting for. */
+:where(.m) :where(h1, h2, h3, h4) { font-weight: 400; margin: 0; }
+:where(.m) :where(p) { margin: 0; }
+:where(.m) :where(ul, ol) { margin: 0; padding: 0; list-style: none; }
+:where(.m) :where(img) { display: block; max-width: 100%; }
+
+.m-wrap {
+  width: 100%;
+  max-width: var(--m-max);
+  margin-inline: auto;
+  padding-inline: var(--m-gutter);
+}
+.m-chapter { padding-block: var(--m-chapter); }
+.m-rule { height: 1px; background: var(--rule); border: 0; margin: 0; }
+
+/* Eyebrow: the smallest type on the page and the most heavily tracked. It sets
+   the register for everything else. Never below 10px, never below 4.5:1. */
+.m-eyebrow {
+  font-size: var(--m-micro);
+  letter-spacing: clamp(0.16em, 0.9vw, 0.34em);
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The display face. Light weight at large sizes, tightened tracking to stop
+   the letterforms drifting apart — the correction large type always needs. */
+.m-display {
+  font-size: var(--m-display);
+  font-weight: 200;
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.m-title {
+  font-size: var(--m-title);
+  font-weight: 250;
+  line-height: 1.04;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.m-head {
+  font-size: var(--m-head);
+  font-weight: 300;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.m-lead {
+  font-size: var(--m-lead);
+  font-weight: 300;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+  color: var(--soft);
+  max-width: 40ch;
+  text-wrap: pretty;
+}
+.m-body { max-width: 62ch; color: var(--soft); text-wrap: pretty; }
+.m-small { font-size: var(--m-small); color: var(--soft); }
+
+/* The wedding voice. Used only on /weddings and only for display sizes. */
+.m-serif {
+  font-family: var(--serif);
+  font-weight: 300;
+  letter-spacing: -0.006em;
+  line-height: 1.06;
+}
+.m-serif em { font-style: italic; }
+
+/* ------------------------------------------------------------------ grain --
+   Generated, not downloaded. feTurbulence at a high base frequency is the same
+   fine, even film grain as the reference, at ~400 bytes and no network
+   request. Fixed to the viewport so it never scrolls with the content, which
+   is what makes it read as grain in the emulsion rather than as a texture
+   painted onto the page. */
+.m-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-transparency: reduce) { .m-grain { display: none; } }
+
+/* ------------------------------------------------------------------ bloom --
+   The single blue field, taken from reference 1: a saturated core that falls
+   away through navy into black and bleeds off the left edge.
+
+   The first attempt laid this behind ink-on-paper type and the headline
+   disappeared into the navy. Going back to the reference: its type is *white,
+   over* the bloom — the dark field is the page, not a decoration on it. So the
+   hero is a dark plate and the bloom is what lights it.
+
+   Built from stacked radial gradients rather than an image: resolution
+   independent, weighs nothing, re-tintable from a variable. It appears exactly
+   once on the site. A second one would make it decoration; one makes it the
+   page's only gesture. */
+.m-bloom {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--blue-black);
+}
+.m-bloom::before {
+  content: "";
+  position: absolute;
+  /* Oversized and pushed off-canvas on three sides: the eye should meet a
+     field already in progress, never the edge of a circle. */
+  inset: -40% -20% -40% -50%;
+  background:
+    radial-gradient(56% 50% at 50% 60%, rgba(7, 10, 18, 0.94) 0%, rgba(7, 10, 18, 0.6) 40%, rgba(7, 10, 18, 0) 72%),
+    radial-gradient(62% 56% at 36% 46%, var(--blue-deep) 0%, rgba(16, 28, 78, 0) 78%),
+    radial-gradient(74% 66% at 28% 36%, var(--blue) 0%, rgba(27, 63, 214, 0.52) 44%, rgba(27, 63, 214, 0) 80%),
+    radial-gradient(50% 42% at 20% 24%, var(--blue-lit) 0%, rgba(74, 118, 239, 0.45) 34%, rgba(74, 118, 239, 0) 72%);
+  filter: blur(26px);
+}
+/* Two jobs: darken the lower half so the contents index always has a floor to
+   sit on, and settle the right edge back toward the plate colour so the field
+   dissolves rather than stopping. */
+.m-bloom::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(102deg, rgba(7, 10, 18, 0) 40%, rgba(8, 11, 19, 0.6) 84%, var(--ink) 100%),
+    linear-gradient(to bottom, rgba(7, 10, 18, 0) 46%, rgba(7, 10, 18, 0.34) 78%, rgba(7, 10, 18, 0.58) 100%);
+}
+
+/* --------------------------------------------------------------- controls --
+   One button, three weights. No gradients, no shadows, no glass. */
+.m-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.72em 1.35em;
+  font-size: var(--m-small);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+  color: inherit;
+  transition:
+    background-color var(--m-fast) var(--m-ease),
+    border-color var(--m-fast) var(--m-ease),
+    color var(--m-fast) var(--m-ease),
+    opacity var(--m-fast) var(--m-ease);
+}
+.m-btn-solid { background: var(--fg); color: var(--bg); }
+.m-btn-solid:hover { opacity: 0.84; }
+.m-btn-line { border-color: var(--rule); color: var(--fg); }
+.m-btn-line:hover { border-color: var(--fg); }
+.m-btn-quiet { color: var(--soft); padding-inline: 0; }
+.m-btn-quiet:hover { color: var(--fg); }
+.m-btn-lg { padding: 0.95em 1.7em; font-size: var(--m-body); }
+
+/* The arrow leans forward on hover. 3px, once — the entire micro-interaction
+   budget for a link. */
+.m-arrow { display: inline-block; transition: transform var(--m-fast) var(--m-ease); }
+.m-btn:hover .m-arrow, .m-link:hover .m-arrow { transform: translateX(3px); }
+
+.m-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--fg);
+  font-weight: 450;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--rule);
+  transition: border-color var(--m-fast) var(--m-ease);
+}
+.m-link:hover { border-bottom-color: var(--fg); }
+
+.m :where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------------------- nav --
+   Transparent over the hero, then a solid bar with a hairline once the page
+   moves. Solid rather than blurred: backdrop-filter on a fixed element is a
+   per-frame GPU cost on every scroll, and the glass look was explicitly out. */
+.m-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: var(--m-nav-h, 4.25rem);
+  display: flex;
+  align-items: center;
+  transition:
+    background-color var(--m-dur) var(--m-ease),
+    border-color var(--m-dur) var(--m-ease);
+  border-bottom: 1px solid transparent;
+}
+.m-nav-inner {
+  width: 100%;
+  max-width: var(--m-max);
+  margin-inline: auto;
+  padding-inline: var(--m-gutter);
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+.m-nav.is-stuck { background: var(--bg); border-bottom-color: var(--rule); }
+
+/* Over a dark hero. Dropped the moment the bar becomes solid, at which point
+   it belongs to the page palette again. */
+.m-nav-dark:not(.is-stuck) {
+  --fg: var(--ink-paper);
+  /* --bg has to flip with it: .m-btn-solid paints `background: var(--fg);
+     color: var(--bg)`, so leaving --bg on paper produced a white pill with
+     near-white text. */
+  --bg: var(--ink);
+  --soft: var(--ink-soft);
+  --rule: var(--ink-rule);
+  color: var(--fg);
+}
+
+.m-mark {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-right: auto;
+}
+.m-mark span { font-weight: 200; letter-spacing: 0.2em; }
+
+.m-nav-links { display: flex; align-items: center; gap: clamp(1rem, 2.4vw, 2rem); }
+/* `:not(.m-btn)` is load-bearing, not tidiness. `.m-nav-links a` scores
+   (0,1,1) and beats `.m-btn-solid` at (0,1,0), so without it the solid pill
+   kept the muted link colour and rendered near-white on near-white. Same
+   specificity trap as the element reset above; both are now excluded rather
+   than fought with !important. */
+.m-nav-links a:not(.m-btn) {
+  font-size: var(--m-small);
+  color: var(--soft);
+  transition: color var(--m-fast) var(--m-ease);
+}
+.m-nav-links a:not(.m-btn):hover,
+.m-nav-links a:not(.m-btn)[aria-current="page"] { color: var(--fg); }
+@media (max-width: 34rem) { .m-nav-hide { display: none; } }
+
+/* Anchor targets clear the fixed bar. Declared once, honoured by native
+   scrolling and by Lenis, which reads computed scroll-margin. */
+.m :target, .m [id] { scroll-margin-top: calc(var(--m-nav-h, 4.25rem) + 2rem); }
+
+/* ----------------------------------------------------------------- footer */
+.m-foot { padding-block: var(--m-block) var(--m-block); }
+.m-foot-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m-block);
+  justify-content: space-between;
+  padding-bottom: var(--m-block);
+}
+.m-foot-cols { display: flex; flex-wrap: wrap; gap: clamp(2rem, 6vw, 5rem); }
+.m-foot-col { display: grid; gap: 0.7rem; align-content: start; }
+.m-foot-col a { color: var(--soft); font-size: var(--m-small); transition: color var(--m-fast) var(--m-ease); }
+.m-foot-col a:hover { color: var(--fg); }
+.m-foot-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  justify-content: space-between;
+  padding-top: var(--m-block);
+  border-top: 1px solid var(--rule);
+  font-size: var(--m-small);
+  color: var(--faint);
+}
+
+/* ============================================================ contents ====
+   The hero of the homepage, taken directly from reference 1: a numbered index
+   set in two columns under a single word.
+
+   Made functional rather than decorative — it is the page's table of contents
+   and its navigation. Clicking scrolls; scrolling marks the current chapter.
+   A site that opens on its own contents page reads as a document rather than
+   as a landing page, which is the whole intent. */
+.m-hero {
+  position: relative;
+  min-height: min(100svh, 60rem);
+  display: flex;
+  align-items: flex-end;
+  padding-block: calc(var(--m-nav-h, 4.25rem) + var(--m-block)) var(--m-block);
+  isolation: isolate;
+}
+.m-hero > .m-wrap { position: relative; z-index: 2; }
+
+.m-hero-grid { display: grid; gap: clamp(2.25rem, 5vw, 3.5rem); width: 100%; }
+.m-hero-word { max-width: 22ch; }
+
+.m-contents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 0.25rem clamp(1.5rem, 5vw, 4rem);
+  border-top: 1px solid var(--rule);
+  padding-top: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+.m-contents a {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.42rem 0;
+  font-size: var(--m-small);
+  color: var(--soft);
+  transition: color var(--m-fast) var(--m-ease);
+}
+.m-contents a:hover { color: var(--fg); }
+.m-contents b {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--m-micro);
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  transition: color var(--m-fast) var(--m-ease);
+}
+.m-contents a:hover b { color: var(--soft); }
+/* The current chapter. Colour and a rule, not a highlight — this has to be
+   legible at a glance without becoming the loudest thing on the page. */
+.m-contents a.is-here { color: var(--fg); }
+.m-contents a.is-here b { color: var(--fg); }
+.m-contents a.is-here span { box-shadow: 0 1px 0 var(--fg); }
+
+/* ============================================================= chapters ===
+   Numbered chapter headers, the structural device that carries the whole
+   homepage. Number, title, and a lead — the same three parts every time. */
+.m-ch-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  padding-bottom: var(--m-block);
+}
+@media (min-width: 56rem) {
+  .m-ch-head { grid-template-columns: 4.5rem minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+  .m-ch-head > :first-child { padding-top: 0.7rem; }
+}
+.m-ch-num {
+  font-size: var(--m-micro);
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Editorial two-column body: a claim on the left, evidence on the right. */
+.m-two {
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 56rem) { .m-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.m-two-wide { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 62rem) { .m-two-wide { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+
+/* A list of claims separated by rules rather than boxed into cards. Cards were
+   explicitly out, and rules hold an editorial page together better anyway. */
+/* A container query, not a viewport one. `.m-row` is used both full-bleed and
+   inside a half-width editorial column; keyed to the viewport it took its
+   three-column layout in a 33rem column and crushed the body copy into five
+   characters per line. It now responds to the space it is actually given. */
+.m-rows { display: grid; container-type: inline-size; }
+.m-row {
+  display: grid;
+  gap: 0.5rem 2rem;
+  padding: clamp(1.25rem, 2.4vw, 1.85rem) 0;
+  border-top: 1px solid var(--rule);
+  align-items: baseline;
+}
+.m-row:last-child { border-bottom: 1px solid var(--rule); }
+@container (min-width: 42rem) {
+  .m-row { grid-template-columns: 3rem minmax(0, 15rem) minmax(0, 1fr); }
+}
+/* No container query support: fall back to the viewport, which is correct for
+   the full-width case and merely stacked in the narrow one. */
+@supports not (container-type: inline-size) {
+  @media (min-width: 46rem) { .m-row { grid-template-columns: 3rem minmax(0, 15rem) minmax(0, 1fr); } }
+}
+.m-row h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
+.m-row p { color: var(--soft); max-width: 52ch; }
+
+/* Figures: numbers that carry weight. Set in the display face, not in a badge. */
+.m-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+.m-fig { display: grid; gap: 0.5rem; }
+.m-fig b {
+  font-size: clamp(2.25rem, 4vw, 3.25rem);
+  font-weight: 200;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.m-fig span { font-size: var(--m-small); color: var(--soft); max-width: 26ch; }
+
+/* A quiet framed still of the product. One hairline and one very soft shadow
+   close to the edge — the same treatment the guest sites use for photographs,
+   so the two halves of the product feel made by the same hand. */
+.m-still {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--bg);
+  box-shadow: 0 1px 2px rgba(10, 12, 16, 0.05), 0 18px 48px -24px rgba(10, 12, 16, 0.28);
+}
+
+/* Pull quote. The only place on the site where type is set optically centred. */
+.m-quote { max-width: 34ch; margin-inline: auto; text-align: center; }
+
+/* ============================================================== weddings ==
+   The warm chapter. Same grid and scale, different palette and display face. */
+.m-wed {
+  --bg: #f6f4ee;
+  --fg: #1c1a16;
+  --soft: #58544a;
+  --faint: #6d6759;
+  --rule: rgba(28, 26, 22, 0.15);
+  background: var(--bg);
+  color: var(--fg);
+}
+.m-wed-dark {
+  --bg: #17150f;
+  --fg: #f4f1e8;
+  --soft: #a9a394;
+  --faint: #8b8574;
+  --rule: rgba(244, 241, 232, 0.16);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* The cinematic hero. The photograph is a real <img> underneath, not a CSS
+   background, so it can be preloaded, sized, and given an empty alt — and so
+   the browser can pick AVIF over WebP. */
+.m-cine { position: relative; isolation: isolate; min-height: min(100svh, 58rem); display: grid; }
+.m-cine-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #b2b096; }
+.m-cine-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The couple sit low in the frame; this keeps them under the type rather
+     than behind it. */
+  object-position: 50% 34%;
+}
+/* Two washes. The first lifts the whole frame further toward paper so the
+   photograph reads as atmosphere; the second is a soft vertical fade that
+   hands the page over to the next chapter without a visible seam. */
+.m-cine-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 85% at 50% 42%, rgba(246, 244, 238, 0.34) 0%, rgba(246, 244, 238, 0.72) 62%, rgba(246, 244, 238, 0.9) 100%),
+    linear-gradient(to bottom, rgba(246, 244, 238, 0.5) 0%, rgba(246, 244, 238, 0) 26%, rgba(246, 244, 238, 0) 68%, var(--bg) 100%);
+}
+.m-cine-body {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  padding-block: calc(var(--m-nav-h, 4.25rem) + var(--m-block)) var(--m-block);
+  text-align: center;
+}
+.m-cine-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.75rem, 8vw, 6.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+  max-width: 16ch;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+.m-cine-title em { font-style: italic; }
+.m-cine-sub { margin-inline: auto; text-align: center; max-width: 44ch; }
+
+/* Scroll cue. A hairline that breathes — 1.4s, opacity and scaleY only, and
+   it stops the moment the page moves. */
+.m-cue { position: absolute; left: 50%; bottom: 1.75rem; z-index: 2; translate: -50% 0; display: grid; justify-items: center; gap: 0.75rem; }
+.m-cue i { display: block; width: 1px; height: 3rem; background: var(--rule); transform-origin: top; }
+@media (prefers-reduced-motion: no-preference) {
+  .m-cue i { animation: m-cue 2.4s var(--m-ease) infinite; }
+}
+@keyframes m-cue {
+  0%   { transform: scaleY(0.15); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+/* The workflow, told as the story of one wedding. Alternating figure and text,
+   held on a rule rather than in a card. */
+.m-step {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+  padding-block: clamp(3rem, 7vw, 6rem);
+  border-top: 1px solid var(--rule);
+}
+@media (min-width: 58rem) {
+  .m-step { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .m-step-flip > :first-child { order: 2; }
+}
+.m-step-copy { display: grid; gap: 1rem; align-content: start; max-width: 44ch; }
+.m-step-copy h3 { font-family: var(--serif); font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 300; line-height: 1.1; letter-spacing: -0.01em; }
+.m-step-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; padding-top: 0.5rem; }
+.m-step-meta span { font-size: var(--m-small); color: var(--soft); }
+.m-step-meta span::before { content: "— "; color: var(--faint); }
+
+/* ================================================================= form ===
+   The access request. One column, generous fields, no placeholder-as-label. */
+.m-col { display: grid; gap: 1rem; align-content: start; max-width: 46ch; }
+
+.m-form { display: grid; gap: clamp(1.1rem, 2vw, 1.5rem); max-width: 34rem; }
+.m-field { display: grid; gap: 0.5rem; }
+.m-field > label { font-size: var(--m-small); font-weight: 500; }
+.m-field .m-hint { font-size: var(--m-small); color: var(--faint); }
+.m-input {
+  width: 100%;
+  font: inherit;
+  font-size: var(--m-body);
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 0.7rem 0;
+  transition: border-color var(--m-fast) var(--m-ease);
+}
+.m-input::placeholder { color: var(--faint); }
+.m-input:hover { border-bottom-color: var(--soft); }
+.m-input:focus { outline: 0; border-bottom-color: var(--fg); }
+.m-input:focus-visible { outline: 0; }
+textarea.m-input { resize: vertical; min-height: 6rem; line-height: 1.55; }
+select.m-input { appearance: none; cursor: pointer; }
+.m-field[data-invalid="true"] .m-input { border-bottom-color: #a9333b; }
+.m-err { font-size: var(--m-small); color: #a9333b; }
+.m-note {
+  border-left: 2px solid var(--rule);
+  padding: 0.25rem 0 0.25rem 1rem;
+  font-size: var(--m-small);
+  color: var(--soft);
+  max-width: 46ch;
+}
+
+/* ============================================================== motion ====
+   Shared with the guest sites by value: 12px rise, 0.985 scale, one curve,
+   never repeated. Elements ship visible and are hidden only once JS has
+   confirmed it can reveal them, so nothing is ever trapped invisible. */
+.m .reveal.armed { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.985); }
+.m .reveal.armed.in { opacity: 1; transform: none; }
+.m .reveal.armed {
+  transition:
+    opacity var(--m-slow) var(--m-ease),
+    transform var(--m-slow) var(--m-ease);
+  will-change: opacity, transform;
+}
+.m .reveal.in { will-change: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .m *, .m *::before, .m *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print: the bloom, the grain and the photograph are all screen-only. */
+@media print {
+  .m-grain, .m-bloom, .m-cine-media, .m-nav, .m-cue { display: none !important; }
+  .m, .m-ink, .m-wed-dark { background: #fff !important; color: #000 !important; }
+}
+
+/* ============================================================ specimens ===
+   Drawn miniatures of the product (see Specimens.tsx for why these are markup
+   rather than screenshots). They inherit the chapter palette, so the same
+   component reads correctly on paper and on ink without a second variant. */
+.m-spec {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fg) 3%, var(--bg));
+  padding: clamp(1rem, 2vw, 1.4rem);
+  display: grid;
+  gap: 0.9rem;
+  font-size: var(--m-small);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 24px 56px -34px rgba(0, 0, 0, 0.35);
+}
+.m-spec-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--m-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.m-spec-bar span:first-child { color: var(--soft); }
+
+.m-spec-rows { display: grid; }
+.m-spec-rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.m-spec-rows li:last-child { border-bottom: 0; padding-bottom: 0; }
+.m-spec-name { color: var(--fg); }
+.m-spec-tags { grid-column: 1; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.m-spec-tags i {
+  font-style: normal;
+  font-size: var(--m-micro);
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0.15em 0.6em;
+}
+.m-spec-status { grid-row: 1; grid-column: 2; color: var(--soft); font-variant-numeric: tabular-nums; }
+.m-spec-status.is-off { color: var(--faint); }
+
+/* Set like a printed programme: no circles, no connecting line, no icons. */
+.m-spec-prog { display: grid; }
+.m-spec-prog li {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.m-spec-prog li:last-child { border-bottom: 0; padding-bottom: 0; }
+.m-spec-prog b { font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.m-spec-prog span { color: var(--fg); }
+.m-spec-prog i { font-style: normal; font-size: var(--m-micro); letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+
+.m-spec-tables { display: grid; gap: 0.6rem; }
+.m-spec-table {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+}
+.m-spec-table span { color: var(--fg); }
+.m-spec-table b { font-weight: 400; color: var(--soft); font-variant-numeric: tabular-nums; }
+.m-spec-table i {
+  grid-column: 1 / -1;
+  display: block;
+  block-size: 1px;
+  background: var(--fg);
+  opacity: 0.55;
+}
+
+/* The invitation. The only specimen set in the wedding voice, because it is
+   the only one a guest ever sees. */
+.m-spec-invite { text-align: center; gap: 0.6rem; padding: clamp(1.5rem, 3.5vw, 2.5rem); }
+.m-spec-names {
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.m-spec-hair { block-size: 1px; inline-size: 3rem; background: var(--rule); margin: 0.4rem auto; }
+.m-spec-guest { font-family: var(--script); font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.1; }
+.m-spec-guest span {
+  display: block;
+  font-family: var(--sans);
+  font-size: var(--m-micro);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 0.4rem;
+}
+.m-spec-line { color: var(--soft); max-width: 30ch; margin-inline: auto; }
+.m-spec-quiet { font-size: var(--m-micro); letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }

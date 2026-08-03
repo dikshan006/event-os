@@ -391,3 +391,46 @@ model EmailLog {
   @@index([studioId, createdAt])
   @@index([status, createdAt])
 }
+
+/**
+ * A planner asking to be let in.
+ *
+ * EventOS has no self-serve signup: studios are created by the platform owner,
+ * one at a time. That is a deliberate product decision, not a missing feature —
+ * but it leaves the public site with nowhere to send anyone. This is that
+ * somewhere.
+ *
+ * Kept entirely separate from User and Studio. Nothing here grants access; a
+ * row is a lead until an admin acts on it, at which point the ordinary planner
+ * creation path runs and this row is only marked.
+ */
+model AccessRequest {
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  /** Studio or company name. Optional: solo planners often have neither. */
+  company String?
+  website String?
+  /** Free text, kept as a string rather than an enum — the useful answers are
+      ranges people describe in their own words ("about 12", "6-8 plus corporate"). */
+  volume  String?
+  message String?
+
+  status     AccessRequestStatus @default(NEW)
+  /** Set when an admin resolves it, so the inbox can show how long it took. */
+  reviewedAt DateTime?
+  note       String?
+
+  /** Coarse abuse signal only. Never surfaced, never used for analytics. */
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+enum AccessRequestStatus {
+  NEW
+  INVITED
+  DECLINED
+}

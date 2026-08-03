@@ -7,7 +7,24 @@ schedule personalized to their groups. Publishing is gated by Stripe
 ($99/wedding, first one free).
 
 Built on **Next.js 15 (App Router) · PostgreSQL + Prisma · Auth.js v5 ·
-Stripe Checkout · Resend**. See `ARCHITECTURE.md` (delivered alongside this
+Stripe Checkout · Resend**.
+
+## Surfaces
+
+| Route | What it is |
+|---|---|
+| `/` | Public EventOS homepage — an editorial document opening on its own contents page |
+| `/weddings` | Public product page — the year of a wedding, told in order |
+| `/request-access` | The only public write path. There is no self-serve signup by design |
+| `/login` · `/dashboard` | One auth system. `/dashboard` resolves to `/admin` or `/studio` by role |
+| `/studio/*` | Planner dashboard |
+| `/admin/*` | Platform admin, including the access-request inbox |
+| `/w/[slug]` · `/invite/[code]` | Guest wedding websites and personalised invitations |
+
+The public site is a `(marketing)` route group with its own stylesheet
+(`src/app/(marketing)/marketing.css`); it shares the fonts, the motion tokens
+and the `Reveal`/`SmoothScroll` components with the guest sites, and nothing
+else. The dashboards never download it. See `ARCHITECTURE.md` (delivered alongside this
 repo) for the full system design this implements.
 
 ---

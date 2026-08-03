@@ -55,3 +55,23 @@ export const zStudioBranding = z.object({
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().max(40).optional().or(z.literal("")),
 });
+
+/**
+ * Public access request. Deliberately forgiving: this is the first thing a
+ * prospective customer ever submits, and a form that rejects "eventos.co" for
+ * missing a scheme loses the lead rather than improving the data.
+ *
+ * Only name and email are required. Everything else is context we would like
+ * but will not trade a submission for.
+ */
+export const zAccessRequest = z.object({
+  name: z.string().trim().min(2, "Please tell us your name.").max(120),
+  email: z.string().trim().toLowerCase().email("That does not look like an email address."),
+  company: z.string().trim().max(140).optional().or(z.literal("")),
+  website: z.string().trim().max(200).optional().or(z.literal("")),
+  volume: z.string().trim().max(80).optional().or(z.literal("")),
+  message: z.string().trim().max(2000).optional().or(z.literal("")),
+  /** Honeypot. Real people never see this field, so anything in it is a bot. */
+  role: z.string().max(0).optional().or(z.literal("")),
+});
+export type AccessRequestInput = z.infer<typeof zAccessRequest>;
