@@ -17,12 +17,13 @@ type GuestOption = { id: string; name: string; groups: string[] };
  * interface rather than only enforced on the server.
  */
 export function AddGuestDialog({
-  action, weddingId, tableId, tableName, remaining, guests,
+  action, weddingId, tableId, tableName, eventTitle, remaining, guests,
 }: {
   action: (formData: FormData) => Promise<void>;
   weddingId: string;
   tableId: string;
   tableName: string;
+  eventTitle: string;
   remaining: number;
   guests: GuestOption[];
 }) {
@@ -53,9 +54,10 @@ export function AddGuestDialog({
         onClick={e => { if (e.target === ref.current) ref.current?.close(); }}>
         <div className="dlg-body" onSubmit={() => ref.current?.close()}>
           <h3 className="dlg-title">Seat a guest at {tableName}</h3>
+          <p className="dlg-desc" style={{ marginTop: -6 }}>{eventTitle}</p>
           <p className="dlg-desc">
-            {remaining} seat{remaining === 1 ? "" : "s"} free. Only guests who have not been
-            seated yet are listed.
+            {remaining} seat{remaining === 1 ? "" : "s"} free. Listing guests who are not yet
+            seated for this event — someone seated at another event still appears here.
           </p>
 
           <input className="inp" autoFocus placeholder="Search by name or group…"
@@ -90,13 +92,13 @@ export function AddGuestDialog({
 
 /** Rename a table or change its capacity. */
 export function EditTableDialog({
-  action, weddingId, tableId, name, seats, seated,
+  action, weddingId, tableId, name, capacity, seated,
 }: {
   action: (formData: FormData) => Promise<void>;
   weddingId: string;
   tableId: string;
   name: string;
-  seats: number;
+  capacity: number;
   seated: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -115,9 +117,9 @@ export function EditTableDialog({
               <input id={`n-${tableId}`} className="inp" name="name" defaultValue={name} maxLength={60} required />
             </div>
             <div className="field">
-              <label htmlFor={`s-${tableId}`}>Seats</label>
-              <input id={`s-${tableId}`} className="inp" name="seats" type="number"
-                min={Math.max(1, seated)} max={30} defaultValue={seats} required />
+              <label htmlFor={`s-${tableId}`}>Capacity</label>
+              <input id={`s-${tableId}`} className="inp" name="capacity" type="number"
+                min={Math.max(1, seated)} max={30} defaultValue={capacity} required />
               <span className="hint">
                 {seated > 0
                   ? `${seated} guest${seated === 1 ? " is" : "s are"} seated here, so this cannot go below ${seated}.`
@@ -136,12 +138,13 @@ export function EditTableDialog({
 
 /** Deleting a table returns its guests to the unassigned list. */
 export function DeleteTableDialog({
-  action, weddingId, tableId, name, seated,
+  action, weddingId, tableId, name, eventTitle, seated,
 }: {
   action: (formData: FormData) => Promise<void>;
   weddingId: string;
   tableId: string;
   name: string;
+  eventTitle: string;
   seated: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -154,7 +157,7 @@ export function DeleteTableDialog({
           <h3 className="dlg-title">Delete {name}?</h3>
           <p className="dlg-desc">
             {seated > 0
-              ? `${seated} guest${seated === 1 ? "" : "s"} will return to the unassigned list. No guest is deleted.`
+              ? `${seated} guest${seated === 1 ? "" : "s"} will become unassigned for ${eventTitle}. No guest is deleted, and their seats at other events are untouched.`
               : "This table has no guests seated at it."}
           </p>
           <form action={action}>

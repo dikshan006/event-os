@@ -134,7 +134,6 @@ model Wedding {
   registry    RegistryItem[]
   funds       CashFund[]
   photos      Photo[]
-  tables      Table[]
   publishedAt DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -150,17 +149,8 @@ model Guest {
   name       String
   email      String?
   phone      String?
-  /**
-   * Seating. A guest belongs to at most one table, which the nullable
-   * foreign key enforces structurally — there is no way to represent the same
-   * guest at two tables, so the rule cannot be broken by a bug in a service.
-   * `onDelete: SetNull` means deleting a table returns its guests to the
-   * unassigned pool rather than deleting them.
-   */
-  tableId    String?
-  table      Table?    @relation(fields: [tableId], references: [id], onDelete: SetNull)
-  /** Position within the table. Reserved for drag-and-drop ordering later. */
-  seatOrder  Int       @default(0)
+  /** One seat per event — see the Seat model. */
+  seats      Seat[]
   // V1 pragmatic choice: group names as a Postgres text[] on the guest.
   // The join-table version in ARCHITECTURE.md is a straight migration later.
   groups     String[]  @default([])
@@ -174,37 +164,69 @@ model Guest {
 }
 
 /**
- * A reception table.
+ * A table, belonging to one event.
  *
- * Shaped for the features that come next, so none of them need a migration
- * that moves existing data:
- *  - `shape` and `seats` describe the table itself, which a printable chart
- *    and a floor plan both need.
- *  - `x`/`y` are normalised 0–1 canvas coordinates, null until someone places
- *    the table on a plan. Normalised rather than pixels so a layout survives
- *    a change of canvas size.
- *  - `Guest.seatOrder` carries drag-and-drop ordering within a table.
+ * Seating is per-event, not per-wedding: a ceremony and a cocktail hour have
+ * no tables, while a reception dinner and a farewell brunch each have their
+ * own, with different people at different tables. An event simply has tables
+ * or it does not — no "needs seating" flag to keep in sync with reality.
  *
- * Automatic seating optimisation needs no schema at all: it reads guest
- * groups and RSVPs, which already exist, and writes `tableId`.
+ * `weddingId` is denormalized alongside `eventId` so the planner page can
+ * count across a whole wedding without joining through every event.
+ *
+ * Shaped for what comes next: `shape` and `capacity` serve a printable chart,
+ * normalised 0–1 `x`/`y` (null until placed) serve a floor plan, and
+ * `Seat.seatOrder` carries drag-and-drop ordering. Automatic seating needs no
+ * schema at all — it reads groups and RSVPs and writes Seat rows.
  */
 model Table {
   id        String     @id @default(cuid())
+  eventId   String
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  // Denormalized scalar, deliberately not a relation: deletion already
+  // cascades Wedding -> Event -> Table, and this exists only so wedding-wide
+  // queries do not have to join through every event.
   weddingId String
-  wedding   Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   studioId  String // denormalized for O(1) tenant checks, as on Guest
   name      String
-  seats     Int        @default(8)
+  capacity  Int        @default(8)
   shape     TableShape @default(ROUND)
   note      String?
   /** Normalised floor-plan position, null until placed. */
   x         Float?
   y         Float?
   sortOrder Int        @default(0)
-  guests    Guest[]
+  seats     Seat[]
   createdAt DateTime   @default(now())
 
-  @@index([weddingId, sortOrder])
+  @@index([eventId, sortOrder])
+  @@index([weddingId])
+  @@index([studioId])
+}
+
+/**
+ * One guest, at one table, for one event.
+ *
+ * `eventId` is denormalized from the table purely so the database can hold
+ * `@@unique([guestId, eventId])`. That constraint is the whole point: a guest
+ * cannot be seated at two tables within the same event, and it is enforced by
+ * Postgres rather than by a service check that a future code path could miss.
+ * Across different events they are free to sit anywhere.
+ */
+model Seat {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  eventId   String // denormalized so the unique constraint below is possible
+  studioId  String
+  /** Position at the table. Reserved for drag-and-drop ordering. */
+  seatOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([guestId, eventId])
+  @@index([tableId, seatOrder])
   @@index([studioId])
 }
 
@@ -228,6 +250,7 @@ model Event {
   dressCode   String?
   isPublic    Boolean  @default(false)
   audiences   String[] @default([]) // group names; empty + isPublic=false means nobody sees it
+  tables      Table[]
 
   @@index([weddingId, sortKey])
 }

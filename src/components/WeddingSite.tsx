@@ -33,12 +33,14 @@ type Props = {
   wedding: Wedding & { faqs: Faq[]; registry: RegistryItem[]; funds: CashFund[] };
   studio: Studio;
   events: Event[]; // already filtered: public site → isPublic only; portal → personalized
-  guest?: (Guest & { rsvp: Rsvp | null; table?: { name: string } | null }) | null;
+  guest?: (Guest & { rsvp: Rsvp | null }) | null;
+  /** Table name keyed by event id, for the guest who is viewing. */
+  tableByEvent?: Record<string, string>;
   photos?: PhotoSet;
   rsvpAction?: (code: string, input: { status: string; meal: string; dietary: string; notes: string }) => Promise<void>;
 };
 
-export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHOTOS, rsvpAction }: Props) {
+export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHOTOS, tableByEvent = {}, rsvpAction }: Props) {
   const theme = THEMES[wedding.template];
   const has = (s: string) => wedding.sections.includes(s);
   const days = [...new Set(events.map(e => e.day))];
@@ -188,21 +190,19 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
                   {e.location && <p className="s-prog-where">{e.location}</p>}
                   {e.dressCode && <p className="s-prog-dress">{e.dressCode}</p>}
                   {e.description && <p className="s-prog-note">{e.description}</p>}
+                  {/* Seating belongs to the event, so it is shown here rather
+                      than as a detached section further down the page. */}
+                  {tableByEvent[e.id] && (
+                    <div className="s-seat">
+                      <p className="s-seat-label">Your table</p>
+                      <p className="s-seat-table">{tableByEvent[e.id]}</p>
+                    </div>
+                  )}
                 </Reveal>
               ))}
             </div>
           ))}
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
-
-          {/* Shown only to a guest who has been seated. Placed with the
-              programme, because a table number is something you look up on the
-              day rather than while browsing. */}
-          {guest?.table && (
-            <Reveal className="s-seat">
-              <p className="s-seat-label">Reception</p>
-              <p className="s-seat-table">{guest.table.name}</p>
-            </Reveal>
-          )}
         </section>
 
         {/* --- The gallery is a separate experience, reached deliberately.

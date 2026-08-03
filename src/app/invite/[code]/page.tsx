@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { WeddingSite } from "@/components/WeddingSite";
 import { personalEvents } from "@/server/services/events";
 import { photoSetFor } from "@/server/services/photos";
+import { seatsForGuest } from "@/server/services/seating";
 import { submitRsvp } from "@/server/services/rsvp";
 import { zRsvp } from "@/lib/validators";
 import { rateLimit } from "@/lib/ratelimit";
@@ -17,7 +18,6 @@ export default async function GuestPortal({ params }: { params: Promise<{ code: 
     where: { inviteCode: code },
     include: {
       rsvp: true,
-      table: { select: { name: true } },
       wedding: {
         include: {
           studio: true,
@@ -31,10 +31,15 @@ export default async function GuestPortal({ params }: { params: Promise<{ code: 
   // Portals work for PUBLISHED weddings; drafts stay private to the studio.
   if (!guest || guest.wedding.status !== "PUBLISHED") notFound();
 
-  const [events, photos] = await Promise.all([
+  const [events, photos, seats] = await Promise.all([
     personalEvents(guest.weddingId, guest.groups),
     photoSetFor(guest.weddingId),
+    seatsForGuest(guest.id),
   ]);
+
+  // Table name per event, so the invitation can show it beside the event it
+  // belongs to rather than as one detached "your table" line.
+  const tableByEvent = Object.fromEntries(seats.map(s => [s.eventId, s.table.name]));
 
   async function rsvpAction(inviteCode: string, input: { status: string; meal: string; dietary: string; notes: string }) {
     "use server";
@@ -50,6 +55,7 @@ export default async function GuestPortal({ params }: { params: Promise<{ code: 
       events={events}
       guest={guest}
       photos={photos}
+      tableByEvent={tableByEvent}
       rsvpAction={rsvpAction}
     />
   );
