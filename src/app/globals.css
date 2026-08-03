@@ -305,19 +305,7 @@ body:has(dialog[open]){overflow:hidden}
    the photograph swallowing the page. A square-ish 2px radius reads as printed
    stock; anything larger reads as a UI card. */
 .s-plate{margin:0 var(--gutter);max-width:1080px;margin-inline:auto;padding:0 var(--gutter)}
-/* The placeholder shown before a hero is uploaded dissolves the same way, so
-   the composition is consistent whether or not a photograph exists yet. */
 .s-plate-fallback{aspect-ratio:16/9}
-@supports (mask-composite: intersect) or (-webkit-mask-composite: source-in){
-  .s-plate-fallback{
-    -webkit-mask-image:
-      linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
-      linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
-    mask-image:
-      linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
-      linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
-    -webkit-mask-composite:source-in;mask-composite:intersect}
-}
 
 /* ------------------------------------------------------------- our story --
    An editorial spread: one portrait, text beside it, aligned on a shared
@@ -367,8 +355,7 @@ body:has(dialog[open]){overflow:hidden}
   /* Intelligent crop: the detail centroid rather than the geometric middle. */
   object-position:var(--ph-focus-x,50%) var(--ph-focus-y,50%)}
 
-/* Scrim + vignette, scaled per image. No inset hairline: a 1px inner edge is
-   precisely the "photo in a box" cue we are trying to lose. */
+/* Scrim + vignette, scaled per image. */
 .s-ph.toned::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:
     linear-gradient(to bottom,
@@ -378,36 +365,38 @@ body:has(dialog[open]){overflow:hidden}
     radial-gradient(125% 95% at 50% 50%, transparent 55%,
       color-mix(in srgb, var(--sb) calc(var(--ph-vignette,.12) * 165%), transparent))}
 
-/* ------------------------------------------------------------ soft edges --
-   The photograph dissolves into the page rather than ending at a border.
+/* ------------------------------------------------------- frame and depth --
+   A printed-album edge: one hairline and a shadow held tight against it.
 
-   A mask is used rather than painting the background colour inward, because a
-   mask genuinely removes the pixels: the result is correct over any surface
-   and cannot band or mismatch if a template background changes. Two linear
-   gradients — one per axis — are intersected so all four edges feather while
-   the centre stays fully opaque.
+   The hairline is mixed from the template's own ink and background, never
+   pure black or white — so Modern Sage gets a sage-grey edge, Classic
+   Elegance a warm one, and neither reads as a UI border. It is drawn with an
+   inset box-shadow rather than `border` so it costs no layout and cannot
+   shift the image by a pixel.
 
-   The fade distance comes from the image's own luminance (see photo-tone.ts),
-   so a dark frame, which meets a light page hardest, gets the longer
-   dissolve. Applied to the whole figure, so the blur placeholder and the scrim
-   fade with the photograph and no layer ends on a hard line.
+   The shadow is deliberately short and close: 1px contact plus a 10px
+   diffusion pulled in by a negative spread. A larger blur or any vertical
+   offset immediately reads as a card floating above the page, which is the
+   thing to avoid. Both strengths come from the image's own luminance — a
+   bright photograph nearly matches a pale page and needs the edge to say
+   where it ends, a dark one already separates and would look outlined.
 
-   Guarded by @supports: where mask compositing is unavailable the photograph
-   simply renders with its scrim and vignette and no border — the previous
-   behaviour, which is a reasonable floor rather than a broken one. */
-@supports (mask-composite: intersect) or (-webkit-mask-composite: source-in){
-  .s-ph.toned{
-    --f:var(--ph-feather,7%);
-    -webkit-mask-image:
-      linear-gradient(to right, transparent 0, #000 var(--f), #000 calc(100% - var(--f)), transparent 100%),
-      linear-gradient(to bottom, transparent 0, #000 var(--f), #000 calc(100% - var(--f)), transparent 100%);
-    mask-image:
-      linear-gradient(to right, transparent 0, #000 var(--f), #000 calc(100% - var(--f)), transparent 100%),
-      linear-gradient(to bottom, transparent 0, #000 var(--f), #000 calc(100% - var(--f)), transparent 100%);
-    -webkit-mask-composite:source-in;
-    mask-composite:intersect}
+   Corners stay square. At this weight a radius is invisible, and square is
+   the more editorial choice. */
+.s-ph.toned{
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--si) calc(var(--ph-edge,.08) * 100%), transparent),
+    0 1px 1px color-mix(in srgb, var(--si) calc(var(--ph-depth,.06) * 60%), transparent),
+    0 4px 10px -6px color-mix(in srgb, var(--si) calc(var(--ph-depth,.06) * 100%), transparent)}
 
-}
+/* The placeholder shown before a hero is uploaded is framed identically, so
+   the composition holds whether or not a photograph exists yet. */
+.s-plate-fallback{
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--si) 8%, transparent),
+    0 1px 1px color-mix(in srgb, var(--si) 4%, transparent),
+    0 4px 10px -6px color-mix(in srgb, var(--si) 6%, transparent)}
+
 
 /* Dark photographs are lifted very slightly instead of scrimmed, so low-key
    frames read as intentional rather than underexposed. */

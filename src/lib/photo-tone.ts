@@ -83,15 +83,19 @@ export function toneStyle(tone: PhotoTone): Record<string, string> {
   // the corners would otherwise glare.
   const vignette = clamp(0.1 + (tone.lum - 0.4) * 0.2, 0.08, 0.22);
 
-  // --- Edge feather ------------------------------------------------------
-  // How far the photograph dissolves into the page, as a percentage of its
-  // own size. This is the inverse of the scrim rule, and for the opposite
-  // reason: every template background is light, so a *dark* photograph has the
-  // harder edge against it and needs the longer fade to stop reading as a
-  // rectangle pasted onto the page. A bright frame already meets the
-  // background halfway and needs almost none — feathering it heavily would
-  // just look like a smudge.
-  const feather = clamp(6 + (0.55 - tone.lum) * 17, 4.5, 15);
+  // --- Edge and depth ----------------------------------------------------
+  // The photograph is framed rather than dissolved: a hairline plus a shadow
+  // that sits tight to the edge. Both are mixed from the template's own ink
+  // and background, never from pure black or white, so a sage invitation gets
+  // a sage-grey edge and a champagne one gets a warm edge.
+  //
+  // Strength is inverted against luminance, because a bright photograph nearly
+  // matches a pale page and needs the edge to define where it ends, while a
+  // dark one already separates and would look outlined if given the same
+  // weight. Both stay under 0.2 — the effect should register as depth, not as
+  // a border.
+  const edge = clamp(0.07 + (tone.lum - 0.42) * 0.16, 0.05, 0.15);
+  const depth = clamp(0.05 + (tone.lum - 0.42) * 0.1, 0.04, 0.1);
 
   return {
     "--ph-scrim": String(round(scrim)),
@@ -99,7 +103,8 @@ export function toneStyle(tone: PhotoTone): Record<string, string> {
     "--ph-saturate": String(round(saturate)),
     "--ph-contrast": String(round(contrast)),
     "--ph-vignette": String(round(vignette)),
-    "--ph-feather": `${round(feather, 1)}%`,
+    "--ph-edge": String(round(edge)),
+    "--ph-depth": String(round(depth)),
     "--ph-focus-x": `${round(clamp(tone.focusX, 12, 88), 1)}%`,
     "--ph-focus-y": `${round(clamp(tone.focusY, 12, 88), 1)}%`,
   };
