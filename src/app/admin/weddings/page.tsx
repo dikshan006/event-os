@@ -8,7 +8,7 @@ export default async function AdminWeddings() {
   const weddings = await prisma.wedding.findMany({ orderBy: { createdAt: "desc" }, include: { studio: true } });
   return (
     <>
-      <PageHead eyebrow="Weddings" title="All Weddings" sub="Every wedding across every planner studio." />
+      <PageHead back="/admin" eyebrow="Weddings" title="All Weddings" sub="Every wedding across every planner studio." />
       <div className="card" style={{ overflow: "hidden" }}>
         <table className="tbl">
           <thead><tr><th>Couple</th><th>Planner</th><th>Template</th><th>Date</th><th>Status</th><th></th></tr></thead>

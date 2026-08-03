@@ -29,7 +29,7 @@ export default async function PlannerDetail({ params }: { params: Promise<{ id: 
   return (
     <>
       <Link className="btn btn-ghost btn-sm" href="/admin/planners" style={{ marginBottom: 10 }}>← All planners</Link>
-      <PageHead eyebrow="Planner profile" title={studio.name}
+      <PageHead back="/admin/planners" eyebrow="Planner profile" title={studio.name}
         sub={`${studio.website ?? ""}${studio.instagram ? ` · ${studio.instagram}` : ""}`}
         actions={<StatusChip s={studio.status} />} />
       <div className="stats">

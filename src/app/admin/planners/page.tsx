@@ -99,7 +99,7 @@ export default async function PlannersPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead eyebrow="Planners" title="Planner Studios"
+      <PageHead back="/admin" eyebrow="Planners" title="Planner Studios"
         sub="Creating a planner automatically generates their private, branded studio with a secure login." />
 
       {flash && (

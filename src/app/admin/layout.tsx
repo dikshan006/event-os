@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="shell" style={{ "--accent": "#211E1B", "--accent-soft": "#211E1B14" } as React.CSSProperties}>
       <Sidebar
-        brand="Platform Admin"
+        brand="EventOS Admin"
         brandMono="✦"
         items={[
           { href: "/admin", label: "Dashboard" },

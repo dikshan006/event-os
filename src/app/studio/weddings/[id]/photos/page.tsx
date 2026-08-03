@@ -130,7 +130,7 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHead
+      <PageHead back={`/studio/weddings/${w.id}`}
         eyebrow={`${w.partnerOne} & ${w.partnerTwo}`}
         title="Photos"
         sub="Every image is resized, compressed and stored in four widths as AVIF and WebP the moment you upload it, so the website stays fast on a phone."

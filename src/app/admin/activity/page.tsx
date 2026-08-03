@@ -7,7 +7,7 @@ export default async function AdminActivity() {
   const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
   return (
     <>
-      <PageHead eyebrow="Activity" title="Activity Log" sub="Every important action across the platform, newest first." />
+      <PageHead back="/admin" eyebrow="Activity" title="Activity Log" sub="Every important action across the platform, newest first." />
       <div className="card" style={{ overflow: "hidden" }}>
         <table className="tbl">
           <thead><tr><th>When</th><th>Actor</th><th>Action</th></tr></thead>

@@ -114,7 +114,7 @@ export default async function SeatingPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <PageHead
+      <PageHead back={`/studio/weddings/${w.id}`}
         eyebrow={`${w.partnerOne} & ${w.partnerTwo}`}
         title="Seating"
         sub="Each event keeps its own plan. A ceremony needs no tables; a dinner and a brunch can seat the same guests differently."

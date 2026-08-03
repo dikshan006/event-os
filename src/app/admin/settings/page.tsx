@@ -21,7 +21,7 @@ export default async function AdminSettings() {
 
   return (
     <>
-      <PageHead eyebrow="Settings" title="Platform Settings" sub="Pricing applies instantly to every planner's next publish." />
+      <PageHead back="/admin" eyebrow="Settings" title="Platform Settings" sub="Pricing applies instantly to every planner's next publish." />
       <form action={save} className="card pad frm" style={{ maxWidth: 520 }}>
         <div className="field"><label>Price per published wedding ($)</label>
           <input className="inp" name="price" type="number" step="1" min="0" defaultValue={settings.pricePerWeddingCents / 100} /></div>

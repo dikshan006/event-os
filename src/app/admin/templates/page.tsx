@@ -9,7 +9,7 @@ export default async function AdminTemplates() {
   const usage = Object.fromEntries(counts.map(c => [c.template, c._count]));
   return (
     <>
-      <PageHead eyebrow="Templates" title="Template Manager"
+      <PageHead back="/admin" eyebrow="Templates" title="Template Manager"
         sub="Three fixed, premium templates. Planners personalize content — the layouts never break." />
       <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
         {Object.entries(TEMPLATES).map(([k, T]) => (

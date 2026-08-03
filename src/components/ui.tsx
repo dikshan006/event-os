@@ -1,11 +1,18 @@
 import Link from "next/link";
+import { BackLink } from "./BackLink";
 
-export function PageHead({ eyebrow, title, sub, actions }: {
+export function PageHead({ eyebrow, title, sub, actions, back }: {
   eyebrow?: string; title: string; sub?: string; actions?: React.ReactNode;
+  /**
+   * Logical parent for the Back control, used when the planner arrived here
+   * directly. Pages that are already a top level (the dashboard) omit it.
+   */
+  back?: string;
 }) {
   return (
     <div className="page-head">
       <div>
+        {back && <BackLink fallback={back} />}
         {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1 className="h1">{title}</h1>
         {sub && <p className="sub">{sub}</p>}

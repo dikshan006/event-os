@@ -1,4 +1,4 @@
-# Production Audit — Wedding Planner OS
+# Production Audit — EventOS
 
 Scope: full static audit of every file, with fixes applied only where something
 was broken, unsafe, or missing for production. Working code was left untouched.
@@ -153,7 +153,7 @@ None. (Rate limiting, hashing, and tokens use Node built-ins.)
    DNS records). Until verified, Resend only delivers to your own account
    email, from `onboarding@resend.dev` — this alone likely explains what you saw.
 2. Set `EMAIL_FROM` to an address **on that verified domain**
-   (e.g. `WeddingOS <hello@yourdomain.com>`).
+   (e.g. `EventOS <hello@yourdomain.com>`).
 3. Set `RESEND_API_KEY` and a production `APP_URL` (it's used in every emailed link).
 4. After deploying: send one invitation, then check the Resend dashboard
    *and* the `EmailLog` table — you should see `SENT` rows with message ids.

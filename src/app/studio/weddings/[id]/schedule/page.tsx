@@ -38,7 +38,7 @@ export default async function SchedulePage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHead eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Schedule Builder"
+      <PageHead back={`/studio/weddings/${w.id}`} eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Schedule Builder"
         sub="Create events once and choose the audience. Every guest automatically receives their own personalized schedule." />
       <div className="split">
         <div>

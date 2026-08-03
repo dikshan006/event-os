@@ -13,7 +13,7 @@ export default async function BillingPage() {
 
   return (
     <>
-      <PageHead eyebrow="Billing" title="Payments & Receipts"
+      <PageHead back="/studio" eyebrow="Billing" title="Payments & Receipts"
         sub={`Pricing: ${settings.firstWeddingFree ? "first published wedding free, then " : ""}${money(settings.pricePerWeddingCents)} per published wedding.`} />
       {!studio.freeWeddingUsed && settings.firstWeddingFree && (
         <div className="note" style={{ marginBottom: 20 }}>Your first published wedding is on us.</div>

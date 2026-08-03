@@ -64,7 +64,7 @@ export default async function GuestsPage({ params, searchParams }: {
 
   return (
     <>
-      <PageHead eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Guest Management"
+      <PageHead back={`/studio/weddings/${w.id}`} eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Guest Management"
         sub="Assign guests to groups — their personalized schedules and invitation links follow automatically."
         actions={
           <>

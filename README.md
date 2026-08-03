@@ -1,4 +1,4 @@
-# Wedding Planner OS
+# EventOS
 
 Multi-tenant SaaS for professional wedding planners: a platform owner creates
 white-labeled **Planner Studios**; planners build weddings from three fixed

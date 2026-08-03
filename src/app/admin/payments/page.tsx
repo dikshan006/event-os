@@ -8,7 +8,7 @@ export default async function AdminPayments() {
   const payments = await prisma.payment.findMany({ orderBy: { createdAt: "desc" }, include: { studio: true } });
   return (
     <>
-      <PageHead eyebrow="Payments" title="Payments" sub="Every charge on the platform. Refunds are issued via Stripe and reconciled by webhook." />
+      <PageHead back="/admin" eyebrow="Payments" title="Payments" sub="Every charge on the platform. Refunds are issued via Stripe and reconciled by webhook." />
       <div className="card" style={{ overflow: "hidden" }}>
         <table className="tbl">
           <thead><tr><th>Date</th><th>Planner</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>

@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { prisma } from "@/lib/db";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.EMAIL_FROM ?? "WeddingOS <onboarding@resend.dev>";
+const FROM = process.env.EMAIL_FROM ?? "EventOS <onboarding@resend.dev>";
 
 export type EmailKind =
   | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE"
@@ -96,7 +96,7 @@ export const emails = {
     sendEmail({
       to: o.to, kind: "PLANNER_INVITE", studioId: o.studioId,
       subject: `Your ${o.studio} studio is ready`,
-      html: shell("Wedding Planner OS", "#9D5C64",
+      html: shell("EventOS", "#9D5C64",
         `Hi ${esc(o.ownerName)},<br/><br/>Your planner studio <b>${esc(o.studio)}</b> has been created.<br/>
          Sign in here to set up your first wedding: <a href="${o.link}">${o.link}</a><br/><br/>
          Your temporary password was shared by the platform owner \u2014 change it after first login.`),
@@ -106,15 +106,15 @@ export const emails = {
     sendEmail({
       to: o.to, kind: "PAYMENT_RECEIPT", studioId: o.studioId,
       subject: `Receipt \u2014 ${o.desc}`,
-      html: shell("Wedding Planner OS", "#9D5C64",
+      html: shell("EventOS", "#9D5C64",
         `Payment received for <b>${esc(o.desc)}</b>: ${esc(o.amount)}. A copy is stored in your Billing page.`),
     }),
 
   passwordReset: (o: { to: string; name: string; link: string }) =>
     sendEmail({
       to: o.to, kind: "PASSWORD_RESET",
-      subject: "Reset your Wedding Planner OS password",
-      html: shell("Wedding Planner OS", "#9D5C64",
+      subject: "Reset your EventOS password",
+      html: shell("EventOS", "#9D5C64",
         `Hi ${esc(o.name)},<br/><br/>We received a request to reset your password. This link is valid for 60 minutes:<br/>
          <a href="${o.link}">${o.link}</a><br/><br/>If you didn't request this, you can safely ignore this email.`),
     }),

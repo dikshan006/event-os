@@ -34,8 +34,8 @@ const script = Pinyon_Script({
 });
 
 export const metadata: Metadata = {
-  title: "Wedding Planner OS",
-  description: "The operating system for professional wedding planners.",
+  title: "EventOS",
+  description: "EventOS — the operating system for professional wedding planners.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -12,7 +12,7 @@ export default async function RsvpsPage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <PageHead eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="RSVP Tracking"
+      <PageHead back={`/studio/weddings/${w.id}`} eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="RSVP Tracking"
         sub="Responses land here instantly as guests reply through their invitation links." />
       <div className="stats">
         {["ACCEPTED", "DECLINED", "MAYBE", "AWAITING"].map(s => (

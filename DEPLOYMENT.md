@@ -1,4 +1,4 @@
-# Deploying Wedding Planner OS
+# Deploying EventOS
 
 Target stack: **Vercel** (app) · **Neon** (Postgres) · **Cloudflare R2** (photos) ·
 **Resend** (email) · **Stripe** (publishing fees).
@@ -42,7 +42,7 @@ Variables**, scoped to *Production* (and *Preview*, if you want previews to work
 | `S3_REGION` | yes | `auto` for R2; the real region for AWS |
 | `S3_PUBLIC_URL` | yes | The bucket's public URL or custom domain, e.g. `https://photos.yourdomain.com` |
 | `RESEND_API_KEY` | yes | Resend → API Keys |
-| `EMAIL_FROM` | yes | `WeddingOS <hello@yourdomain.com>` — must be on a domain verified in Resend |
+| `EMAIL_FROM` | yes | `EventOS <hello@yourdomain.com>` — must be on a domain verified in Resend |
 | `STRIPE_SECRET_KEY` | yes | Stripe → Developers → API keys (`sk_live_…`) |
 | `STRIPE_WEBHOOK_SECRET` | yes | From step 5 below (`whsec_…`) |
 

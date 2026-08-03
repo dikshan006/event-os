@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div className="script" style={{ fontSize: 56, color: "var(--rose)", lineHeight: 1 }}>W</div>
         <div style={{ fontSize: 12, letterSpacing: ".34em", textTransform: "uppercase", fontWeight: 500, marginTop: 6 }}>
-          Wedding Planner OS
+          EventOS
         </div>
         <p className="sub" style={{ margin: "10px auto 0" }}>One platform. Your brand. Every guest, personally invited.</p>
       </div>

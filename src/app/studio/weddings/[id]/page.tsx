@@ -46,7 +46,7 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <PageHead eyebrow={TEMPLATES[w.template].name}
+      <PageHead back="/studio/weddings" eyebrow={TEMPLATES[w.template].name}
         title={`${w.partnerOne} & ${w.partnerTwo}`}
         sub={w.venue ? `${w.venue} · ${w.city ?? ""}` : undefined}
         actions={<><StatusChip s={w.status} /><a className="btn btn-outline" href={`/w/${w.slug}`} target="_blank">View website ↗</a></>} />

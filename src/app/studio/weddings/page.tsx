@@ -40,7 +40,7 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead eyebrow="Weddings" title="All Weddings"
+      <PageHead back="/studio" eyebrow="Weddings" title="All Weddings"
         sub="Create, edit, publish, duplicate — everything about each wedding lives here."
         actions={<Link className="btn btn-primary" href="/studio/weddings/new">New Wedding</Link>} />
       {sp.published && <div className="note" style={{ marginBottom: 20 }}>Payment confirmed — your wedding is being published. Refresh in a moment if it still shows as draft.</div>}

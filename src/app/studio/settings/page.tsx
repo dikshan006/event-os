@@ -31,7 +31,7 @@ export default async function StudioSettings() {
 
   return (
     <>
-      <PageHead eyebrow="Settings" title="Studio Branding"
+      <PageHead back="/studio" eyebrow="Settings" title="Studio Branding"
         sub="Your brand appears on every wedding you publish. The platform itself stays invisible." />
       <div className="split">
         <form action={save} className="card pad frm">

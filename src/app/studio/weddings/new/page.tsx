@@ -30,20 +30,33 @@ export default async function NewWedding() {
 
   return (
     <>
-      <PageHead eyebrow="New wedding" title="Create New Wedding"
+      <PageHead back="/studio/weddings" eyebrow="New wedding" title="Create New Wedding"
         sub="Choose a template, add the couple, personalize the content. The layout can never break." />
       <form action={create} className="frm" style={{ maxWidth: 760 }}>
         <div className="card pad frm">
-          <h2 className="section-t">Choose Your Template</h2>
-          <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+          <h2 className="section-t">Choose your template</h2>
+          <p className="hint" style={{ marginTop: -8, marginBottom: 4 }}>
+            Every template shows the same sample wedding, so you are comparing the design
+            rather than the words. Previews open in a new tab and save nothing.
+          </p>
+          <div className="tpl-grid">
             {Object.entries(TEMPLATES).map(([key, T], i) => (
-              <label key={key} className="card pad" style={{ cursor: "pointer", display: "grid", gap: 8, borderTop: `6px solid ${T.color}` }}>
-                <div className="row">
+              <div key={key} className="tpl-card" style={{ borderTop: `4px solid ${T.color}` }}>
+                <label className="tpl-choice">
                   <input type="radio" name="template" value={key} defaultChecked={i === 0} required />
-                  <b className="serif" style={{ fontSize: 19 }}>{T.name}</b>
-                </div>
-                <span className="meta">{T.desc}</span>
-              </label>
+                  <span>
+                    <b className="serif">{T.name}</b>
+                    <span className="meta">{T.desc}</span>
+                  </span>
+                </label>
+                {/* A new tab, so the details already typed into this form survive. */}
+                <a className="btn btn-outline btn-sm tpl-preview"
+                  href={`/studio/templates/${key.toLowerCase()}`}
+                  target="_blank" rel="noopener noreferrer">
+                  Preview template <span aria-hidden="true">↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </div>
             ))}
           </div>
         </div>

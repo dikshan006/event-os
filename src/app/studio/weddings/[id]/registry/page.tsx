@@ -45,7 +45,7 @@ export default async function RegistryPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHead eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Registry & Cash Gifts"
+      <PageHead back={`/studio/weddings/${w.id}`} eyebrow={`${w.partnerOne} & ${w.partnerTwo}`} title="Registry & Cash Gifts"
         sub="Paste any product link — planners can edit everything before it goes live. Guests are redirected to the retailer." />
       <div className="split">
         <div style={{ display: "grid", gap: 20 }}>

@@ -693,6 +693,42 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* ---------------------------------------------------------------- seating --
    Cards a planner can scan at arm's length rather than a dense grid. Each
    table states its own occupancy; the eye goes to the fill bar first. */
+/* --------------------------------------------------------- back control --
+   One treatment, used by PageHead on every page that has a parent. Sits above
+   the eyebrow so the eye reads Back → context → title. */
+.backlink{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;
+  background:none;border:0;cursor:pointer;padding:2px 0;
+  font:500 12px var(--sans);letter-spacing:.06em;color:var(--soft);
+  transition:color var(--dur-fast) var(--ease)}
+.backlink-arrow{display:inline-block;transition:transform var(--dur-fast) var(--ease)}
+.backlink:hover{color:var(--ink)}
+.backlink:hover .backlink-arrow{transform:translateX(-2px)}
+.backlink:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ------------------------------------------------------ template chooser --
+   Each template is a card with its own preview action, so choosing is a
+   decision made after looking rather than from a name and one line of copy. */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.tpl-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow-sm);padding:18px;display:flex;flex-direction:column;gap:14px}
+.tpl-choice{display:flex;gap:10px;align-items:flex-start;cursor:pointer;flex:1}
+.tpl-choice > span{display:grid;gap:4px}
+.tpl-choice b{font-size:18px}
+.tpl-preview{align-self:flex-start}
+
+/* ------------------------------------------------------ template preview --
+   A full-bleed render of the real guest site, with a slim bar above it. */
+.preview{min-height:100vh;background:var(--bg)}
+.preview-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+  flex-wrap:wrap;padding:12px 20px;background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.preview-back{display:inline-flex;align-items:center;gap:7px;
+  font:500 12px var(--sans);letter-spacing:.06em;color:var(--ink)}
+.preview-back:hover{color:var(--accent)}
+.preview-name{font-family:var(--serif);font-size:18px;font-weight:500;margin-left:auto}
+.preview-note{font-size:11px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.preview-frame{position:relative}
+
 .seat-event + .seat-event{padding-top:34px;border-top:1px solid var(--line)}
 .seat-event-head{display:flex;align-items:flex-start;justify-content:space-between;
   gap:16px;flex-wrap:wrap;margin-bottom:20px}
