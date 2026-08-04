@@ -31,5 +31,6 @@ export const TEMPLATES = {
   BLUSH_ROMANCE: { name: "Blush Romance", color: "#9D5C64", desc: "Romantic and elegant with soft blush tones and delicate details." },
   MODERN_SAGE: { name: "Modern Sage", color: "#87A07A", desc: "Clean, modern and timeless with a fresh sage green palette." },
   CLASSIC_ELEGANCE: { name: "Classic Elegance", color: "#A93A42", desc: "Timeless and sophisticated with a classic red and cream aesthetic." },
+  MIDNIGHT_BLOOM: { name: "Midnight Bloom", color: "#C8A99E", desc: "Dark, botanical and cinematic — hairline type and photography lit out of near-black." },
 } as const;
 export type TemplateId = keyof typeof TEMPLATES;

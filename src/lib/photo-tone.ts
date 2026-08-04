@@ -117,6 +117,15 @@ export function toneStyle(tone: PhotoTone): Record<string, string> {
   // drawn in dark ink on a dark image: invisible exactly where an edge was
   // most needed. A near-constant weight is both more visible and more like a
   // print, which does not change its mount to suit the exposure.
+  //
+  // These two are per-photograph only. How hard each is pushed also depends on
+  // the page the print is mounted on, and that is not knowable here: this runs
+  // once at upload, while the template can be changed afterwards and the same
+  // photograph then has to work on a different ground. So the template's half
+  // of the calculation is applied in CSS, as `--s-edge-k` and `--s-depth-k`
+  // (see `themeVars` in themes.ts). Splitting it this way means switching a
+  // wedding from a cream template to a near-black one re-mounts every existing
+  // photograph correctly, with nothing reprocessed.
   const edge = clamp(0.34 + (tone.lum - 0.45) * 0.1, 0.3, 0.42);
   const depth = clamp(0.06 + (tone.lum - 0.42) * 0.1, 0.05, 0.12);
 

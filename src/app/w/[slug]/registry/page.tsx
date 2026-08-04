@@ -8,7 +8,7 @@ import { reportError } from "@/lib/errors";
 import { Wishlist, type ClaimResult } from "@/components/Wishlist";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Reveal } from "@/components/Reveal";
-import { THEMES } from "@/lib/themes";
+import { THEMES, themeVars } from "@/lib/themes";
 import { fmtDate } from "@/lib/utils";
 
 /**
@@ -68,15 +68,13 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
 
   const { items } = await publicRegistry(wedding.id);
   const theme = THEMES[wedding.template];
-  const vars = {
-    "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep,
-  } as React.CSSProperties;
+  const vars = themeVars(theme) as React.CSSProperties;
 
   const couple = `${wedding.partnerOne} & ${wedding.partnerTwo}`;
   const claimWithSlug = claim.bind(null, slug);
 
   return (
-    <div className="site" style={vars}>
+    <div className="site" data-template={wedding.template} style={vars}>
       <SmoothScroll />
       <a href="#wishlist" className="skip">Skip to the wishlist</a>
 

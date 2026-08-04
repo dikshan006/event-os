@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter, Pinyon_Script } from "next/font/google";
+import { Cormorant_Garamond, Inter, Italiana, Pinyon_Script } from "next/font/google";
 
 /**
  * Fonts are loaded through next/font rather than an @import inside globals.css.
@@ -26,6 +26,24 @@ const sans = Inter({
   display: "swap",
 });
 
+/**
+ * The hairline display face, used by templates whose character *is* their
+ * typography. Declared here alongside the others rather than lazily, because a
+ * font file is only fetched when a glyph actually renders in it — a template
+ * that never asks for this face costs nothing to have declared.
+ *
+ * One weight, because that is all it has: its lightness is the design, not a
+ * setting. It is a display face in the strict sense — beautiful at 80px, thin
+ * to the point of illegibility at 14px — so nothing below heading size is ever
+ * set in it.
+ */
+const display = Italiana({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+  display: "swap",
+});
+
 const script = Pinyon_Script({
   subsets: ["latin"],
   weight: "400",
@@ -40,7 +58,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable} ${script.variable}`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${script.variable} ${display.variable}`}>
       <body>{children}</body>
     </html>
   );

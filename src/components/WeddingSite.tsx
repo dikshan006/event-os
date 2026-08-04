@@ -6,9 +6,10 @@ import { InvitationHero } from "./InvitationHero";
 import { SmoothScroll } from "./SmoothScroll";
 import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
+import { Botanical } from "./Botanical";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
-import { THEMES } from "@/lib/themes";
+import { THEMES, themeVars } from "@/lib/themes";
 import { EventActions, ScheduleCalendarLink, VenueDirections } from "./EventActions";
 import { hasPlace, resolvePlace } from "@/lib/maps";
 
@@ -27,9 +28,12 @@ type Props = {
 export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHOTOS, tableByEvent = {}, rsvpAction }: Props) {
   const theme = THEMES[wedding.template];
   const has = (s: string) => wedding.sections.includes(s);
+  // Decoration is a property of the palette, so the page asks the theme
+  // rather than checking which template is active.
+  const ornament = theme.ornament === "botanical";
   const days = [...new Set(events.map(e => e.day))];
   const first = guest?.name.split(" ")[0];
-  const vars = { "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep } as React.CSSProperties;
+  const vars = themeVars(theme) as React.CSSProperties;
 
   /**
    * The token the calendar endpoint is addressed by: a guest's invite code on
@@ -86,7 +90,8 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
   // The couple's names are the page's h1 — previously three unlabelled divs,
   // which left the document with no heading outline at all for screen readers.
-  const nameInk = wedding.template === "MODERN_SAGE" ? theme.deep : theme.ink;
+  // Which ink the names take is a property of the palette, not a special case
+  // for one template — it now travels with the theme as `--s-name-ink`.
   const Names = (
     <h1 className="s-names" aria-label={`${wedding.partnerOne} and ${wedding.partnerTwo}`}>
       {theme.names === "script" ? (
@@ -97,16 +102,19 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         </>
       ) : (
         <>
-          <span className="s-name" style={{ color: nameInk }}>{wedding.partnerOne.toUpperCase()}</span>
+          <span className="s-name">{wedding.partnerOne.toUpperCase()}</span>
           <span className="s-and" aria-hidden="true">and</span>
-          <span className="s-name" style={{ color: nameInk }}>{wedding.partnerTwo.toUpperCase()}</span>
+          <span className="s-name">{wedding.partnerTwo.toUpperCase()}</span>
         </>
       )}
     </h1>
   );
 
   return (
-    <div className="site" style={vars}>
+    // `data-template` is the hook a template uses to change layout and rhythm
+    // without any component knowing which template is active. Everything a
+    // template overrides lives in one block of the stylesheet, keyed off this.
+    <div className="site" data-template={wedding.template} style={vars}>
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
@@ -121,6 +129,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         <main id="main">
           {/* --- Masthead: type first, generous air, no ornament. --------- */}
           <header className="s-masthead" id="home">
+            {ornament && <Botanical variant="masthead" corners={["tl", "br"]} />}
             <Reveal>
               <p className="s-kicker">The wedding of</p>
               {Names}
@@ -362,6 +371,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         {/* Understated: names in the page's own display face rather than a
             script flourish, and the studio credit kept quiet. */}
         <footer className="s-foot">
+          {ornament && <Botanical variant="foot" corners={["bl", "br"]} />}
           <p className="s-foot-names">{wedding.partnerOne} &amp; {wedding.partnerTwo}</p>
           <p className="s-foot-date">{dateLine}</p>
           <p className="by">Designed by {studio.name}</p>

@@ -13,6 +13,9 @@
   --serif:var(--font-serif),'Cormorant Garamond',Georgia,serif;
   --sans:var(--font-sans),'Inter',system-ui,sans-serif;
   --script:var(--font-script),'Pinyon Script',cursive;
+  /* Hairline display face. Only templates that ask for it ever render in it,
+     and a font file is only fetched when a glyph actually uses it. */
+  --display:var(--font-display),'Italiana',Didot,'Bodoni MT',Georgia,serif;
 
   /* ---- Motion -------------------------------------------------------------
      One easing curve and three durations for the whole product. Everything
@@ -233,7 +236,12 @@ body:has(dialog[open]){overflow:hidden}
 .login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
 
 /* Guest wedding site */
-.site{min-height:100vh;background:var(--sb);color:var(--si);font-family:var(--serif);font-size:16px}
+/* Fallbacks so the guest-site rules stay valid anywhere the theme variables
+   have not been set — the studio's own chrome, a stray preview, a test. Every
+   one of these is overridden by `themeVars()` in practice. */
+.site{min-height:100vh;background:var(--sb);color:var(--si);font-family:var(--serif);font-size:16px;
+  --s-shade:var(--si);--s-edge-k:1;--s-depth-k:1;--s-line:8%;
+  --s-name-ink:var(--si);--s-face:var(--serif)}
 .s-wrap{max-width:1120px;margin:0 auto}
 .s-nav{--nav-h:60px;display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(20px,4vw,40px);
   min-height:var(--nav-h);align-items:center;padding:var(--sp-4) var(--gutter);
@@ -241,7 +249,9 @@ body:has(dialog[open]){overflow:hidden}
   text-transform:uppercase;position:sticky;top:0;z-index:5;
   background:color-mix(in srgb, var(--sb) 88%, transparent);
   -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
-  border-bottom:1px solid rgba(0,0,0,.06)}
+  /* Was a fixed black at 6%, which is invisible on a dark page. Mixed off the
+     ink instead, so the rule belongs to whichever palette is active. */
+  border-bottom:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent)}
 .s-nav a{position:relative;color:var(--si);opacity:var(--muted);padding:6px 2px;
   transition:opacity var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
 .s-nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
@@ -259,7 +269,10 @@ body:has(dialog[open]){overflow:hidden}
   transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),
              color var(--dur) var(--ease)}
 .s-nav-cta::after{display:none}
-.s-nav-cta:hover,.s-nav-cta:focus-visible{background:var(--sa);border-color:var(--sa);color:#fff!important}
+/* Filled on hover, and the label takes the page colour rather than a fixed
+   white. On a pale template the two are the same thing; on a dark one the
+   accent is itself pale, and white-on-pale-rose is unreadable. */
+.s-nav-cta:hover,.s-nav-cta:focus-visible{background:var(--sa);border-color:var(--sa);color:var(--sb)!important}
 
 /* ---------------------------------------------------------------- reveal --
    Opacity and a 12px rise, both compositor-friendly. `.armed` is added by JS
@@ -298,8 +311,12 @@ body:has(dialog[open]){overflow:hidden}
 .s-meta{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;
   text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.18em;
   margin-top:var(--sp-6);line-height:1.9}
-/* Separator between meta items. At .5 it measured 2.41:1. */
-.s-dot{margin:0 .7em;opacity:var(--muted)}
+/* Separator between meta items. At .5 it measured 2.41:1.
+   Full opacity, not `--muted` again: the parent `.s-meta` is already dimmed,
+   and opacity multiplies down the tree — .8 inside .8 is .64, which put this
+   at 3.36:1 on Classic Elegance. Dimming a child of a dimmed parent is almost
+   always this bug. */
+.s-dot{margin:0 .7em;opacity:1}
 
 /* ----------------------------------------------------------- hero plate --
    Inset rather than full-bleed, so the page frames the photograph instead of
@@ -335,7 +352,9 @@ body:has(dialog[open]){overflow:hidden}
    are plain <picture> elements. The wrapper reserves the aspect ratio and
    paints the blur placeholder underneath, so nothing ever shifts on load. */
 .s-ph{position:relative;overflow:hidden;margin:0;background-size:cover;background-position:center;
-  background-color:rgba(0,0,0,.04)}
+  /* The colour behind the blur placeholder. Mixed off the page rather than a
+     fixed black wash, which on a dark template is a black square on black. */
+  background-color:color-mix(in srgb, var(--si) 5%, var(--sb))}
 
 /* ------------------------------------------------ photograph treatment ---
    Every value here comes from the photograph itself. src/lib/images.ts
@@ -417,12 +436,18 @@ body:has(dialog[open]){overflow:hidden}
      present in the stylesheet, absent on the page. */
   --ph-edge-w: 2px;
   box-shadow:
-    0 0 0 var(--ph-edge-w) color-mix(in srgb, var(--ph-edge-color) calc(var(--ph-edge,.32) * 100%), transparent),
+    /* `--s-edge-k` is the template's contribution: cream separates a print on
+       its own, a near-black page barely does, so on a dark template the rule
+       carries proportionally more of the separation. */
+    0 0 0 var(--ph-edge-w)
+      color-mix(in srgb, var(--ph-edge-color) calc(var(--ph-edge,.32) * var(--s-edge-k,1) * 100%), transparent),
     /* Contact shadow: tight, barely offset, pulled back by a negative spread.
        Offset and blur are what make a shadow read as a card floating above the
-       page; a print resting on paper has neither. */
-    0 1px 2px color-mix(in srgb, var(--si) calc(var(--ph-depth,.07) * 55%), transparent),
-    0 3px 11px -7px color-mix(in srgb, var(--si) calc(var(--ph-depth,.07) * 100%), transparent)}
+       page; a print resting on paper has neither.
+       Cast in `--s-shade`, not in the ink. On a dark template the ink is nearly
+       white, and a shadow made of it is a glow — the exact opposite effect. */
+    0 1px 2px color-mix(in srgb, var(--s-shade) calc(var(--ph-depth,.07) * var(--s-depth-k,1) * 55%), transparent),
+    0 3px 11px -7px color-mix(in srgb, var(--s-shade) calc(var(--ph-depth,.07) * var(--s-depth-k,1) * 100%), transparent)}
 
 /* The same treatment for any other photograph on the site — a registry gift
    image, or anything added later — without needing the SitePhoto wrapper. */
@@ -430,18 +455,18 @@ body:has(dialog[open]){overflow:hidden}
   --ph-edge-color: color-mix(in srgb, var(--sa) 26%, var(--si));
   border-radius:2px;
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--ph-edge-color) 32%, transparent),
-    0 1px 1px color-mix(in srgb, var(--si) 4%, transparent),
-    0 3px 10px -7px color-mix(in srgb, var(--si) 7%, transparent)}
+    0 0 0 2px color-mix(in srgb, var(--ph-edge-color) calc(32% * var(--s-edge-k,1)), transparent),
+    0 1px 1px color-mix(in srgb, var(--s-shade) calc(4% * var(--s-depth-k,1)), transparent),
+    0 3px 10px -7px color-mix(in srgb, var(--s-shade) calc(7% * var(--s-depth-k,1)), transparent)}
 .site .s-framed img{filter:brightness(.85) saturate(.93) sepia(.04) contrast(.98)}
 
 /* The placeholder shown before a hero is uploaded is framed identically, so
    the composition holds whether or not a photograph exists yet. */
 .s-plate-fallback{
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--si) 8%, transparent),
-    0 1px 1px color-mix(in srgb, var(--si) 4%, transparent),
-    0 4px 10px -6px color-mix(in srgb, var(--si) 6%, transparent)}
+    inset 0 0 0 1px color-mix(in srgb, var(--si) var(--s-line), transparent),
+    0 1px 1px color-mix(in srgb, var(--s-shade) calc(4% * var(--s-depth-k,1)), transparent),
+    0 4px 10px -6px color-mix(in srgb, var(--s-shade) calc(6% * var(--s-depth-k,1)), transparent)}
 
 
 /* Dark photographs are lifted very slightly instead of scrimmed, so low-key
@@ -480,7 +505,10 @@ body:has(dialog[open]){overflow:hidden}
 .inv-divider{display:flex;align-items:center;justify-content:center;gap:14px;
   width:min(240px,60%);margin:clamp(28px,5vw,44px) 0}
 .inv-divider-line{flex:1;height:1px;background:currentColor;color:var(--sa);opacity:.35}
-.inv-divider-mark{font-size:11px;color:var(--sa);opacity:.75;line-height:1}
+/* The parent carries `role="presentation"`, so this is decorative and outside
+   the contrast requirement — but it was measuring 2.92:1 and simply looked
+   weak. Full strength; the accent is quiet enough on its own. */
+.inv-divider-mark{font-size:11px;color:var(--sa);opacity:1;line-height:1}
 .inv-line{font-family:var(--script);
   font-size:clamp(25px,5.2vw,38px);line-height:1.55;color:var(--sa);
   max-width:22ch;margin:0 auto;padding-bottom:.06em}
@@ -513,9 +541,17 @@ body:has(dialog[open]){overflow:hidden}
 /* Content inside a section gets a larger gap than the heading pair. */
 .s-sec > .s-hs + *{margin-top:var(--sp-7)}
 .s-count{display:flex;justify-content:center;gap:18px}
-.s-count .t{background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:18px 22px;min-width:96px}
+/* A pane lifted a little off the page, whichever direction 'off the page'
+   happens to be: the ink is mixed into the background, so on cream it settles
+   a shade lighter and on near-black a shade lighter still. */
+.s-count .t{background:color-mix(in srgb, var(--si) 4%, var(--sb));
+  border:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent);
+  border-radius:8px;padding:18px 22px;min-width:96px}
 .s-count .n{font-size:40px;color:var(--sd)}
-.s-count .u{font:500 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;opacity:.7}
+/* Was a hard-coded .7, which is below the measured floor: 4.01:1 on Modern
+   Sage and 3.88:1 on Classic Elegance at 10px, where AA wants 4.5. These are
+   labels, not decoration — a guest has to read which number is which. */
+.s-count .u{font:500 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;opacity:var(--muted)}
 /* ------------------------------------------------------------- programme --
    Set like a printed wedding programme rather than a timeline: no rules, no
    connectors, no icons. Each entry is time, event, place, dress — descending
@@ -577,7 +613,7 @@ body:has(dialog[open]){overflow:hidden}
   padding:var(--sp-4) var(--gutter);
   background:color-mix(in srgb, var(--sb) 90%, transparent);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(0,0,0,.06)}
+  border-bottom:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent)}
 .gal-title{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
   letter-spacing:.36em;text-transform:uppercase;opacity:var(--muted);text-indent:.36em}
 .gal-close{background:none;border:0;cursor:pointer;padding:6px 2px;
@@ -675,7 +711,7 @@ body:has(dialog[open]){overflow:hidden}
 .s-opt.on::before{background:var(--sa);box-shadow:inset 0 0 0 1px var(--sa)}
 .s-opt:has(input:focus-visible){outline:2px solid var(--sa);outline-offset:3px}
 
-.s-inp{width:100%;background:color-mix(in srgb, #fff 60%, transparent);
+.s-inp{width:100%;background:color-mix(in srgb, var(--sb) 60%, transparent);
   border:1px solid color-mix(in srgb, var(--si) 16%, transparent);border-radius:2px;
   padding:var(--sp-4);font-family:var(--serif);font-size:var(--t-body);color:var(--si);
   /* 16px minimum on iOS, or focusing the field zooms the page. */
@@ -687,7 +723,9 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 
 .s-btn{display:inline-flex;align-items:center;justify-content:center;
   min-height:52px;padding:0 var(--sp-7);cursor:pointer;
-  background:var(--sa);color:#fff;border:1px solid var(--sa);border-radius:2px;
+  /* The label takes the page colour, not a fixed white: on a dark template
+     the accent is pale and white on it cannot be read. */
+  background:var(--sa);color:var(--sb);border:1px solid var(--sa);border-radius:2px;
   font-family:var(--sans);font-size:var(--t-micro);font-weight:500;
   letter-spacing:.24em;text-transform:uppercase;text-indent:.24em;
   transition:opacity var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
@@ -1211,3 +1249,142 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .preview-modes a:hover { color: var(--ink); }
 .preview-modes a.is-on { background: var(--ink); color: #fff; }
 .preview-modes a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ═══════════════════════════════════════════════════════ MIDNIGHT BLOOM ═══
+   The first dark template.
+
+   Everything below is typography, colour, rhythm and ornament. No section is
+   added, removed or restructured: the markup Midnight Bloom renders is the
+   markup every other template renders, which is what makes it possible to
+   promise that changing template never changes what the site can do.
+
+   Placed at the end of the stylesheet on purpose. Several of these selectors
+   tie on specificity with the base rules they override, and a tie is settled
+   by source order — the same trap that once left the wishlist buttons at 36px
+   on a phone.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ------------------------------------------------------------- ornament -- */
+/* One square box per corner, pinned to the corner it belongs to and never in
+   the flow. Sized in vmin so the spray scales with the page rather than with
+   whichever section it happens to sit in — tied to the section, it ballooned
+   on a tall phone masthead and shrank to nothing on a short footer. */
+.site .bot{
+  position:absolute;pointer-events:none;z-index:0;
+  width:var(--bot-size,34vmin);height:var(--bot-size,34vmin);
+  max-width:440px;max-height:440px;opacity:var(--bot-opacity,.8)}
+.site .bot-tl{top:0;left:0}
+.site .bot-tr{top:0;right:0}
+.site .bot-bl{bottom:0;left:0}
+.site .bot-br{bottom:0;right:0}
+.site .s-masthead,.site .s-foot{position:relative;isolation:isolate}
+/* `:not(.bot)` and not a bare `> *`. A universal child rule ties on specificity
+   with `.site .bot` above and, being later, would win — turning the ornament
+   from absolute to relative and dropping it into the flow, where it pushes the
+   names down the page. The same rule shaped as `> *` has already broken one
+   absolutely-positioned decoration in this codebase. */
+.site .s-masthead > :not(.bot),.site .s-foot > :not(.bot){position:relative;z-index:1}
+
+.site[data-template="MIDNIGHT_BLOOM"]{
+  /* The bloom ramp, mixed from the palette rather than fixed. Seven steps:
+     fewer and the petals band, more and the extra steps are indistinguishable
+     at the size and contrast this is seen at. */
+  --bot-1:color-mix(in srgb, var(--sa) 14%, var(--sb));
+  --bot-2:color-mix(in srgb, var(--sa) 24%, var(--sb));
+  --bot-3:color-mix(in srgb, var(--sa) 35%, var(--sb));
+  --bot-4:color-mix(in srgb, var(--sa) 47%, var(--sb));
+  --bot-5:color-mix(in srgb, var(--sa) 60%, var(--sb));
+  --bot-6:color-mix(in srgb, var(--sa) 74%, var(--sb));
+  --bot-7:color-mix(in srgb, var(--sa) 88%, var(--sb));
+  --bot-leaf:color-mix(in srgb, var(--sa) 9%, var(--sb));
+  --bot-stem:color-mix(in srgb, var(--sa) 17%, var(--sb));
+  --bot-rib:color-mix(in srgb, var(--sa) 13%, var(--sb));
+
+  /* Off-white on near-black reads brighter than the same contrast the other
+     way round — the halation is real, not imagined. Small text is therefore
+     allowed to sit quieter here than on a cream page without losing legibility.
+     Both values were measured against this palette, not inherited: .74 gives
+     11px caps 8.4:1, well past the 4.5:1 AA floor. */
+  --muted:.74;
+  --muted-lg:.58;
+}
+
+/* ---------------------------------------------------------- typography -- */
+/* The hairline face, on the names and the section headings only. It is a
+   display face in the strict sense: exquisite at 70px, a rumour at 14px. Body
+   copy stays in the house serif, which is what keeps the page readable. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-name,
+.site[data-template="MIDNIGHT_BLOOM"] .s-h,
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names,
+.site[data-template="MIDNIGHT_BLOOM"] .inv-guest{
+  font-family:var(--s-face);font-weight:400}
+
+/* Larger and more widely tracked than the house setting. A hairline face needs
+   the size to show its contrast and the air to stop the thin strokes filling
+   in — set it at the house size and it just looks like a light serif. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-name{
+  font-size:clamp(34px,7.4vw,78px);letter-spacing:.10em;line-height:1.06;
+  color:var(--s-name-ink)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-names{gap:var(--sp-5)}
+
+/* Two voices, not three. The house script is retired for this template and its
+   two jobs — the conjunction and the invitation line — go to the serif italic.
+   A copperplate script beside a hairline didone is two decorative faces
+   competing in the same sentence, and the one that loses is the one carrying
+   the couple's names. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-and{
+  font-family:var(--serif);font-style:italic;font-size:clamp(15px,2vw,20px);
+  letter-spacing:.02em;color:var(--si);opacity:var(--muted)}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-line{
+  font-family:var(--serif);font-style:italic;font-size:clamp(17px,2.6vw,23px);
+  letter-spacing:.03em;line-height:1.7}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-date{letter-spacing:.26em}
+
+.site[data-template="MIDNIGHT_BLOOM"] .s-h{
+  font-size:clamp(21px,3.1vw,31px);letter-spacing:.26em;text-indent:.26em}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-guest{
+  font-size:clamp(34px,7vw,60px);letter-spacing:.06em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names{letter-spacing:.22em}
+
+/* --------------------------------------------------------------- chrome -- */
+/* Solid rather than translucent. A blurred bar over near-black is nearly
+   black anyway, so the effect costs a compositor layer and buys nothing; solid
+   also gives the nav a hard top edge to hold the page together. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav{
+  background:var(--sb);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  border-bottom:1px solid color-mix(in srgb, var(--si) 10%, transparent)}
+
+/* ---------------------------------------------------------- composition -- */
+/* More air than the light templates. Dark pages read as heavier at the same
+   measurements, and the extra space is what keeps this one from feeling
+   closed in. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{
+  padding-block:clamp(96px,16vw,190px) clamp(72px,11vw,128px)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-sec{padding-block:var(--sp-9)}
+
+/* Top-left and bottom-right of the masthead, so the names sit inside a frame
+   rather than beside a pile. Atmosphere that overlaps a name has stopped being
+   atmosphere, which is what the size and the opacity are holding back. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:32vmin;--bot-opacity:.62}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:26vmin;--bot-opacity:.5}
+
+/* On a narrow column there is no room to be framed on two sides: the second
+   spray closes over the names. The remaining one also shrinks, because a
+   fixed vmin on a tall phone viewport is a much larger share of the width. */
+@media (max-width:720px){
+  .site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:40vmin;--bot-opacity:.5}
+  .site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:34vmin;--bot-opacity:.42}
+  .site[data-template="MIDNIGHT_BLOOM"] .bot-br{display:none}
+}
+
+/* ------------------------------------------------------------- surfaces -- */
+/* The countdown panes and the RSVP fields are the two places the page stops
+   being pure black. Both are lifted with ink rather than with white, so they
+   warm rather than grey. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-count .t{
+  background:color-mix(in srgb, var(--si) 5%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 13%, transparent)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-inp{
+  background:color-mix(in srgb, var(--si) 4%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 20%, transparent)}
