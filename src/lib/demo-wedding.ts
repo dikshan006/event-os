@@ -1,6 +1,6 @@
 import { demoGiftRows } from "./demo-gifts";
-import type { PhotoSet, PhotoView } from "./photo-view";
-import { toneStyle, type PhotoTone } from "./photo-tone";
+import { DEMO_HERO, DEMO_STORY } from "./demo-photos.generated";
+import { EMPTY_PHOTOS, type PhotoSet } from "./photo-view";
 
 /**
  * One fictional wedding, shared by every template preview.
@@ -16,64 +16,36 @@ import { toneStyle, type PhotoTone } from "./photo-tone";
 
 const DEMO_DATE = new Date("2027-06-12T16:00:00Z");
 
-/**
- * Stand-in photographs.
- *
- * Generated as SVG data URIs rather than shipped as binaries: no storage, no
- * network, and they inherit each template's palette so the preview shows how
- * the toning system behaves rather than pasting the same stock image into
- * three different colour schemes. They are unmistakably indicative — the
- * preview says so — but they demonstrate the frame, crop, tone and spacing
- * accurately, which is what a planner is judging.
- */
-function demoPhoto(id: string, w: number, h: number, hues: [string, string, string], tone: PhotoTone): PhotoView {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-<defs>
-<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="${hues[0]}"/><stop offset="0.55" stop-color="${hues[1]}"/><stop offset="1" stop-color="${hues[2]}"/>
-</linearGradient>
-<radialGradient id="v" cx="0.5" cy="0.45" r="0.75">
-<stop offset="0.5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/>
-</radialGradient>
-</defs>
-<rect width="${w}" height="${h}" fill="url(#g)"/>
-<ellipse cx="${w * 0.42}" cy="${h * 0.52}" rx="${w * 0.15}" ry="${h * 0.3}" fill="#fff" opacity="0.07"/>
-<ellipse cx="${w * 0.6}" cy="${h * 0.55}" rx="${w * 0.13}" ry="${h * 0.27}" fill="#fff" opacity="0.05"/>
-<rect width="${w}" height="${h}" fill="url(#v)"/>
-</svg>`;
-  const src = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  return {
-    id,
-    alt: "Indicative photograph shown in the template preview",
-    caption: null,
-    width: w,
-    height: h,
-    blurData: src,
-    // A data URI has no renditions; the same source serves every width.
-    avif: `${src} ${w}w`,
-    webp: `${src} ${w}w`,
-    src,
-    style: toneStyle(tone),
-  };
-}
 
+/**
+ * The demo photography.
+ *
+ * Two real photographs, run through the same pipeline a planner's upload goes
+ * through — the AVIF/WebP ladder, the blur placeholder and, most importantly,
+ * the tone measurement. The border colour, exposure and saturation a planner
+ * sees in a preview are therefore computed from these images exactly as they
+ * would be from their client's, rather than approximated.
+ *
+ * The same two appear in every template, on purpose: holding the photography
+ * constant is what makes the comparison a comparison of design.
+ *
+ * The gallery re-uses them under distinct ids. WeddingSite de-duplicates by id
+ * and excludes whichever photograph it promoted to the story portrait, so
+ * without separate ids the Gallery section would render empty and a planner
+ * would think the template lacked one.
+ */
 export const DEMO_PHOTOS: PhotoSet = {
-  hero: demoPhoto("demo-hero", 1600, 900, ["#6d6157", "#9a8478", "#c3ae9c"],
-    { lum: 0.52, sat: 0.24, spread: 0.19, focusX: 50, focusY: 44 }),
-  couple: [demoPhoto("demo-portrait", 800, 1000, ["#574f49", "#867364", "#b39c88"],
-    { lum: 0.44, sat: 0.22, spread: 0.17, focusX: 50, focusY: 42 })],
-  story: [],
-  // The gallery is deliberately small: the preview demonstrates the gallery
-  // experience without pretending a real wedding has been shot.
+  hero: DEMO_HERO,
+  couple: [],
+  story: [DEMO_STORY],
   gallery: [
-    demoPhoto("demo-g1", 1200, 1200, ["#5f5a52", "#8d8175", "#bdae9c"],
-      { lum: 0.5, sat: 0.2, spread: 0.18, focusX: 50, focusY: 50 }),
-    demoPhoto("demo-g2", 1200, 1200, ["#4f4a46", "#7d7167", "#a89684"],
-      { lum: 0.42, sat: 0.19, spread: 0.16, focusX: 50, focusY: 50 }),
-    demoPhoto("demo-g3", 1200, 1200, ["#6a6259", "#9c8d7d", "#c8b7a3"],
-      { lum: 0.56, sat: 0.22, spread: 0.2, focusX: 50, focusY: 50 }),
+    { ...DEMO_HERO, id: "demo-gallery-1", caption: "The old town, close to midnight" },
+    { ...DEMO_STORY, id: "demo-gallery-2", caption: "The morning after the engagement" },
   ],
 };
+
+/** No photographs at all — the second preview mode. */
+export const DEMO_PHOTOS_NONE: PhotoSet = EMPTY_PHOTOS;
 
 /** Shaped exactly like a Prisma Wedding + relations, so no preview-only code paths. */
 export const DEMO_WEDDING = {

@@ -1195,3 +1195,19 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .site .s-gbtn, .site .s-gbtn-quiet { padding-block: 16px; }
   .site .s-switch { padding-block: 14px; }
 }
+
+/* Preview mode switch — two states, styled as one control rather than as two
+   buttons, so it reads as a choice between views of the same thing. */
+.preview-modes { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; }
+.preview-modes a {
+  padding: 7px 15px;
+  font: 500 11px var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--soft);
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.preview-modes a + a { border-left: 1px solid var(--line-strong); }
+.preview-modes a:hover { color: var(--ink); }
+.preview-modes a.is-on { background: var(--ink); color: #fff; }
+.preview-modes a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
