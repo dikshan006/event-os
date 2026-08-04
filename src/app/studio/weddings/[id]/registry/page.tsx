@@ -135,7 +135,6 @@ export default async function RegistryPage({ params }: { params: Promise<{ id: s
                               <input type="hidden" name="weddingId" value={w.id} />
                               <div className="field"><label>Title</label><input className="inp" name="title" defaultValue={g.title} required /></div>
                               <div className="field"><label>Product URL</label><input className="inp" name="url" type="url" defaultValue={g.url} required /></div>
-                              <div className="field"><label>Image URL</label><input className="inp" name="imageUrl" defaultValue={g.imageUrl ?? ""} placeholder="https://…" /></div>
                               <div className="frm two">
                                 <div className="field"><label>Price</label><input className="inp" name="price" defaultValue={g.price ?? ""} /></div>
                                 <div className="field"><label>Retailer</label><input className="inp" name="retailer" defaultValue={g.retailer ?? ""} /></div>
@@ -180,10 +179,6 @@ export default async function RegistryPage({ params }: { params: Promise<{ id: s
             <input type="hidden" name="weddingId" value={w.id} />
             <div className="field"><label>Product URL</label><input className="inp" name="url" type="url" required placeholder="https://…" /></div>
             <div className="field"><label>Title</label><input className="inp" name="title" required /></div>
-            <div className="field"><label>Image URL</label>
-              <input className="inp" name="imageUrl" placeholder="https://…" />
-              <span className="hint">Optional. Copy the product photo&rsquo;s address from the retailer, or leave blank for a monogram tile.</span>
-            </div>
             <div className="frm two">
               <div className="field"><label>Price</label><input className="inp" name="price" placeholder="$449.95" /></div>
               <div className="field"><label>Retailer</label><input className="inp" name="retailer" placeholder="auto from URL" /></div>

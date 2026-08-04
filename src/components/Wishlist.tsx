@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export type Gift = {
   id: string;
   title: string;
-  imageUrl: string | null;
   price: string | null;
   retailer: string | null;
   url: string;
@@ -15,55 +15,52 @@ export type Gift = {
 export type ClaimResult = { ok: true; name: string } | { ok: false; message: string };
 
 /**
- * The wishlist.
+ * The wishlist, as an editorial list.
  *
- * Interaction is deliberately thin. A guest opens a retailer in a new tab, buys
- * something, comes back, and says so. Everything else — the toggle, the modal,
- * the reminder — exists to make that one confirmation likely, because a
- * registry nobody confirms is a registry that produces duplicate gifts.
+ * No product images: the registry is link-based, so a frame per gift was a
+ * large empty rectangle whose only job was to be the right shape. Twenty of
+ * them made the page four times taller than the content warranted. What
+ * remains is what a guest actually reads — name, store, price, one action —
+ * set the way a hotel's recommendation list is set.
  *
- * The nudge is the interesting part. Rather than nagging on arrival, the page
- * remembers which gift sent the guest away and only asks when they come back to
- * the tab. That is the moment the question makes sense, and it means a guest
- * who never left is never asked anything.
+ * Everything is shown, purchased included. Hiding claimed gifts leaves a guest
+ * unable to tell a short list from a nearly-finished one, and seeing that most
+ * of a registry is already spoken for is the closest thing this page has to
+ * social proof.
  */
 export function Wishlist({
   gifts,
-  claimed,
   claimAction,
 }: {
   gifts: Gift[];
-  claimed: Gift[];
   claimAction: (state: ClaimResult | null, formData: FormData) => Promise<ClaimResult | null>;
 }) {
-  const [showClaimed, setShowClaimed] = useState(false);
-  const [openGift, setOpenGift] = useState<Gift | null>(null);
-  // The gift whose retailer the guest most recently opened.
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [claiming, setClaiming] = useState<Gift | null>(null);
   const [pending, setPending] = useState<Gift | null>(null);
-  const [thanked, setThanked] = useState<string | null>(null);
+  const [done, setDone] = useState<{ name: string; gift: Gift } | null>(null);
+  const router = useRouter();
 
-  // Survives a full reload, and is scoped to this tab — a guest browsing two
-  // weddings at once should not see one wishlist's reminder on the other.
+  // Scoped to this tab and surviving a reload — a guest browsing two weddings
+  // should not meet one wishlist's reminder on the other.
   const KEY = "eventos:gift-pending";
 
-  useEffect(() => {
+  const readPending = () => {
     try {
       const id = sessionStorage.getItem(KEY);
-      if (id) setPending(gifts.find(g => g.id === id) ?? null);
+      setPending(id ? gifts.find(g => g.id === id) ?? null : null);
     } catch {
       /* private mode: the reminder is a nicety, not a requirement */
     }
-  }, [gifts]);
+  };
 
-  // Ask only once they are back on this tab, which is when the question is
-  // actually answerable.
+  useEffect(readPending, [gifts]);
+
+  // Ask only once they are back on this tab, which is the moment the question
+  // is answerable. A guest who never left is never asked anything.
   useEffect(() => {
     const onReturn = () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const id = sessionStorage.getItem(KEY);
-        if (id) setPending(gifts.find(g => g.id === id) ?? null);
-      } catch { /* ignore */ }
+      if (document.visibilityState === "visible") readPending();
     };
     document.addEventListener("visibilitychange", onReturn);
     window.addEventListener("focus", onReturn);
@@ -82,24 +79,55 @@ export function Wishlist({
     setPending(null);
   };
 
-  const onClaimed = (name: string) => {
-    setThanked(name);
-    forget();
-    setOpenGift(null);
-  };
+  /* ------------------------------------------------------ confirmed state -- */
+  if (done) {
+    return (
+      <div className="s-thanks" role="status">
+        <p className="s-thanks-eyebrow">Confirmed</p>
+        <h2 className="s-thanks-title">Thank you, {done.name}.</h2>
+        <p className="s-thanks-body">
+          Your gift has been marked as purchased. The couple will know
+          <em> {done.gift.title} </em>
+          is reserved, which helps prevent anyone buying it twice.
+        </p>
+        {/* A typographic heart rather than an emoji: ❤️ renders in the
+            operating system's colour emoji font, which next to Cormorant looks
+            like something pasted in from another document. */}
+        <p className="s-thanks-sign">
+          <span className="s-thanks-heart" aria-hidden="true">♥</span>
+          We so appreciate you celebrating with us.
+        </p>
+        <button
+          type="button"
+          className="s-gbtn"
+          onClick={() => {
+            setDone(null);
+            // Pull the claim back down so the list shows it as purchased.
+            router.refresh();
+          }}
+        >
+          Back to the wishlist
+        </button>
+      </div>
+    );
+  }
+
+  const shown = availableOnly ? gifts.filter(g => !g.purchasedBy) : gifts;
+  const claimedCount = gifts.filter(g => g.purchasedBy).length;
 
   return (
     <>
-      {/* The gentle reminder. Only ever shown to someone who actually left. */}
-      {pending && !thanked && (
+      {/* The reminder. Page content, not a notification — no border, no tint,
+          nothing that reads as a system message interrupting the page. */}
+      {pending && (
         <div className="s-recall" role="status">
           <p className="s-recall-title">Finished purchasing?</p>
           <p className="s-recall-body">
-            Help us prevent duplicate gifts by confirming your purchase of{" "}
-            <em>{pending.title}</em>.
+            If you purchased <em>{pending.title}</em>, please confirm below so
+            other guests know it has been reserved.
           </p>
           <div className="s-recall-acts">
-            <button type="button" className="s-gbtn" onClick={() => setOpenGift(pending)}>
+            <button type="button" className="s-gbtn" onClick={() => setClaiming(pending)}>
               I purchased this gift
             </button>
             <button type="button" className="s-gbtn-quiet" onClick={forget}>
@@ -109,170 +137,162 @@ export function Wishlist({
         </div>
       )}
 
-      {thanked && (
-        <div className="s-recall" role="status">
-          <p className="s-recall-title">Thank you, {thanked}.</p>
-          <p className="s-recall-body">
-            It is marked on the wishlist, so nobody buys it twice.
-          </p>
-        </div>
-      )}
-
-      <div className="s-wish-bar">
-        <p className="s-wish-count">
-          {gifts.length} {gifts.length === 1 ? "gift" : "gifts"} available
-          {claimed.length > 0 && ` · ${claimed.length} already purchased`}
-        </p>
-        {claimed.length > 0 && (
-          <label className="s-switch">
-            <input
-              type="checkbox"
-              checked={showClaimed}
-              onChange={e => setShowClaimed(e.target.checked)}
-            />
-            <span className="s-switch-track" aria-hidden="true"><span /></span>
-            <span className="s-switch-label">Show purchased gifts</span>
-          </label>
-        )}
-      </div>
-
-      <ul className="s-gifts">
-        {gifts.map(g => (
-          <GiftCard key={g.id} gift={g} onOpen={() => remember(g)} onClaim={() => setOpenGift(g)} />
-        ))}
-        {showClaimed &&
-          claimed.map(g => <GiftCard key={g.id} gift={g} claimed />)}
-      </ul>
-
-      {gifts.length === 0 && !showClaimed && (
-        <p className="s-empty">
-          Every gift on the wishlist has been purchased. Thank you — truly.
-        </p>
-      )}
-
-      {openGift && (
-        <ClaimDialog
-          gift={openGift}
+      {claiming && (
+        <ClaimPanel
+          gift={claiming}
           action={claimAction}
-          onClose={() => setOpenGift(null)}
-          onDone={onClaimed}
+          onCancel={() => setClaiming(null)}
+          onDone={name => {
+            setDone({ name, gift: claiming });
+            forget();
+            setClaiming(null);
+          }}
         />
+      )}
+
+      {!claiming && (
+        <>
+          <div className="s-wish-bar">
+            <p className="s-wish-count">
+              {gifts.length} {gifts.length === 1 ? "gift" : "gifts"}
+              {claimedCount > 0 && ` · ${claimedCount} already purchased`}
+            </p>
+            {claimedCount > 0 && (
+              <label className="s-switch">
+                <input
+                  type="checkbox"
+                  checked={availableOnly}
+                  onChange={e => setAvailableOnly(e.target.checked)}
+                />
+                <span className="s-switch-track" aria-hidden="true"><span /></span>
+                <span className="s-switch-label">Show available only</span>
+              </label>
+            )}
+          </div>
+
+          <ul className="s-gifts">
+            {shown.map(g => (
+              <GiftRow
+                key={g.id}
+                gift={g}
+                onOpen={() => remember(g)}
+                onClaim={() => setClaiming(g)}
+              />
+            ))}
+          </ul>
+
+          {shown.length === 0 && (
+            <p className="s-empty">
+              Every gift on the wishlist has been purchased. Thank you — truly.
+            </p>
+          )}
+        </>
       )}
     </>
   );
 }
 
-function GiftCard({
+function GiftRow({
   gift,
-  claimed = false,
   onOpen,
   onClaim,
 }: {
   gift: Gift;
-  claimed?: boolean;
-  onOpen?: () => void;
-  onClaim?: () => void;
+  onOpen: () => void;
+  onClaim: () => void;
 }) {
+  const claimed = Boolean(gift.purchasedBy);
+  const detail = [gift.retailer, gift.price].filter(Boolean).join(" · ");
+
   return (
     <li className={`s-gift${claimed ? " is-claimed" : ""}`}>
-      <span className="s-gift-frame">
-        {gift.imageUrl ? (
-          <img src={gift.imageUrl} alt="" loading="lazy" decoding="async" />
-        ) : (
-          <span className="s-gift-mono" aria-hidden="true">{gift.title.trim()[0] ?? "·"}</span>
-        )}
-      </span>
+      <p className="s-gift-title">{gift.title}</p>
+      {detail && <p className="s-gift-detail">{detail}</p>}
 
-      <span className="s-gift-body">
-        <span className="s-gift-title">{gift.title}</span>
-        {gift.retailer && <span className="s-gift-store">{gift.retailer}</span>}
-        {gift.price && <span className="s-gift-price">{gift.price}</span>}
-
-        {claimed ? (
-          <span className="s-gift-badge">Purchased by {gift.purchasedBy}</span>
-        ) : (
-          <span className="s-gift-acts">
-            {/* The retailer opens in a new tab so the wishlist is still here
-                when they come back — which is the whole point. */}
-            <a
-              className="s-gbtn"
-              href={gift.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onOpen}
-            >
-              Buy gift<span aria-hidden="true"> ↗</span>
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-            <button type="button" className="s-gbtn-quiet" onClick={onClaim}>
-              I purchased this gift
-            </button>
-          </span>
-        )}
-      </span>
+      {claimed ? (
+        <p className="s-gift-badge">
+          <span className="s-gift-tick" aria-hidden="true">✓</span>
+          Purchased by {gift.purchasedBy}
+        </p>
+      ) : (
+        <p className="s-gift-acts">
+          {/* The retailer opens in a new tab so the wishlist is still here when
+              they come back — which is the whole point of the reminder. */}
+          <a
+            className="s-gbtn"
+            href={gift.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onOpen}
+          >
+            View gift<span aria-hidden="true"> →</span>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+          <button type="button" className="s-gbtn-quiet" onClick={onClaim}>
+            I purchased this
+          </button>
+        </p>
+      )}
     </li>
   );
 }
 
 /**
- * Native <dialog> with showModal(): focus trapping, Escape to close and the
- * top layer come from the platform rather than from a library.
+ * The confirmation form.
+ *
+ * Inline, in place of the list, rather than in a dialog. A modal over a wedding
+ * page is a piece of application furniture — a backdrop, a panel, a close
+ * affordance — and the request asked for page content. Taking over the section
+ * also removes any doubt about what is being confirmed.
  */
-function ClaimDialog({
+function ClaimPanel({
   gift,
   action,
-  onClose,
+  onCancel,
   onDone,
 }: {
   gift: Gift;
   action: (state: ClaimResult | null, formData: FormData) => Promise<ClaimResult | null>;
-  onClose: () => void;
+  onCancel: () => void;
   onDone: (name: string) => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
   const [state, formAction, pending] = useActionState<ClaimResult | null, FormData>(action, null);
-
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
 
   useEffect(() => {
     if (state?.ok) onDone(state.name);
   }, [state, onDone]);
 
   return (
-    <dialog ref={ref} className="s-modal" onClose={onClose}>
-      <form action={formAction} className="s-modal-body">
-        <input type="hidden" name="itemId" value={gift.id} />
+    <form action={formAction} className="s-claim">
+      <input type="hidden" name="itemId" value={gift.id} />
 
-        <p className="s-modal-eyebrow">Confirm purchase</p>
-        <h2 className="s-modal-title">{gift.title}</h2>
-        <p className="s-modal-note">
-          We will mark this as purchased so nobody buys it twice. Your name is
-          shown to the couple, not to other guests.
-        </p>
+      <p className="s-claim-eyebrow">Confirm purchase</p>
+      <h2 className="s-claim-title">{gift.title}</h2>
+      <p className="s-claim-note">
+        We will mark this as purchased so nobody buys it twice. Your name is
+        shown to the couple, not to other guests.
+      </p>
 
-        <div className="s-field">
-          <label htmlFor="claim-name">Your name</label>
-          <input id="claim-name" name="name" className="s-input" required maxLength={80} autoComplete="name" autoFocus />
-        </div>
+      <div className="s-field">
+        <label htmlFor="claim-name">Your name</label>
+        <input id="claim-name" name="name" className="s-input" required maxLength={80} autoComplete="name" autoFocus />
+      </div>
 
-        <div className="s-field">
-          <label htmlFor="claim-note">A message, if you like</label>
-          <textarea id="claim-note" name="note" className="s-input" rows={3} maxLength={600} />
-        </div>
+      <div className="s-field">
+        <label htmlFor="claim-note">A message, if you like</label>
+        <textarea id="claim-note" name="note" className="s-input" rows={3} maxLength={600} />
+      </div>
 
-        {state?.ok === false && <p className="s-modal-err" role="alert">{state.message}</p>}
+      {state?.ok === false && <p className="s-claim-err" role="alert">{state.message}</p>}
 
-        <div className="s-modal-acts">
-          <button type="button" className="s-gbtn-quiet" onClick={() => ref.current?.close()}>
-            Cancel
-          </button>
-          <button type="submit" className="s-gbtn" disabled={pending}>
-            {pending ? "Confirming…" : "Confirm purchase"}
-          </button>
-        </div>
-      </form>
-    </dialog>
+      <div className="s-claim-acts">
+        <button type="submit" className="s-gbtn" disabled={pending}>
+          {pending ? "Confirming…" : "Confirm purchase"}
+        </button>
+        <button type="button" className="s-gbtn-quiet" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

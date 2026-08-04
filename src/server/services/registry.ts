@@ -21,18 +21,23 @@ export function listFunds(studioId: string, weddingId: string) {
  * claim is exposed, and the note is for the couple, not for other guests.
  */
 export async function publicRegistry(weddingId: string) {
+  // Every gift, in the planner's order, purchased or not.
+  //
+  // Hiding claimed gifts was the first version and it was wrong: a guest
+  // landing on a list of forty, when the couple asked for a hundred and sixty
+  // are already bought, cannot tell which of those two things happened. Seeing
+  // that most of the list is spoken for is reassuring, and it is the closest
+  // thing a wishlist has to social proof.
   const items = await prisma.registryItem.findMany({
     where: { weddingId },
     orderBy: [{ sortOrder: "asc" }],
     select: {
-      id: true, title: true, imageUrl: true, price: true, retailer: true,
+      id: true, title: true, price: true, retailer: true,
       url: true, featured: true, purchasedBy: true,
     },
   });
-  return {
-    available: items.filter(i => !i.purchasedBy),
-    claimed: items.filter(i => i.purchasedBy),
-  };
+  const claimedCount = items.filter(i => i.purchasedBy).length;
+  return { items, claimedCount, availableCount: items.length - claimedCount };
 }
 
 /**

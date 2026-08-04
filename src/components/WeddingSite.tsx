@@ -300,15 +300,10 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
                 <ul className="s-gifts s-reg-preview">
                   {featuredGifts.map(g => (
                     <li className="s-gift" key={g.id}>
-                      <span className="s-gift-frame">
-                        {g.imageUrl
-                          ? <img src={g.imageUrl} alt="" loading="lazy" decoding="async" />
-                          : <span className="s-gift-mono" aria-hidden="true">{g.title.trim()[0] ?? "·"}</span>}
-                      </span>
-                      <span className="s-gift-body">
-                        <span className="s-gift-title">{g.title}</span>
-                        {g.retailer && <span className="s-gift-store">{g.retailer}</span>}
-                      </span>
+                      <p className="s-gift-title">{g.title}</p>
+                      {[g.retailer, g.price].filter(Boolean).length > 0 && (
+                        <p className="s-gift-detail">{[g.retailer, g.price].filter(Boolean).join(" · ")}</p>
+                      )}
                     </li>
                   ))}
                 </ul>

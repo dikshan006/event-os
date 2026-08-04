@@ -66,7 +66,7 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
   });
   if (!wedding) notFound();
 
-  const { available, claimed } = await publicRegistry(wedding.id);
+  const { items } = await publicRegistry(wedding.id);
   const theme = THEMES[wedding.template];
   const vars = {
     "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep,
@@ -97,7 +97,7 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
               heading, and room to breathe — rather than as a notice. No icon,
               no colour, nothing that reads as a system message. */}
           <Reveal>
-            <aside className="s-callout">
+            <div className="s-callout">
               <p className="s-callout-title">A small request</p>
               <p className="s-callout-body">
                 If you purchase a gift from our wishlist, please return to this
@@ -106,15 +106,11 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
                 duplicate gifts from being purchased. Thank you for helping us
                 celebrate this special moment.
               </p>
-            </aside>
+            </div>
           </Reveal>
 
           <Reveal>
-            <Wishlist
-              gifts={available}
-              claimed={claimed}
-              claimAction={claimWithSlug}
-            />
+            <Wishlist gifts={items} claimAction={claimWithSlug} />
           </Reveal>
         </section>
 
