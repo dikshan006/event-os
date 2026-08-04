@@ -142,16 +142,21 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
           {/* --- Hero plate: one photograph, inset, toned into the palette.
               Eager and high-priority because it is the only above-the-fold
-              image; everything below it is lazy. Falls back to the template
-              gradient until a photograph is uploaded. -------------------- */}
-          <Reveal as="figure" className="s-plate" delay={80}>
-            {photos.hero ? (
+              image; everything below it is lazy.
+
+              No photograph, no plate. There used to be a gradient rectangle
+              here standing in for the missing hero, and it was the single
+              thing that made a site without photography look broken rather
+              than considered — a 16:9 grey-brown box under the names reads as
+              an image that failed to load. The masthead simply meets the
+              invitation instead, and the extra air is the better composition
+              anyway. ----------------------------------------------------- */}
+          {photos.hero && (
+            <Reveal as="figure" className="s-plate" delay={80}>
               <SitePhoto photo={photos.hero} ratio={16 / 9} priority
                 sizes="(max-width: 1120px) 100vw, 1080px" />
-            ) : (
-              <div className="s-plate-fallback" style={{ background: theme.photo }} />
-            )}
-          </Reveal>
+            </Reveal>
+          )}
 
           <Reveal className="s-invite">
             <InvitationHero guestName={guest?.name} groups={guest?.groups} date={wedding.date} />
@@ -160,7 +165,11 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           {/* --- Story: the second and final homepage photograph, set beside
               the text as an editorial spread rather than a grid of thumbs. */}
           {(wedding.story || portrait) && (
-            <section className="s-story">
+            // Without a portrait the spread has one column, not an empty one.
+            // The grid previously kept its 380px photo track whether or not
+            // anything filled it, which pushed the prose into a narrow gutter
+            // beside a hole.
+            <section className={`s-story${portrait ? "" : " s-story-solo"}`}>
               {portrait && (
                 <Reveal as="figure" className="s-portrait">
                   <SitePhoto photo={portrait} ratio={4 / 5}

@@ -1,5 +1,6 @@
+import type { TemplateKey } from "@prisma/client";
 import { demoGiftRows } from "./demo-gifts";
-import { DEMO_HERO, DEMO_STORY } from "./demo-photos.generated";
+import { DEMO_BY_TEMPLATE } from "./demo-photos.generated";
 import { EMPTY_PHOTOS, type PhotoSet } from "./photo-view";
 
 /**
@@ -18,31 +19,38 @@ const DEMO_DATE = new Date("2027-06-12T16:00:00Z");
 
 
 /**
- * The demo photography.
+ * The demo photography, per template.
  *
- * Two real photographs, run through the same pipeline a planner's upload goes
+ * Real photographs, run through the same pipeline a planner's upload goes
  * through — the AVIF/WebP ladder, the blur placeholder and, most importantly,
  * the tone measurement. The border colour, exposure and saturation a planner
  * sees in a preview are therefore computed from these images exactly as they
  * would be from their client's, rather than approximated.
  *
- * The same two appear in every template, on purpose: holding the photography
- * constant is what makes the comparison a comparison of design.
+ * Keyed by template because photography that suits a cream-and-blush page is
+ * not the photography that suits a near-black one, and a preview whose whole
+ * job is to sell a design should not be fighting it. Templates without their
+ * own set fall back to the default pair — see scripts/build-demo-photos.ts.
  *
- * The gallery re-uses them under distinct ids. WeddingSite de-duplicates by id
- * and excludes whichever photograph it promoted to the story portrait, so
+ * The gallery re-uses the pair under distinct ids. WeddingSite de-duplicates by
+ * id and excludes whichever photograph it promoted to the story portrait, so
  * without separate ids the Gallery section would render empty and a planner
- * would think the template lacked one.
+ * would conclude the template lacked one.
  */
-export const DEMO_PHOTOS: PhotoSet = {
-  hero: DEMO_HERO,
-  couple: [],
-  story: [DEMO_STORY],
-  gallery: [
-    { ...DEMO_HERO, id: "demo-gallery-1", caption: "The old town, close to midnight" },
-    { ...DEMO_STORY, id: "demo-gallery-2", caption: "The morning after the engagement" },
-  ],
-};
+export function demoPhotosFor(template: TemplateKey): PhotoSet {
+  const set = DEMO_BY_TEMPLATE[template];
+  if (!set) return EMPTY_PHOTOS;
+  const { hero, story } = set;
+  return {
+    hero,
+    couple: [],
+    story: story ? [story] : [],
+    gallery: [
+      hero && { ...hero, id: "demo-gallery-1", caption: "The old town, close to midnight" },
+      story && { ...story, id: "demo-gallery-2", caption: "The morning after the engagement" },
+    ].filter((p): p is NonNullable<typeof p> => Boolean(p)),
+  };
+}
 
 /** No photographs at all — the second preview mode. */
 export const DEMO_PHOTOS_NONE: PhotoSet = EMPTY_PHOTOS;

@@ -134,7 +134,7 @@ export default async function PhotosPage({ params }: { params: Promise<{ id: str
         eyebrow={`${w.partnerOne} & ${w.partnerTwo}`}
         title="Photos"
         sub="Every image is resized, compressed and stored in four widths as AVIF and WebP the moment you upload it, so the website stays fast on a phone."
-        actions={<a className="btn btn-outline" href={`/w/${w.slug}`} target="_blank">View website ↗</a>}
+        actions={<Link className="btn btn-outline" href={`/studio/weddings/${w.id}/preview`}>Preview website</Link>}
       />
 
       <div className="row wrap" style={{ marginBottom: 24 }}>

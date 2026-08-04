@@ -54,7 +54,25 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
       <PageHead back="/studio/weddings" eyebrow={TEMPLATES[w.template].name}
         title={`${w.partnerOne} & ${w.partnerTwo}`}
         sub={w.venue ? `${w.venue} · ${w.city ?? ""}` : undefined}
-        actions={<><StatusChip s={w.status} /><a className="btn btn-outline" href={`/w/${w.slug}`} target="_blank">View website ↗</a></>} />
+        actions={
+          <>
+            <StatusChip s={w.status} />
+            {/* Preview always points at the draft route, which renders the real
+                site from whatever is currently saved. It used to point at
+                `/w/[slug]`, which filters on PUBLISHED and so 404s on every
+                draft — meaning the first time a planner saw their own work was
+                after publishing it. The live link is offered as well, but only
+                once there is something live to link to. */}
+            <Link className="btn btn-outline" href={`/studio/weddings/${w.id}/preview`}>
+              Preview website
+            </Link>
+            {w.status === "PUBLISHED" && (
+              <a className="btn btn-outline" href={`/w/${w.slug}`} target="_blank" rel="noreferrer">
+                View live ↗
+              </a>
+            )}
+          </>
+        } />
       <div className="row wrap" style={{ marginBottom: 24 }}>
         {tabs.map(([href, label], i) => (
           <Link key={href} href={href} className={`btn btn-sm ${i === 0 ? "btn-accent" : "btn-outline"}`}>{label}</Link>

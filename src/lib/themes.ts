@@ -35,15 +35,12 @@ export type Theme = {
    * right answer for most: an ornament that appears everywhere stops being one.
    */
   ornament: "none" | "botanical";
-  /** Stands in for the hero before a photograph is uploaded. */
-  photo: string;
 };
 
 export const THEMES: Record<TemplateKey, Theme> = {
   BLUSH_ROMANCE: {
     bg: "#F6EFEA", ink: "#211E1B", accent: "#9B5B63", deep: "#211E1B",
     names: "caps", nameInk: "ink", face: "serif", ornament: "none",
-    photo: "linear-gradient(120deg,#4a4340,#7c655b 60%,#a3897a)",
   },
   // Sage was #87A07A on white: 2.86:1, which fails WCAG AA even for large
   // text, and it carried every link and the RSVP button. Darkened until both
@@ -51,12 +48,10 @@ export const THEMES: Record<TemplateKey, Theme> = {
   MODERN_SAGE: {
     bg: "#FFFFFF", ink: "#414B3C", accent: "#5E7052", deep: "#54654A",
     names: "caps", nameInk: "deep", face: "serif", ornament: "none",
-    photo: "linear-gradient(120deg,#1f2a22,#3c5240 55%,#6e8264)",
   },
   CLASSIC_ELEGANCE: {
     bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42",
     names: "script", nameInk: "ink", face: "serif", ornament: "none",
-    photo: "linear-gradient(120deg,#241f24,#57404a 55%,#8d6f72)",
   },
   /**
    * Midnight Bloom — the first dark template.
@@ -75,7 +70,6 @@ export const THEMES: Record<TemplateKey, Theme> = {
   MIDNIGHT_BLOOM: {
     bg: "#100F0E", ink: "#EFE9DF", accent: "#C8A99E", deep: "#F3EEE6",
     names: "caps", nameInk: "ink", face: "display", ornament: "botanical",
-    photo: "linear-gradient(120deg,#141312,#2b2320 55%,#4b3c36)",
   },
 };
 

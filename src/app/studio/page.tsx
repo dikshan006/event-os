@@ -68,7 +68,8 @@ export default async function StudioDashboard() {
                     </div>
                     <div className="row">
                       <Link className="btn btn-outline btn-sm grow" href={`/studio/weddings/${w.id}`}>Open wedding</Link>
-                      <a className="btn btn-ghost btn-sm" href={`/w/${w.slug}`} target="_blank">Website ↗</a>
+                      {/* Preview, not the live URL: on a draft the live URL is a 404. */}
+                      <Link className="btn btn-ghost btn-sm" href={`/studio/weddings/${w.id}/preview`}>Preview</Link>
                     </div>
                   </div>
                 </div>

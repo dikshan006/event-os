@@ -323,7 +323,6 @@ body:has(dialog[open]){overflow:hidden}
    the photograph swallowing the page. A square-ish 2px radius reads as printed
    stock; anything larger reads as a UI card. */
 .s-plate{margin:0 var(--gutter);max-width:1080px;margin-inline:auto;padding:0 var(--gutter)}
-.s-plate-fallback{aspect-ratio:16/9}
 
 /* ------------------------------------------------------------- our story --
    An editorial spread: one portrait, text beside it, aligned on a shared
@@ -332,6 +331,13 @@ body:has(dialog[open]){overflow:hidden}
 .s-story{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);
   gap:clamp(28px,5vw,72px);align-items:center;
   max-width:1000px;margin-inline:auto;padding:var(--sp-9) var(--gutter)}
+/* No portrait: one centred column of prose, set to a reading measure. Keeping
+   the two-track grid left a 380px void beside the text — the exact "image
+   failed to load" impression a site without photography must never give. */
+.s-story-solo{grid-template-columns:minmax(0,1fr);max-width:760px;text-align:center}
+.s-story-solo .s-story-text{text-align:center}
+.s-story-solo .s-story-text .s-h{text-align:center;text-indent:.2em}
+.s-story-solo .s-story-text p{margin-inline:auto}
 .s-portrait{margin:0}
 .s-story-text{text-align:left}
 .s-story-text .s-h{text-align:left;text-indent:0;margin-bottom:var(--sp-6)}
@@ -459,14 +465,6 @@ body:has(dialog[open]){overflow:hidden}
     0 1px 1px color-mix(in srgb, var(--s-shade) calc(4% * var(--s-depth-k,1)), transparent),
     0 3px 10px -7px color-mix(in srgb, var(--s-shade) calc(7% * var(--s-depth-k,1)), transparent)}
 .site .s-framed img{filter:brightness(.85) saturate(.93) sepia(.04) contrast(.98)}
-
-/* The placeholder shown before a hero is uploaded is framed identically, so
-   the composition holds whether or not a photograph exists yet. */
-.s-plate-fallback{
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--si) var(--s-line), transparent),
-    0 1px 1px color-mix(in srgb, var(--s-shade) calc(4% * var(--s-depth-k,1)), transparent),
-    0 4px 10px -6px color-mix(in srgb, var(--s-shade) calc(6% * var(--s-depth-k,1)), transparent)}
 
 
 /* Dark photographs are lifted very slightly instead of scrimmed, so low-key
@@ -805,18 +803,109 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .tpl-choice b{font-size:18px}
 .tpl-preview{align-self:flex-start}
 
-/* ------------------------------------------------------ template preview --
-   A full-bleed render of the real guest site, with a slim bar above it. */
+/* -------------------------------------------------------------- preview --
+   A full-bleed render of the real guest site with one quiet bar above it.
+
+   The bar is chrome around something that is meant to look beautiful, so it is
+   built to be ignored: no card, no shadow, no filled buttons, one hairline. It
+   holds three zones — out, what, how — and the middle one is centred
+   independently of the other two so the template's name sits on the page's
+   axis rather than wherever the back link happens to end.
+
+   The previous version put four controls in a single flex row with `gap:16px`
+   and let them wrap; at narrow widths the toggle landed under the title beside
+   a status note, and the whole thing read as a dashboard toolbar. */
 .preview{min-height:100vh;background:var(--bg)}
-.preview-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
-  flex-wrap:wrap;padding:12px 20px;background:var(--surface);
-  border-bottom:1px solid var(--line)}
-.preview-back{display:inline-flex;align-items:center;gap:7px;
-  font:500 12px var(--sans);letter-spacing:.06em;color:var(--ink)}
-.preview-back:hover{color:var(--accent)}
-.preview-name{font-family:var(--serif);font-size:18px;font-weight:500;margin-left:auto}
-.preview-note{font-size:11px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
 .preview-frame{position:relative}
+
+.pv-bar{
+  position:sticky;top:0;z-index:20;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:24px;padding:14px clamp(16px,3vw,28px);
+  background:color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);
+  border-bottom:1px solid var(--line)}
+
+.pv-back{display:inline-flex;align-items:center;gap:6px;justify-self:start;
+  font:500 13px var(--sans);letter-spacing:.01em;color:var(--soft);
+  padding:7px 10px;margin-left:-10px;border-radius:8px;
+  transition:color var(--dur-fast) var(--ease),background-color var(--dur-fast) var(--ease)}
+.pv-back:hover{color:var(--ink);background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.pv-back svg{opacity:.7}
+
+.pv-id{display:inline-flex;align-items:center;gap:10px;justify-self:center;min-width:0}
+.pv-title{font-family:var(--serif);font-size:17px;font-weight:500;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Deliberately quiet. It marks a state, it is not a warning — and the planner
+   is supposed to be looking at the wedding, not at the badge. */
+.pv-badge{flex:none;font:600 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;color:var(--soft);
+  background:color-mix(in srgb, var(--ink) 6%, transparent);
+  border:1px solid color-mix(in srgb, var(--ink) 8%, transparent)}
+
+.pv-tools{display:inline-flex;align-items:center;gap:10px;justify-self:end}
+
+/* The segmented control. One track, one moving state, a label inside rather
+   than floating above it — stacking a caption over the control is what made
+   the old header feel like two rows of chrome. */
+.pv-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;
+  background:color-mix(in srgb, var(--ink) 5%, transparent);
+  border:1px solid color-mix(in srgb, var(--ink) 7%, transparent);border-radius:999px}
+.pv-seg-label{padding:0 10px 0 8px;font:500 11px var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint)}
+.pv-opt{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;
+  font:500 12.5px var(--sans);color:var(--soft);white-space:nowrap;
+  transition:color var(--dur-fast) var(--ease),background-color var(--dur-fast) var(--ease),
+             box-shadow var(--dur-fast) var(--ease)}
+.pv-opt:hover{color:var(--ink)}
+.pv-opt.is-on{color:var(--ink);background:var(--surface);
+  box-shadow:0 1px 2px rgba(33,30,27,.07),0 1px 1px rgba(33,30,27,.04)}
+/* Drawn, not a ● character: a glyph would shift with whichever font loads. */
+.pv-dot{width:9px;height:9px;border-radius:50%;flex:none;
+  border:1.5px solid color-mix(in srgb, var(--ink) 26%, transparent);
+  transition:border-color var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+.pv-opt.is-on .pv-dot{border-color:var(--accent);
+  box-shadow:inset 0 0 0 2.5px var(--accent)}
+.pv-opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* The guest menu, as a native disclosure so it needs no JavaScript. */
+.pv-menu{position:relative}
+.pv-menu > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 13px;border-radius:999px;font:500 12.5px var(--sans);color:var(--soft);
+  border:1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  transition:color var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease)}
+.pv-menu > summary::-webkit-details-marker{display:none}
+.pv-menu > summary:hover{color:var(--ink);border-color:var(--line-strong)}
+.pv-menu[open] > summary{color:var(--ink);border-color:var(--line-strong)}
+.pv-menu > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pv-menu-list{position:absolute;right:0;top:calc(100% + 8px);z-index:30;
+  min-width:264px;max-width:340px;max-height:min(56vh,420px);overflow:auto;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 10px 34px -12px rgba(33,30,27,.22),0 2px 8px -4px rgba(33,30,27,.12)}
+.pv-menu-list a{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 11px;border-radius:9px;font:400 13px var(--sans);color:var(--ink);
+  /* The name holds one line and the group list gives way. Left to wrap, a
+     two-word name and a two-group list turned every row into three lines. */
+  white-space:nowrap}
+.pv-menu-list a:hover{background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.pv-menu-list a.is-on{color:var(--accent)}
+.pv-menu-list a small{color:var(--faint);font-size:11px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis}
+.pv-menu-head{padding:8px 11px 6px;font:500 10px var(--sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint)}
+
+/* A single way back out at the foot of a very long page. */
+.preview-tail{padding:28px 20px 44px;text-align:center;background:var(--bg);
+  border-top:1px solid var(--line)}
+.preview-tail a{font:500 12.5px var(--sans);color:var(--soft)}
+.preview-tail a:hover{color:var(--ink)}
+
+@media (max-width:800px){
+  .pv-bar{grid-template-columns:auto 1fr;gap:12px;row-gap:10px}
+  .pv-id{justify-self:end}
+  .pv-tools{grid-column:1 / -1;justify-self:center}
+  .pv-seg-label{display:none}
+}
 
 .seat-event + .seat-event{padding-top:34px;border-top:1px solid var(--line)}
 .seat-event-head{display:flex;align-items:flex-start;justify-content:space-between;
@@ -1233,22 +1322,6 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .site .s-gbtn, .site .s-gbtn-quiet { padding-block: 16px; }
   .site .s-switch { padding-block: 14px; }
 }
-
-/* Preview mode switch — two states, styled as one control rather than as two
-   buttons, so it reads as a choice between views of the same thing. */
-.preview-modes { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; }
-.preview-modes a {
-  padding: 7px 15px;
-  font: 500 11px var(--sans);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--soft);
-  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-}
-.preview-modes a + a { border-left: 1px solid var(--line-strong); }
-.preview-modes a:hover { color: var(--ink); }
-.preview-modes a.is-on { background: var(--ink); color: #fff; }
-.preview-modes a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* ═══════════════════════════════════════════════════════ MIDNIGHT BLOOM ═══
    The first dark template.

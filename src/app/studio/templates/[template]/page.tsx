@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { requireStudio } from "@/server/services/context";
 import { WeddingSite } from "@/components/WeddingSite";
+import { PreviewBar } from "@/components/PreviewBar";
 import { TEMPLATES, type TemplateId } from "@/lib/utils";
 import {
-  DEMO_WEDDING, DEMO_EVENTS, DEMO_STUDIO, DEMO_PHOTOS, DEMO_PHOTOS_NONE, DEMO_TABLE_BY_EVENT,
+  DEMO_WEDDING, DEMO_EVENTS, DEMO_STUDIO, demoPhotosFor, DEMO_PHOTOS_NONE, DEMO_TABLE_BY_EVENT,
 } from "@/lib/demo-wedding";
 
 export const metadata: Metadata = { title: "Template preview — EventOS", robots: { index: false } };
@@ -44,52 +45,29 @@ export default async function TemplatePreview({
    * very little; comparing them bare is how the differences become visible.
    *
    * A query parameter rather than client state: the mode survives a reload,
-   * can be linked to a couple, and needs no JavaScript.
+   * can be linked to a colleague, and needs no JavaScript.
    */
   const withPhotos = photos !== "none";
   const wedding = { ...DEMO_WEDDING, template: key };
 
   return (
     <div className="preview">
-      <div className="preview-bar">
-        <Link className="preview-back" href="/studio/weddings/new">
-          <span aria-hidden="true">←</span> Back to templates
-        </Link>
-        <p className="preview-name">{TEMPLATES[key].name}</p>
-
-        <div className="preview-modes" role="group" aria-label="Preview mode">
-          <Link
-            href={`/studio/templates/${template}`}
-            className={withPhotos ? "is-on" : undefined}
-            aria-current={withPhotos ? "true" : undefined}
-          >
-            Demo photos
-          </Link>
-          <Link
-            href={`/studio/templates/${template}?photos=none`}
-            className={!withPhotos ? "is-on" : undefined}
-            aria-current={!withPhotos ? "true" : undefined}
-          >
-            No photos
-          </Link>
-        </div>
-
-        {/* Said plainly, because the alternative is a planner concluding the
-            template has no gallery. Every other section renders identically in
-            both modes — only the two that are made of photographs stand down. */}
-        <p className="preview-note">
-          {withPhotos
-            ? "Sample wedding · nothing is saved"
-            : "Hero and gallery stand down without photographs · nothing is saved"}
-        </p>
-      </div>
+      <PreviewBar
+        back={{ href: "/studio/weddings/new", label: "Back to templates" }}
+        title={TEMPLATES[key].name}
+        modes={{
+          on: withPhotos ? "photos" : "none",
+          photos: `/studio/templates/${template}`,
+          none: `/studio/templates/${template}?photos=none`,
+        }}
+      />
 
       <div className="preview-frame">
         <WeddingSite
           wedding={wedding}
           studio={DEMO_STUDIO}
           events={DEMO_EVENTS}
-          photos={withPhotos ? DEMO_PHOTOS : DEMO_PHOTOS_NONE}
+          photos={withPhotos ? demoPhotosFor(key) : DEMO_PHOTOS_NONE}
           tableByEvent={DEMO_TABLE_BY_EVENT}
           guest={{
             id: "demo-guest", weddingId: "demo", studioId: "demo",
@@ -98,6 +76,12 @@ export default async function TemplatePreview({
             invitedAt: null, createdAt: DEMO_WEDDING.date, rsvp: null,
           }}
         />
+      </div>
+
+      {/* One quiet way back out at the end of a long page, so a planner who has
+          scrolled to the footer is not sent hunting for the bar. */}
+      <div className="preview-tail">
+        <Link href="/studio/weddings/new">Choose a template</Link>
       </div>
     </div>
   );

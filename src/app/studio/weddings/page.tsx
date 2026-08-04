@@ -59,7 +59,7 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
                 <div className="meta">{T.name} · {fmtDate(w.date)} · {w._count.guests} guests</div>
                 <div className="row">
                   <Link className="btn btn-outline btn-sm grow" href={`/studio/weddings/${w.id}`}>Edit content</Link>
-                  <a className="btn btn-outline btn-sm grow" href={`/w/${w.slug}`} target="_blank">Website ↗</a>
+                  <Link className="btn btn-outline btn-sm grow" href={`/studio/weddings/${w.id}/preview`}>Preview</Link>
                 </div>
                 <div className="row">
                   {w.status === "DRAFT" ? (
