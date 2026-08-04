@@ -120,6 +120,17 @@ model Wedding {
   date        DateTime
   venue       String?
   city        String?
+  /** Full street address of the main venue. Feeds the map links. */
+  venueAddress String?
+  /** Optional; when present the map opens on the exact pin rather than a search. */
+  venueLat    Float?
+  venueLng    Float?
+  /**
+   * IANA zone of the venue, e.g. "Europe/Rome". Every event time is entered as
+   * local wall time here and stored as the UTC instant it corresponds to, so
+   * calendars are correct for guests wherever they open them.
+   */
+  timeZone    String         @default("UTC")
   story       String?        @db.Text
   // Travel details, written by the planner. All optional; the Travel section
   // hides itself when every one of them is empty rather than inventing copy.
@@ -243,16 +254,40 @@ model Event {
   wedding     Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   title       String
   description String?  @db.Text
+  /**
+   * `day` and `time` remain the display strings the guest site has always
+   * shown — planners write "Late" or "After dinner" and that should survive.
+   * They are now generated from startsAt when it is set, and still editable.
+   */
   day         String // display day label, e.g. "Saturday, September 25"
   time        String // display time, e.g. "4:00 PM"
+  /**
+   * The machine-readable instants, stored in UTC.
+   *
+   * A calendar entry cannot be derived from free text: "7pm" has no date, and
+   * "Friday, September 24" has no year or timezone. These are converted from
+   * the planner's local wall time using Wedding.timeZone at write time, so a
+   * guest in another country is given the right moment rather than the right
+   * numbers. Nullable because events created before this existed have no
+   * reliable value, and inventing one would put a wedding in the wrong day of
+   * somebody's calendar.
+   */
+  startsAt    DateTime?
+  endsAt      DateTime?
   sortKey     Int      @default(0)
   location    String?
+  /** Street address for this event, when it differs from the main venue. */
+  address     String?
+  /** Optional, and only ever used to make a map pin exact. */
+  lat         Float?
+  lng         Float?
   dressCode   String?
   isPublic    Boolean  @default(false)
   audiences   String[] @default([]) // group names; empty + isPublic=false means nobody sees it
   tables      Table[]
 
   @@index([weddingId, sortKey])
+  @@index([weddingId, startsAt])
 }
 
 model Rsvp {

@@ -54,6 +54,9 @@ async function main() {
         date: new Date("2027-09-25T16:00:00Z"),
         venue: "The Magnolia Estate",
         city: "Charleston, SC",
+        venueAddress: "3550 Ashley River Rd, Charleston, SC 29414",
+        venueLat: 32.8098, venueLng: -80.0731,
+        timeZone: "America/New_York",
         story:
           "Our journey began with a chance meeting and quickly grew into something special, filled with laughter, adventures and unforgettable memories. As we prepare to say \u201CI do,\u201D we\u2019re excited to celebrate this next chapter with our loved ones.",
         faqs: {
@@ -73,11 +76,16 @@ async function main() {
         },
         events: {
           create: [
-            { title: "Welcome Dinner", day: "Friday, September 24", time: "7:00 PM", sortKey: 10, location: "The Vineyard Terrace", dressCode: "Cocktail attire", audiences: ["Family", "VIP"] },
-            { title: "Ceremony", day: "Saturday, September 25", time: "4:00 PM", sortKey: 20, location: "The Grand Lawn", dressCode: "Black tie optional", isPublic: true },
-            { title: "Reception", day: "Saturday, September 25", time: "6:30 PM", sortKey: 30, location: "The Orangery", dressCode: "Black tie optional", isPublic: true },
-            { title: "After Party", day: "Saturday, September 25", time: "11:00 PM", sortKey: 40, location: "The Cellar Bar", dressCode: "Come as you are", audiences: ["Friends", "Bridesmaids", "Groomsmen"] },
-            { title: "Farewell Brunch", day: "Sunday, September 26", time: "10:30 AM", sortKey: 50, location: "Garden Pavilion", dressCode: "Casual", audiences: ["Family", "VIP"] },
+            { title: "Welcome Dinner", day: "Friday, September 24", time: "7:00 PM", sortKey: 10,
+              startsAt: new Date("2027-09-24T23:00:00Z"), endsAt: new Date("2027-09-25T02:00:00Z"), location: "The Vineyard Terrace", dressCode: "Cocktail attire", audiences: ["Family", "VIP"] },
+            { title: "Ceremony", day: "Saturday, September 25", time: "4:00 PM", sortKey: 20,
+              startsAt: new Date("2027-09-25T20:00:00Z"), endsAt: new Date("2027-09-25T21:00:00Z"), location: "The Grand Lawn", dressCode: "Black tie optional", isPublic: true },
+            { title: "Reception", day: "Saturday, September 25", time: "6:30 PM", sortKey: 30,
+              startsAt: new Date("2027-09-25T22:30:00Z"), endsAt: new Date("2027-09-26T03:00:00Z"), location: "The Orangery", dressCode: "Black tie optional", isPublic: true },
+            { title: "After Party", day: "Saturday, September 25", time: "11:00 PM", sortKey: 40,
+              startsAt: new Date("2027-09-26T03:00:00Z"), location: "The Cellar Bar", dressCode: "Come as you are", audiences: ["Friends", "Bridesmaids", "Groomsmen"] },
+            { title: "Farewell Brunch", day: "Sunday, September 26", time: "10:30 AM", sortKey: 50,
+              startsAt: new Date("2027-09-26T14:30:00Z"), location: "Garden Pavilion", dressCode: "Casual", audiences: ["Family", "VIP"] },
           ],
         },
       },

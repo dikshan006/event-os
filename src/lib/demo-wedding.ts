@@ -86,6 +86,12 @@ export const DEMO_WEDDING = {
   date: DEMO_DATE,
   venue: "Villa Aurelia",
   city: "Fiesole, Tuscany",
+  // Real enough that the preview's map links open somewhere plausible, and the
+  // calendar buttons render exactly as they will on a live invitation.
+  venueAddress: "Via Vecchia Fiesolana 62, 50014 Fiesole FI, Italy",
+  venueLat: 43.8074,
+  venueLng: 11.2925,
+  timeZone: "Europe/Rome",
   story:
     "We met on a rainy Thursday in a bookshop that neither of us had meant to visit, " +
     "and argued for an hour about whether the last copy of a novel belonged to one of us.\n\n" +
@@ -131,22 +137,38 @@ export const DEMO_WEDDING = {
 };
 
 /** Public events for the preview — the same programme in every template. */
+/**
+ * Public events for the preview — the same programme in every template.
+ *
+ * `startsAt` is set so the preview shows the calendar controls in their real
+ * state. Instants are UTC; June in Rome is CEST (+2), so 19:00 local is 17:00Z.
+ */
+const utc = (iso: string) => new Date(iso);
+
 export const DEMO_EVENTS = [
   { id: "e1", weddingId: "demo", title: "Welcome Drinks", description: null,
     day: "Friday, 11 June", time: "7:00 PM", sortKey: 10,
-    location: "Piazza Mino, Fiesole", dressCode: "Come as you are",
+    startsAt: utc("2027-06-11T17:00:00Z"), endsAt: utc("2027-06-11T20:00:00Z"),
+    location: "Piazza Mino, Fiesole", address: "Piazza Mino da Fiesole, 50014 Fiesole FI, Italy",
+    lat: 43.8073, lng: 11.2936, dressCode: "Come as you are",
     isPublic: true, audiences: [] },
   { id: "e2", weddingId: "demo", title: "The Ceremony", description:
       "Please be seated by twenty to five; we would rather begin late than begin without you.",
     day: "Saturday, 12 June", time: "5:00 PM", sortKey: 20,
-    location: "The Walled Garden", dressCode: "Black tie optional",
+    startsAt: utc("2027-06-12T15:00:00Z"), endsAt: utc("2027-06-12T16:00:00Z"),
+    location: "The Walled Garden", address: null, lat: null, lng: null,
+    dressCode: "Black tie optional",
     isPublic: true, audiences: [] },
   { id: "e3", weddingId: "demo", title: "Dinner", description: null,
     day: "Saturday, 12 June", time: "7:30 PM", sortKey: 30,
-    location: "The Limonaia", dressCode: null, isPublic: true, audiences: [] },
+    startsAt: utc("2027-06-12T17:30:00Z"), endsAt: utc("2027-06-12T22:00:00Z"),
+    location: "The Limonaia", address: null, lat: null, lng: null,
+    dressCode: null, isPublic: true, audiences: [] },
   { id: "e4", weddingId: "demo", title: "Farewell Brunch", description: null,
     day: "Sunday, 13 June", time: "11:00 AM", sortKey: 40,
-    location: "Terrace, Villa Aurelia", dressCode: null, isPublic: true, audiences: [] },
+    startsAt: utc("2027-06-13T09:00:00Z"), endsAt: null,
+    location: "Terrace, Villa Aurelia", address: null, lat: null, lng: null,
+    dressCode: null, isPublic: true, audiences: [] },
 ];
 
 export const DEMO_STUDIO = {

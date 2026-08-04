@@ -4,6 +4,7 @@ import { createWedding } from "@/server/services/weddings";
 import { importGuests } from "@/server/services/guests";
 import { PageHead } from "@/components/ui";
 import { zWedding } from "@/lib/validators";
+import { COMMON_TIME_ZONES } from "@/lib/timezone";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
 
 export default async function NewWedding() {
@@ -16,7 +17,9 @@ export default async function NewWedding() {
       partnerOne: formData.get("partnerOne"),
       partnerTwo: formData.get("partnerTwo"),
       date: formData.get("date"),
-      venue: formData.get("venue") ?? "",
+      venue: formData.get("venue"),
+      venueAddress: formData.get("venueAddress") ?? "",
+      timeZone: String(formData.get("timeZone") || "UTC"),
       city: formData.get("city") ?? "",
       story: formData.get("story") ?? "",
       template: formData.get("template"),
@@ -70,6 +73,16 @@ export default async function NewWedding() {
             <div className="field"><label>City</label><input className="inp" name="city" placeholder="e.g. Charleston, SC" /></div>
           </div>
           <div className="field"><label>Venue</label><input className="inp" name="venue" placeholder="e.g. The Magnolia Estate" /></div>
+          <div className="field"><label>Venue address</label>
+            <input className="inp" name="venueAddress" placeholder="Street, city, postcode" />
+            <span className="hint">Gives guests one-tap directions. You can add it later.</span>
+          </div>
+          <div className="field"><label>Time zone</label>
+            <select className="inp" name="timeZone" defaultValue="Europe/London">
+              {COMMON_TIME_ZONES.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
+            </select>
+            <span className="hint">Where the wedding happens. Event times are read in this zone.</span>
+          </div>
           <div className="field"><label>Your story</label>
             <textarea className="inp" name="story" placeholder="Our journey began with a chance meeting…" /></div>
           <div className="field"><label>Website sections</label>

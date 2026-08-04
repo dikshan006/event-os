@@ -8,6 +8,8 @@ import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
+import { EventActions, ScheduleCalendarLink, VenueDirections } from "./EventActions";
+import { hasPlace, resolvePlace } from "@/lib/maps";
 
 /**
  * Template palettes.
@@ -46,6 +48,18 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
   const days = [...new Set(events.map(e => e.day))];
   const first = guest?.name.split(" ")[0];
   const vars = { "--sb": theme.bg, "--si": theme.ink, "--sa": theme.accent, "--sd": theme.deep } as React.CSSProperties;
+
+  /**
+   * The token the calendar endpoint is addressed by: a guest's invite code on
+   * the invitation, the wedding slug on the public site. Both resolve through
+   * the same visibility rules the page itself used, so the .ics can never
+   * contain an event that is not already on this page.
+   */
+  const calToken = guest?.inviteCode ?? wedding.slug;
+  const venuePlace = resolvePlace({ location: null, address: null, lat: null, lng: null }, wedding);
+  const venueMappable = hasPlace(venuePlace);
+  const venueAddressLine = venuePlace.address;
+  const appUrl = (process.env.APP_URL ?? "").replace(/\/$/, "");
 
   /**
    * Exactly two photographs on the homepage.
@@ -198,11 +212,23 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
                       <p className="s-seat-table">{tableByEvent[e.id]}</p>
                     </div>
                   )}
+                  <EventActions
+                    event={e}
+                    wedding={wedding}
+                    studioName={studio.name}
+                    token={calToken}
+                    appUrl={appUrl}
+                  />
                 </Reveal>
               ))}
             </div>
           ))}
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
+          {events.length > 0 && (
+            <Reveal>
+              <ScheduleCalendarLink events={events} token={calToken} appUrl={appUrl} />
+            </Reveal>
+          )}
         </section>
 
         {/* --- The gallery is a separate experience, reached deliberately.
@@ -216,8 +242,13 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         )}
 
         {/* Only what the planner actually wrote. The previous version shipped
-            invented copy — valet parking, a room block — to real guests. */}
-        {has("TRAVEL") && travelEntries.length > 0 && (
+            invented copy — valet parking, a room block — to real guests.
+
+            Directions are the exception: they are derived from the venue the
+            planner already entered, so the section now also earns its place
+            when there is a venue but no travel notes yet. A guest should never
+            have to copy an address out of a page. */}
+        {has("TRAVEL") && (travelEntries.length > 0 || venueMappable) && (
           <section className="s-sec" id="travel">
             <h2 className="s-h">Travel</h2>
             <div className="s-hs">getting here &amp; staying nearby</div>
@@ -228,6 +259,13 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
                   <p>{body}</p>
                 </Reveal>
               ))}
+              {venueMappable && (
+                <Reveal className="s-note">
+                  <h3>{wedding.venue || "Directions"}</h3>
+                  {venueAddressLine && <p>{venueAddressLine}</p>}
+                  <VenueDirections wedding={wedding} />
+                </Reveal>
+              )}
             </div>
           </section>
         )}

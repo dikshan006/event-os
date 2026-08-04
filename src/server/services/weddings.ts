@@ -4,6 +4,26 @@ import { weddingSlug } from "@/lib/utils";
 import { logAudit } from "./audit";
 import type { z } from "zod";
 import type { zWedding } from "@/lib/validators";
+import { parseCoord } from "@/lib/validators";
+import { isValidTimeZone } from "@/lib/timezone";
+
+/**
+ * Venue and timezone fields, mapped once.
+ *
+ * An unknown IANA string falls back to UTC rather than being stored: a bad
+ * zone makes `Intl` throw at render time, which would take down the schedule
+ * editor and the invitation together.
+ */
+function placeFields(input: z.infer<typeof zWedding>) {
+  return {
+    venue: input.venue || null,
+    city: input.city || null,
+    venueAddress: input.venueAddress || null,
+    venueLat: parseCoord(input.venueLat, 90),
+    venueLng: parseCoord(input.venueLng, 180),
+    timeZone: isValidTimeZone(input.timeZone) ? input.timeZone : "UTC",
+  };
+}
 
 export function listWeddings(studioId: string) {
   return prisma.wedding.findMany({
@@ -22,8 +42,7 @@ export async function createWedding(studioId: string, actorName: string, input: 
       partnerOne: input.partnerOne,
       partnerTwo: input.partnerTwo,
       date: new Date(input.date + "T16:00:00Z"),
-      venue: input.venue || null,
-      city: input.city || null,
+      ...placeFields(input),
       story: input.story || null,
       venueNote: input.venueNote || null,
       accommodation: input.accommodation || null,
@@ -50,8 +69,7 @@ export async function updateWedding(studioId: string, weddingId: string, input: 
       partnerOne: input.partnerOne,
       partnerTwo: input.partnerTwo,
       date: new Date(input.date + "T16:00:00Z"),
-      venue: input.venue || null,
-      city: input.city || null,
+      ...placeFields(input),
       story: input.story || null,
       venueNote: input.venueNote || null,
       accommodation: input.accommodation || null,

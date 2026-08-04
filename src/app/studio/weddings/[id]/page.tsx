@@ -4,6 +4,7 @@ import { updateWedding } from "@/server/services/weddings";
 import { PageHead, StatusChip } from "@/components/ui";
 import { zWedding } from "@/lib/validators";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
+import { COMMON_TIME_ZONES } from "@/lib/timezone";
 import { revalidatePath } from "next/cache";
 
 export default async function WeddingEditor({ params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +22,10 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
       date: formData.get("date"),
       venue: formData.get("venue") ?? "",
       city: formData.get("city") ?? "",
+      venueAddress: formData.get("venueAddress") ?? "",
+      venueLat: formData.get("venueLat") ?? "",
+      venueLng: formData.get("venueLng") ?? "",
+      timeZone: formData.get("timeZone") ?? "UTC",
       story: formData.get("story") ?? "",
       venueNote: formData.get("venueNote") ?? "",
       accommodation: formData.get("accommodation") ?? "",
@@ -64,7 +69,47 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
           <div className="field"><label>Date</label><input className="inp" type="date" name="date" defaultValue={dateValue} required /></div>
           <div className="field"><label>City</label><input className="inp" name="city" defaultValue={w.city ?? ""} /></div>
         </div>
-        <div className="field"><label>Venue</label><input className="inp" name="venue" defaultValue={w.venue ?? ""} /></div>
+        <div className="field"><label htmlFor="w-venue">Venue</label>
+          <input id="w-venue" className="inp" name="venue" defaultValue={w.venue ?? ""} placeholder="e.g. Villa Aurelia" /></div>
+
+        {/* Everything a guest needs to navigate comes from these three fields.
+            No map key, no place picker, no lookup — the planner types the venue
+            the way they would write it on a card. */}
+        <div className="field"><label htmlFor="w-address">Venue address</label>
+          <input id="w-address" className="inp" name="venueAddress" defaultValue={w.venueAddress ?? ""}
+            placeholder="Via Angelo Masina 5, 00153 Roma" />
+          <span className="hint">Powers one-tap directions on every guest&rsquo;s invitation. Every event inherits it unless it sets its own.</span>
+        </div>
+
+        <div className="field"><label htmlFor="w-tz">Time zone</label>
+          <select id="w-tz" className="inp" name="timeZone" defaultValue={w.timeZone}>
+            {/* The wedding's stored zone is listed first even when it is not
+                one of the common ones, so opening and saving this form can
+                never silently change it. */}
+            {!COMMON_TIME_ZONES.includes(w.timeZone as (typeof COMMON_TIME_ZONES)[number]) && (
+              <option value={w.timeZone}>{w.timeZone}</option>
+            )}
+            {COMMON_TIME_ZONES.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
+          </select>
+          <span className="hint">Event times are entered in this zone, so calendars are right for guests anywhere.</span>
+        </div>
+
+        <details className="frm-more">
+          <summary>Venue coordinates</summary>
+          <div className="frm two" style={{ marginTop: 12 }}>
+            <div className="field"><label htmlFor="w-lat">Latitude</label>
+              <input id="w-lat" className="inp" name="venueLat" inputMode="decimal"
+                defaultValue={w.venueLat ?? ""} placeholder="41.8902" /></div>
+            <div className="field"><label htmlFor="w-lng">Longitude</label>
+              <input id="w-lng" className="inp" name="venueLng" inputMode="decimal"
+                defaultValue={w.venueLng ?? ""} placeholder="12.4922" /></div>
+          </div>
+          <p className="hint" style={{ marginTop: 10 }}>
+            Optional. The address alone opens the right place for anywhere with a postal
+            address; coordinates help for a field, a private estate, or a venue that
+            shares its name with somewhere else.
+          </p>
+        </details>
         <div className="field"><label>Story</label><textarea className="inp" name="story" defaultValue={w.story ?? ""} /></div>
 
         <fieldset style={{ border: 0, display: "grid", gap: 16 }}>

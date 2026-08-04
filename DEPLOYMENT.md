@@ -64,9 +64,17 @@ deploy. That guard is deliberate.
 DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npx prisma migrate deploy
 ```
 
-This includes `20260803170000_access_request`, which adds the `AccessRequest`
-table behind the public site's Request access form. Until it is applied that
-form will error, so run migrations before pointing a domain at the site.
+This includes:
+
+- `20260803170000_access_request` — the table behind the public site's Request
+  access form. Until it is applied that form errors.
+- `20260804090000_calendar_and_maps` — real start/end instants on events, venue
+  address, coordinates and a timezone. It also best-effort backfills `startsAt`
+  for existing events whose time reads like "7:00 PM" or "19:00", anchored to
+  the wedding's own date. Anything it cannot parse is left NULL and flagged in
+  the Schedule Builder rather than guessed at.
+
+Run migrations before pointing a domain at the site.
 
 4. Create the platform admin. **Do not run `db:seed` in production** — that is
    demo data with a shared `password123`.
@@ -178,6 +186,14 @@ Each step depends on the one above it.
 - [ ] **Add a guest with your own email → Send invitations** → email arrives
 - [ ] Open the `/invite/<CODE>` link → personalised invitation renders with the
       hero photo and the guest's name
+- [ ] On an event, **Add to calendar → Google** opens Google with the right
+      title, date and venue prefilled
+- [ ] **Add to calendar → Apple Calendar** downloads an .ics; open it and check
+      the time matches the venue's local time, not yours
+- [ ] **Directions → Google Maps / Apple Maps** opens the venue. On a phone it
+      should open the installed app, not a browser tab
+- [ ] `/calendar/<CODE>/all.ics` downloads the whole personal schedule
+- [ ] `/calendar/<wrong-code>/all.ics` returns 404
 - [ ] **Submit an RSVP** → confirmation email arrives → response appears in the
       studio's RSVP dashboard
 - [ ] Visit `/w/<slug>` in a private window → public site loads, hero photo
@@ -208,6 +224,25 @@ the bucket and the server only signs the request.
 If uploads succeed but images render blank, `S3_PUBLIC_URL` is wrong — the
 bytes are in the bucket but the public URL doesn't resolve. Open one derivative
 URL directly to confirm, and check the bucket allows public reads.
+
+## Calendar and maps
+
+Nothing to configure — no Google Maps key, no calendar API, no third-party
+script. Guest-facing links are the documented universal URL schemes, and .ics
+files are generated per request at `/calendar/{token}/{event}.ics`, where the
+token is a guest's invite code or a published wedding's slug. Authorisation is
+inherited from the same rules the invitation page uses, so the file can never
+contain an event the page would not show.
+
+Two things the planner must set for it to work:
+
+1. **A timezone on the wedding** (Content tab). Event times are entered as local
+   wall time at the venue and stored as the instant they correspond to, so a
+   guest opening the invitation from another country gets the right moment.
+   Defaults to UTC, which is only correct for a wedding in the UK in winter.
+2. **A start time on each event** (Schedule Builder). Events without one still
+   appear on the invitation but offer no calendar button — the builder shows a
+   "No time set" chip so this is visible rather than silent.
 
 ## Known limitations to revisit after launch
 
