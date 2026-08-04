@@ -32,6 +32,8 @@ export async function submitRsvp(code: string, input: z.infer<typeof zRsvp>) {
       to: guest.email, guestName: guest.name, couple,
       studio: guest.wedding.studio.name, color: guest.wedding.studio.brandColor,
       status: input.status, studioId: guest.studioId,
+      // Same reasoning as the invitation: a reply should reach the planner.
+      studioEmail: guest.wedding.studio.contactEmail,
     });
   }
 }

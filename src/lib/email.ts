@@ -1,8 +1,40 @@
 import { Resend } from "resend";
 import { prisma } from "@/lib/db";
+import { renderHtml, renderText, type Message } from "@/lib/email-render";
+
+/**
+ * Outbound email.
+ *
+ * The workflow above this file is unchanged: the same callers, the same
+ * signatures, the same copy. What changed is everything between "send this" and
+ * the message arriving — the parts that decide whether it lands in an inbox or
+ * a spam folder.
+ *
+ * The deliverability problems this file addresses, in the order they matter:
+ *
+ *  1. No plain-text part. An HTML-only message is one of the strongest, easiest
+ *     spam signals there is (SpamAssassin `MIME_HTML_ONLY` and equivalents).
+ *     Every message now carries both, rendered from one description so they
+ *     cannot disagree.
+ *  2. No Reply-To. A wedding guest replying to an invitation was writing into
+ *     nothing. An unreplyable From on a personal-looking email is both a spam
+ *     signal and, more importantly, rude. Replies now go to the studio.
+ *  3. The default sender was `onboarding@resend.dev` — Resend's shared sandbox
+ *     domain, which can only deliver to your own account address and carries no
+ *     domain reputation of yours. Now refused in production with a message that
+ *     says exactly what to set.
+ *  4. Retries were indiscriminate. Re-sending to an address the provider has
+ *     already rejected as invalid does not help, wastes the request budget and
+ *     is the sort of behaviour that costs sending reputation. Only transient
+ *     failures are retried now, with backoff.
+ *  5. No List-Unsubscribe. See the note on `unsubscribe` below.
+ */
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.EMAIL_FROM ?? "EventOS <onboarding@resend.dev>";
+
+/** The sandbox sender Resend hands out. Useful in dev, useless in production. */
+const SANDBOX_FROM = "onboarding@resend.dev";
+const FROM = process.env.EMAIL_FROM ?? `EventOS <${SANDBOX_FROM}>`;
 
 export type EmailKind =
   | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE"
@@ -10,150 +42,404 @@ export type EmailKind =
   | "ACCESS_REQUEST"
   | "ACCESS_REQUEST_ACK";
 
-type SendArgs = { to: string; subject: string; html: string; kind: EmailKind; studioId?: string };
+type SendArgs = {
+  to: string;
+  subject: string;
+  message: Message;
+  kind: EmailKind;
+  studioId?: string;
+  /**
+   * Where a reply goes. A guest answering their invitation should reach the
+   * planner; a planner answering a receipt should reach us.
+   */
+  replyTo?: string | null;
+  /**
+   * A `mailto:` address that honours unsubscribe requests, for the
+   * List-Unsubscribe header.
+   *
+   * Deliberately mailto and not a one-click URL. RFC 8058 one-click implies a
+   * suppression list that silently stops sending — and silently suppressing a
+   * wedding invitation is a worse outcome than the spam complaint it prevents,
+   * because the guest simply never learns there is a wedding. A mailto routes
+   * to a human who can act on it, satisfies the header's purpose, and is what
+   * most transactional senders use.
+   *
+   * Omitted entirely on password resets and receipts, where offering to
+   * unsubscribe from a security email is nonsense.
+   */
+  unsubscribe?: string | null;
+};
+
+/* ------------------------------------------------------------ diagnostics -- */
+
+export type EmailConfig = {
+  ready: boolean;
+  provider: "resend" | "none";
+  from: string;
+  /** The bare address inside `EMAIL_FROM`, which is what must be on a verified domain. */
+  fromAddress: string | null;
+  fromDomain: string | null;
+  problems: string[];
+  warnings: string[];
+};
+
+/**
+ * What is and is not configured — surfaced rather than discovered by a guest
+ * not receiving an invitation.
+ */
+export function emailConfig(): EmailConfig {
+  const problems: string[] = [];
+  const warnings: string[] = [];
+
+  const fromAddress = FROM.match(/<([^>]+)>/)?.[1] ?? (FROM.includes("@") ? FROM.trim() : null);
+  const fromDomain = fromAddress?.split("@")[1] ?? null;
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (!process.env.RESEND_API_KEY) {
+    problems.push("RESEND_API_KEY is not set — nothing can be sent.");
+  }
+  if (!process.env.EMAIL_FROM) {
+    (isProd ? problems : warnings).push(
+      "EMAIL_FROM is not set, so the sandbox sender is in use. It only delivers to your own Resend account address.",
+    );
+  }
+  if (fromAddress === SANDBOX_FROM && isProd) {
+    problems.push(
+      `EMAIL_FROM still points at ${SANDBOX_FROM}. Set it to an address on a domain verified in Resend, e.g. "Your Studio <hello@yourdomain.com>".`,
+    );
+  }
+  if (fromDomain && /^(gmail|outlook|hotmail|yahoo|icloud|live|aol)\./i.test(fromDomain)) {
+    problems.push(
+      `EMAIL_FROM uses ${fromDomain}, a consumer mailbox provider. Their DMARC policy rejects mail sent on their behalf by anyone else, so this will fail at most recipients. Use a domain you control.`,
+    );
+  }
+  if (!process.env.APP_URL) {
+    problems.push("APP_URL is not set — invitation links would be built against an empty origin.");
+  }
+  if (!process.env.EMAIL_REPLY_TO && !isProd) {
+    warnings.push("EMAIL_REPLY_TO is not set; platform emails fall back to the From address.");
+  }
+
+  return {
+    ready: problems.length === 0,
+    provider: resend ? "resend" : "none",
+    from: FROM,
+    fromAddress,
+    fromDomain,
+    problems,
+    warnings,
+  };
+}
+
+/* ------------------------------------------------------------------ send -- */
 
 /** Best-effort persistence — an EmailLog failure must never break the main flow. */
-async function record(args: SendArgs, status: "SENT" | "FAILED" | "SKIPPED", provider?: string, error?: string) {
+async function record(
+  args: SendArgs,
+  status: "SENT" | "FAILED" | "SKIPPED",
+  provider?: string,
+  error?: string,
+) {
   try {
     await prisma.emailLog.create({
-      data: { studioId: args.studioId ?? null, kind: args.kind, toEmail: args.to, subject: args.subject, status, provider, error },
+      data: {
+        studioId: args.studioId ?? null,
+        kind: args.kind,
+        toEmail: args.to,
+        subject: args.subject,
+        status,
+        provider,
+        error,
+      },
     });
   } catch (e) {
     console.error("[email] failed to write EmailLog", e);
   }
 }
 
-async function attempt(args: SendArgs): Promise<{ id?: string; error?: string }> {
-  // ROOT CAUSE of "emails not received": the Resend SDK does NOT throw on API
-  // errors — it returns { data, error }. The previous code ignored the return
-  // value, so unverified domains / bad senders failed 100% silently.
-  const { data, error } = await resend!.emails.send({ from: FROM, to: args.to, subject: args.subject, html: args.html });
-  if (error) return { error: `${error.name ?? "resend_error"}: ${error.message ?? "unknown"}` };
+type Attempt = { id?: string; error?: string; retryable?: boolean };
+
+/**
+ * Which failures are worth trying again.
+ *
+ * Retrying a permanent rejection is not merely useless — repeatedly sending to
+ * an address the provider has told you is invalid is exactly the pattern that
+ * damages a sending reputation. Rate limits, gateway errors and network faults
+ * are transient and worth another go; a malformed address or an unverified
+ * domain will fail identically forever.
+ */
+function isRetryable(name: string, message: string): boolean {
+  const n = `${name} ${message}`.toLowerCase();
+  if (/rate.?limit|too.?many|429/.test(n)) return true;
+  if (/timeout|timed out|socket|econn|network|fetch failed|enotfound|eai_again/.test(n)) return true;
+  if (/\b5\d\d\b|internal|unavailable|bad gateway/.test(n)) return true;
+  // Everything else — invalid recipient, unverified domain, bad key, missing
+  // field — is a configuration or data problem that a second attempt repeats.
+  return false;
+}
+
+async function attempt(args: SendArgs, html: string, text: string): Promise<Attempt> {
+  // The Resend SDK does not throw on API errors — it returns { data, error }.
+  // Ignoring that return value is how sends fail silently, which is the state
+  // this file was originally written to fix; the check stays.
+  const headers: Record<string, string> = {
+    // Tells Gmail and others this is a one-off message rather than a campaign,
+    // and suppresses auto-replies and out-of-office bounces back at us.
+    "X-Entity-Ref-ID": `${args.kind}:${Date.now()}`,
+    "Auto-Submitted": "auto-generated",
+  };
+  if (args.unsubscribe) {
+    headers["List-Unsubscribe"] = `<mailto:${args.unsubscribe}?subject=Unsubscribe>`;
+  }
+
+  const { data, error } = await resend!.emails.send({
+    from: FROM,
+    to: args.to,
+    subject: args.subject,
+    html,
+    // The part that matters most for deliverability, and the cheapest to add.
+    text,
+    ...(args.replyTo ? { replyTo: args.replyTo } : {}),
+    headers,
+    // Lets the provider dashboard break delivery down by message type, so a
+    // problem specific to invitations is visible as one.
+    tags: [{ name: "kind", value: args.kind.toLowerCase() }],
+  });
+
+  if (error) {
+    const name = error.name ?? "resend_error";
+    const message = error.message ?? "unknown";
+    return { error: `${name}: ${message}`, retryable: isRetryable(name, message) };
+  }
   return { id: data?.id };
 }
 
 /**
- * Send with verification, one retry on failure, and a persisted log row for
- * every outcome. Returns success so callers can surface delivery state, but
- * never throws — email must not break sign-ups, RSVPs, or payments.
+ * Send, with retries for transient failures only, and a log row for every
+ * outcome. Returns success so callers can surface delivery state, but never
+ * throws — email must not break sign-ups, RSVPs or payments.
  */
 export async function sendEmail(args: SendArgs): Promise<boolean> {
-  if (!args.to) { await record(args, "SKIPPED", undefined, "No recipient address"); return false; }
+  if (!args.to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(args.to)) {
+    await record(args, "SKIPPED", undefined, args.to ? `Not a valid address: ${args.to}` : "No recipient address");
+    return false;
+  }
+
   if (!resend) {
     console.log(`[email:dev] RESEND_API_KEY not set — would send "${args.subject}" to ${args.to}`);
     await record(args, "SKIPPED", undefined, "RESEND_API_KEY not configured");
     return false;
   }
-  try {
-    let result = await attempt(args);
-    if (result.error) {
-      console.error(`[email] send failed (will retry once): ${result.error}`);
-      await new Promise(r => setTimeout(r, 500));
-      result = await attempt(args);
-    }
-    if (result.error) {
-      console.error(`[email] send failed permanently to=${args.to} kind=${args.kind}: ${result.error}`);
-      await record(args, "FAILED", undefined, result.error);
-      return false;
-    }
-    await record(args, "SENT", result.id);
-    return true;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[email] transport error to=${args.to} kind=${args.kind}: ${msg}`);
-    await record(args, "FAILED", undefined, msg);
+
+  // A misconfigured sender fails every message identically. Say so once, in
+  // terms that name the fix, rather than logging a provider error per guest.
+  const cfg = emailConfig();
+  if (!cfg.ready) {
+    const why = cfg.problems.join(" ");
+    console.error(`[email] not configured for sending: ${why}`);
+    await record(args, "SKIPPED", undefined, why);
     return false;
   }
+
+  const html = renderHtml(args.message);
+  const text = renderText(args.message);
+
+  // Three attempts, backing off. Enough to ride out a rate limit or a blip,
+  // few enough that a queued batch cannot stall on one address.
+  const delays = [400, 1500];
+  let result: Attempt = {};
+
+  for (let i = 0; i <= delays.length; i++) {
+    try {
+      result = await attempt(args, html, text);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      result = { error: msg, retryable: isRetryable("transport", msg) };
+    }
+
+    if (!result.error) {
+      await record(args, "SENT", result.id);
+      return true;
+    }
+    if (!result.retryable || i === delays.length) break;
+
+    console.warn(`[email] transient failure, retrying in ${delays[i]}ms: ${result.error}`);
+    await new Promise(r => setTimeout(r, delays[i]));
+  }
+
+  console.error(
+    `[email] send failed to=${args.to} kind=${args.kind} retryable=${result.retryable ?? false}: ${result.error}`,
+  );
+  await record(args, "FAILED", undefined, result.error);
+  return false;
 }
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/* -------------------------------------------------------------- messages -- */
 
-const shell = (brand: string, color: string, body: string) => `
-  <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px;color:#211E1B">
-    <div style="text-align:center;letter-spacing:.3em;font-size:11px;color:${color};text-transform:uppercase">${esc(brand)}</div>
-    <div style="margin-top:24px;font-size:15px;line-height:1.7">${body}</div>
-    <div style="margin-top:32px;text-align:center;font-size:10px;letter-spacing:.25em;color:#A9A199;text-transform:uppercase">Designed by ${esc(brand)}</div>
-  </div>`;
+const PLATFORM_COLOR = "#9D5C64";
+const PLATFORM_REPLY_TO = process.env.EMAIL_REPLY_TO ?? null;
 
 export const emails = {
-  guestInvitation: (o: { to: string; guestName: string; couple: string; studio: string; color: string; link: string; studioId: string }) =>
+  guestInvitation: (o: {
+    to: string; guestName: string; couple: string; studio: string;
+    color: string; link: string; studioId: string;
+    /** The studio's own address, so a guest's reply reaches the planner. */
+    studioEmail?: string | null;
+  }) =>
     sendEmail({
-      to: o.to, kind: "GUEST_INVITATION", studioId: o.studioId,
-      subject: `You're invited \u2014 ${o.couple}`,
-      html: shell(o.studio, o.color,
-        `Dear ${esc(o.guestName)},<br/><br/>You are warmly invited to the wedding of <b>${esc(o.couple)}</b>.<br/><br/>
-         Your personal invitation \u2014 with a schedule made just for you \u2014 is here:<br/>
-         <a href="${o.link}" style="color:${o.color}">${o.link}</a>`),
+      to: o.to,
+      kind: "GUEST_INVITATION",
+      studioId: o.studioId,
+      subject: `You're invited — ${o.couple}`,
+      replyTo: o.studioEmail ?? PLATFORM_REPLY_TO,
+      unsubscribe: o.studioEmail ?? PLATFORM_REPLY_TO,
+      message: {
+        brand: o.studio,
+        color: o.color,
+        preheader: `${o.guestName}, your personal invitation to ${o.couple} is ready.`,
+        blocks: [
+          { t: "p", text: `Dear ${o.guestName},` },
+          { t: "p", text: `You are warmly invited to the wedding of ${o.couple}.` },
+          { t: "p", text: "Your personal invitation includes the schedule for your day, directions, and a place to reply." },
+          { t: "button", label: "Open your invitation", href: o.link },
+          { t: "fallback", href: o.link },
+        ],
+        footnote: `You are receiving this because ${o.couple} added you to their guest list. Reply to this email to reach ${o.studio}.`,
+      },
     }),
 
-  rsvpConfirmation: (o: { to: string; guestName: string; couple: string; studio: string; color: string; status: string; studioId: string }) =>
+  rsvpConfirmation: (o: {
+    to: string; guestName: string; couple: string; studio: string;
+    color: string; status: string; studioId: string; studioEmail?: string | null;
+  }) =>
     sendEmail({
-      to: o.to, kind: "RSVP_CONFIRMATION", studioId: o.studioId,
-      subject: `RSVP received \u2014 ${o.couple}`,
-      html: shell(o.studio, o.color,
-        `Thank you, ${esc(o.guestName)}. Your response (<b>${esc(o.status.toLowerCase())}</b>) has been recorded for ${esc(o.couple)}.`),
+      to: o.to,
+      kind: "RSVP_CONFIRMATION",
+      studioId: o.studioId,
+      subject: `RSVP received — ${o.couple}`,
+      replyTo: o.studioEmail ?? PLATFORM_REPLY_TO,
+      message: {
+        brand: o.studio,
+        color: o.color,
+        preheader: `Your reply to ${o.couple} has been recorded.`,
+        blocks: [
+          { t: "p", text: `Thank you, ${o.guestName}.` },
+          { t: "p", text: `Your response has been recorded for ${o.couple}.` },
+          { t: "lines", items: [["Response", o.status.toLowerCase()]] },
+          { t: "p", text: "If anything changes, open your invitation again and reply once more — the most recent answer is the one that counts." },
+        ],
+        footnote: `Reply to this email to reach ${o.studio}.`,
+      },
     }),
 
   plannerInvite: (o: { to: string; ownerName: string; studio: string; link: string; studioId: string }) =>
     sendEmail({
-      to: o.to, kind: "PLANNER_INVITE", studioId: o.studioId,
+      to: o.to,
+      kind: "PLANNER_INVITE",
+      studioId: o.studioId,
       subject: `Your ${o.studio} studio is ready`,
-      html: shell("EventOS", "#9D5C64",
-        `Hi ${esc(o.ownerName)},<br/><br/>Your planner studio <b>${esc(o.studio)}</b> has been created.<br/>
-         Sign in here to set up your first wedding: <a href="${o.link}">${o.link}</a><br/><br/>
-         Your temporary password was shared by the platform owner \u2014 change it after first login.`),
+      replyTo: PLATFORM_REPLY_TO,
+      message: {
+        brand: "EventOS",
+        color: PLATFORM_COLOR,
+        preheader: `${o.studio} is set up and waiting for your first wedding.`,
+        blocks: [
+          { t: "p", text: `Hi ${o.ownerName},` },
+          { t: "p", text: `Your planner studio ${o.studio} has been created.` },
+          { t: "button", label: "Sign in to your studio", href: o.link },
+          { t: "fallback", href: o.link },
+          { t: "p", text: "Your temporary password was shared with you separately. Please change it after your first sign-in." },
+        ],
+      },
     }),
 
   paymentReceipt: (o: { to: string; studio: string; desc: string; amount: string; studioId: string }) =>
     sendEmail({
-      to: o.to, kind: "PAYMENT_RECEIPT", studioId: o.studioId,
-      subject: `Receipt \u2014 ${o.desc}`,
-      html: shell("EventOS", "#9D5C64",
-        `Payment received for <b>${esc(o.desc)}</b>: ${esc(o.amount)}. A copy is stored in your Billing page.`),
+      to: o.to,
+      kind: "PAYMENT_RECEIPT",
+      studioId: o.studioId,
+      subject: `Receipt — ${o.desc}`,
+      replyTo: PLATFORM_REPLY_TO,
+      message: {
+        brand: "EventOS",
+        color: PLATFORM_COLOR,
+        preheader: `Payment received: ${o.amount}.`,
+        blocks: [
+          { t: "p", text: "Thank you — your payment has been received." },
+          { t: "lines", items: [["Item", o.desc], ["Amount", o.amount]] },
+          { t: "p", text: "A copy is kept on your Billing page." },
+        ],
+      },
     }),
 
-  /**
-   * Sent to the platform owner when somebody asks for access. Deliberately
-   * plain and complete: it should be answerable from a phone without opening
-   * the admin dashboard first.
-   */
   accessRequest: (o: {
     to: string; name: string; email: string; company?: string | null;
     website?: string | null; volume?: string | null; message?: string | null; link: string;
   }) =>
     sendEmail({
-      to: o.to, kind: "ACCESS_REQUEST",
-      subject: `Access request \u2014 ${o.name}${o.company ? ` (${o.company})` : ""}`,
-      html: shell("EventOS", "#9D5C64",
-        `<b>${esc(o.name)}</b> asked for access to EventOS.<br/><br/>
-         <b>Email</b> ${esc(o.email)}<br/>
-         ${o.company ? `<b>Studio</b> ${esc(o.company)}<br/>` : ""}
-         ${o.website ? `<b>Website</b> ${esc(o.website)}<br/>` : ""}
-         ${o.volume ? `<b>Weddings a year</b> ${esc(o.volume)}<br/>` : ""}
-         ${o.message ? `<br/>${esc(o.message).replace(/\n/g, "<br/>")}<br/>` : ""}
-         <br/><a href="${o.link}">Open the requests inbox</a>`),
+      to: o.to,
+      kind: "ACCESS_REQUEST",
+      subject: `Access request — ${o.name}${o.company ? ` (${o.company})` : ""}`,
+      // Replying to the notification should reach the person who asked.
+      replyTo: o.email,
+      message: {
+        brand: "EventOS",
+        color: PLATFORM_COLOR,
+        preheader: `${o.name}${o.company ? ` of ${o.company}` : ""} asked for access.`,
+        blocks: [
+          { t: "p", text: `${o.name} asked for access to EventOS.` },
+          {
+            t: "lines",
+            items: [
+              ["Email", o.email],
+              ...(o.company ? ([["Studio", o.company]] as [string, string][]) : []),
+              ...(o.website ? ([["Website", o.website]] as [string, string][]) : []),
+              ...(o.volume ? ([["Weddings a year", o.volume]] as [string, string][]) : []),
+            ],
+          },
+          ...(o.message ? ([{ t: "quote", text: o.message }] as const) : []),
+          { t: "button", label: "Open the requests inbox", href: o.link },
+        ],
+      },
     }),
 
-  /**
-   * Sent to the requester. Its only job is to prove the form worked and to set
-   * an honest expectation \u2014 nothing is promised, because nothing has been decided.
-   */
   accessRequestAck: (o: { to: string; name: string }) =>
     sendEmail({
-      to: o.to, kind: "ACCESS_REQUEST_ACK",
-      subject: "We have your request \u2014 EventOS",
-      html: shell("EventOS", "#9D5C64",
-        `Hi ${esc(o.name)},<br/><br/>Thank you \u2014 we have your request for access to EventOS.<br/><br/>
-         We set up each studio by hand, so this is read by a person rather than a queue.
-         You will hear back from us either way.`),
+      to: o.to,
+      kind: "ACCESS_REQUEST_ACK",
+      subject: "We have your request — EventOS",
+      replyTo: PLATFORM_REPLY_TO,
+      message: {
+        brand: "EventOS",
+        color: PLATFORM_COLOR,
+        preheader: "A person reads every request. You will hear back either way.",
+        blocks: [
+          { t: "p", text: `Hi ${o.name},` },
+          { t: "p", text: "Thank you — we have your request for access to EventOS." },
+          { t: "p", text: "We set up each studio by hand, so this is read by a person rather than a queue. You will hear back from us either way." },
+        ],
+      },
     }),
 
   passwordReset: (o: { to: string; name: string; link: string }) =>
     sendEmail({
-      to: o.to, kind: "PASSWORD_RESET",
+      to: o.to,
+      kind: "PASSWORD_RESET",
       subject: "Reset your EventOS password",
-      html: shell("EventOS", "#9D5C64",
-        `Hi ${esc(o.name)},<br/><br/>We received a request to reset your password. This link is valid for 60 minutes:<br/>
-         <a href="${o.link}">${o.link}</a><br/><br/>If you didn't request this, you can safely ignore this email.`),
+      replyTo: PLATFORM_REPLY_TO,
+      // No List-Unsubscribe: offering to opt out of a security email is
+      // nonsense, and filters treat one on a transactional message as noise.
+      message: {
+        brand: "EventOS",
+        color: PLATFORM_COLOR,
+        preheader: "This link is valid for 60 minutes.",
+        blocks: [
+          { t: "p", text: `Hi ${o.name},` },
+          { t: "p", text: "We received a request to reset your password. This link is valid for 60 minutes." },
+          { t: "button", label: "Choose a new password", href: o.link },
+          { t: "fallback", href: o.link },
+          { t: "p", text: "If you did not request this, you can safely ignore this email — your password will not change." },
+        ],
+      },
     }),
 };

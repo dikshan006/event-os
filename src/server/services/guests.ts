@@ -70,12 +70,20 @@ export async function deleteGuest(studioId: string, guestId: string) {
   await prisma.guest.deleteMany({ where: { id: guestId, studioId } });
 }
 
-async function emailOneGuest(guest: { id: string; name: string; email: string | null; inviteCode: string }, wedding: { partnerOne: string; partnerTwo: string }, studio: { id: string; name: string; brandColor: string }) {
+async function emailOneGuest(
+  guest: { id: string; name: string; email: string | null; inviteCode: string },
+  wedding: { partnerOne: string; partnerTwo: string },
+  studio: { id: string; name: string; brandColor: string; contactEmail: string | null },
+) {
   if (!guest.email) return false;
   return emails.guestInvitation({
     to: guest.email, guestName: guest.name,
     couple: `${wedding.partnerOne} & ${wedding.partnerTwo}`,
     studio: studio.name, color: studio.brandColor, studioId: studio.id,
+    // A guest who hits reply should reach the planner, not a void. This is
+    // also what makes the message look like correspondence rather than a
+    // broadcast, which is half of why invitations get filtered.
+    studioEmail: studio.contactEmail,
     link: `${process.env.APP_URL}/invite/${guest.inviteCode}`,
   });
 }
@@ -86,6 +94,16 @@ async function emailOneGuest(guest: { id: string; name: string; email: string | 
  * set for guests whose email actually went out (guests without an email
  * address are marked invited too — their link is shared manually).
  */
+/**
+ * Gap between invitations in a batch.
+ *
+ * Resend allows 2 requests a second by default, so 600ms leaves headroom for
+ * the occasional retry without the batch crawling. At this pace 200 guests
+ * takes about two minutes — comfortably inside a serverless function's budget,
+ * and slow enough not to look like a blast.
+ */
+const INVITE_SEND_INTERVAL_MS = 600;
+
 export async function sendInvitations(studioId: string, weddingId: string, actorName: string) {
   const [wedding, studio] = await Promise.all([
     prisma.wedding.findFirst({ where: { id: weddingId, studioId } }),
@@ -95,7 +113,12 @@ export async function sendInvitations(studioId: string, weddingId: string, actor
   const pending = await prisma.guest.findMany({ where: { weddingId, studioId, invitedAt: null } });
 
   let sent = 0, failed = 0;
-  for (const g of pending) {
+  for (const [i, g] of pending.entries()) {
+    // Paced under the provider's rate limit. Sending 200 invitations in a tight
+    // loop earns 429s, and a burst of identical messages from a new domain is
+    // also precisely the shape a spam filter is watching for — a steady trickle
+    // reads as correspondence.
+    if (i > 0) await new Promise(r => setTimeout(r, INVITE_SEND_INTERVAL_MS));
     const ok = g.email ? await emailOneGuest(g, wedding, studio) : true;
     if (ok) {
       sent++;

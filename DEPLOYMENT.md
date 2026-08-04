@@ -133,6 +133,10 @@ DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npm run db:deplo
 
 ## 4. Email (Resend)
 
+> Full deliverability setup — SPF, DKIM, DMARC, warm-up and the reasons behind
+> each record — is in **EMAIL.md**. Run `npm run email:check` to confirm the
+> environment before the first send. The steps below are the minimum.
+
 1. Resend → Domains → add your domain, then add the DKIM/SPF records it prints
    to your DNS.
 2. Wait for verification. **Until it verifies, Resend only delivers to your own

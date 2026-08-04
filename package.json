@@ -14,7 +14,8 @@
     "db:seed": "prisma db seed",
     "db:create-admin": "tsx --env-file=.env prisma/create-admin.ts",
     "lint": "next lint",
-    "db:backfill-timezones": "tsx --env-file=.env prisma/backfill-timezones.ts"
+    "db:backfill-timezones": "tsx --env-file=.env prisma/backfill-timezones.ts",
+    "email:check": "tsx --env-file=.env scripts/email-check.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
