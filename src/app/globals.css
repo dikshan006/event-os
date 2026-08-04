@@ -293,7 +293,7 @@ body:has(dialog[open]){overflow:hidden}
    them. The vertical space is the luxury signal. */
 .s-masthead{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
 .s-kicker{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
-  letter-spacing:.42em;text-transform:uppercase;color:var(--si);opacity:var(--muted-lg);
+  letter-spacing:.42em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
   text-indent:.42em;margin-bottom:var(--sp-6)}
 .s-meta{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;
   text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.18em;
@@ -935,6 +935,10 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   font-weight: 500;
   line-height: 1.25;
   color: var(--sd);
+  /* Two lines reserved. Product names run long and unevenly; without this the
+     store, price and buttons sit at a different height in every card and the
+     grid stops reading as a grid. A rare third line only pushes its own card. */
+  min-block-size: 2.5em;
 }
 .site .s-gift-store,
 .site .s-gift-price {
@@ -998,3 +1002,236 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 }
 .frm-more[open] > summary::after { transform: rotate(225deg) translate(-2px,-2px); }
 .frm-more > summary:hover { color: var(--ink); }
+
+/* ================================================================ wishlist ==
+   The dedicated registry page. Every value below is an existing token — the
+   same cream, ink, serif, spacing scale and hairline weight the invitation
+   uses. Nothing here introduces a colour or a size the site did not have. */
+
+/* The request. Stationery, not a notification: a hairline box, a small serif
+   heading, and a lot of room. No icon, no tint, no border colour that carries
+   meaning — a yellow warning bar would be the one un-wedding-like thing on
+   the page. */
+.site .s-callout {
+  max-width: 58ch;
+  margin: 0 auto var(--sp-8);
+  padding: clamp(24px, 4vw, 40px) clamp(22px, 4vw, 46px);
+  border: 1px solid color-mix(in srgb, var(--si) 16%, transparent);
+  background: color-mix(in srgb, var(--si) 2.5%, var(--sb));
+  text-align: center;
+}
+.site .s-callout-title {
+  font-family: var(--serif);
+  font-size: var(--t-h3);
+  font-weight: 500;
+  color: var(--sd);
+  margin-bottom: var(--sp-3);
+}
+.site .s-callout-body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: 1.85;
+  color: var(--si);
+  opacity: var(--muted);
+  max-width: 52ch;
+  margin-inline: auto;
+}
+
+/* Count on the left, toggle on the right, hairline under both. */
+.site .s-wish-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-6);
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-7);
+  border-bottom: 1px solid color-mix(in srgb, var(--si) 12%, transparent);
+}
+.site .s-wish-count {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+
+/* A real checkbox, visually hidden, with a drawn track — so it is keyboard
+   operable and announced correctly without any JavaScript for the semantics. */
+.site .s-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 0; }
+.site .s-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.site .s-switch-track {
+  inline-size: 34px;
+  block-size: 18px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--si) 28%, transparent);
+  position: relative;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.site .s-switch-track span {
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-start: 3px;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--si) 46%, transparent);
+  transition: translate var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.site .s-switch input:checked + .s-switch-track { border-color: var(--sa); background: color-mix(in srgb, var(--sa) 12%, transparent); }
+.site .s-switch input:checked + .s-switch-track span { translate: 16px 0; background: var(--sa); }
+.site .s-switch input:focus-visible + .s-switch-track { outline: 2px solid var(--sa); outline-offset: 3px; }
+.site .s-switch-label {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 76%, transparent);
+}
+
+/* The two buttons on a gift card and in the modal. Not filled rectangles —
+   a wall of solid buttons is what makes a registry look like a shop. */
+.site .s-gbtn {
+  display: inline-block;
+  padding: 11px 0;
+  font: 500 var(--t-micro)/1.2 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--sa);
+  border-bottom: 1px solid color-mix(in srgb, var(--sa) 34%, transparent);
+  background: none;
+  cursor: pointer;
+  width: fit-content;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.site .s-gbtn:hover, .site .s-gbtn:focus-visible { border-bottom-color: var(--sa); }
+.site .s-gbtn[disabled] { opacity: .5; cursor: default; }
+
+.site .s-gbtn-quiet {
+  display: inline-block;
+  padding: 11px 0;
+  font: 500 var(--t-micro)/1.2 var(--sans);
+  letter-spacing: .16em;
+  color: color-mix(in srgb, var(--si) 70%, transparent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  width: fit-content;
+  transition: color var(--dur-fast) var(--ease);
+}
+.site .s-gbtn-quiet:hover, .site .s-gbtn-quiet:focus-visible { color: var(--si); }
+
+.site .s-gift-acts { display: grid; justify-items: start; gap: 0; margin-top: 4px; }
+.site .s-gift.is-claimed .s-gift-frame { opacity: .5; }
+.site .s-gift-badge {
+  margin-top: 8px;
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .14em;
+  color: color-mix(in srgb, var(--si) 66%, transparent);
+  font-style: italic;
+}
+
+/* The reminder shown only to a guest who actually left for a retailer. */
+.site .s-recall {
+  max-width: 58ch;
+  margin: 0 auto var(--sp-7);
+  padding: clamp(20px, 3vw, 30px) clamp(20px, 3.5vw, 36px);
+  border: 1px solid color-mix(in srgb, var(--sa) 30%, transparent);
+  background: color-mix(in srgb, var(--sa) 4%, var(--sb));
+  text-align: center;
+}
+.site .s-recall-title { font-family: var(--serif); font-size: var(--t-h3); font-weight: 500; color: var(--sd); }
+.site .s-recall-body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: 1.8;
+  color: var(--si);
+  opacity: var(--muted);
+  margin-top: var(--sp-2);
+}
+.site .s-recall-body em { font-style: italic; }
+.site .s-recall-acts { display: flex; flex-wrap: wrap; gap: var(--sp-5); justify-content: center; margin-top: var(--sp-3); }
+
+/* ------------------------------------------------------------ claim modal --
+   Native <dialog>. Focus trapping, Escape and the top layer all come from the
+   platform; the styling is the site's own. */
+.site .s-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  /* `width` and `max-width` alone leave `margin:auto` nothing definite to work
+     with, which is how a dialog ends up pinned to the left edge. */
+  width: min(30rem, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100dvh - 2 * var(--sp-6));
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--si) 18%, transparent);
+  background: var(--sb);
+  color: var(--si);
+  box-shadow: 0 30px 90px -40px rgba(0, 0, 0, .45);
+}
+.site .s-modal::backdrop { background: color-mix(in srgb, #000 42%, transparent); }
+/* The dialog is a DOM descendant of the section, so it inherits its centring.
+   A centred label above a left-aligned input reads as a mistake. */
+.site .s-modal-body { display: grid; gap: var(--sp-4); padding: clamp(24px, 4vw, 38px); text-align: left; }
+.site .s-modal-eyebrow {
+  font: 500 var(--t-eyebrow)/1 var(--sans);
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 64%, transparent);
+}
+.site .s-modal-title { font-family: var(--serif); font-size: var(--t-h2); font-weight: 500; line-height: 1.2; color: var(--sd); }
+.site .s-modal-note {
+  font-family: var(--serif);
+  font-size: var(--t-micro);
+  line-height: 1.7;
+  color: var(--si);
+  opacity: var(--muted);
+}
+.site .s-modal-err { font-family: var(--sans); font-size: var(--t-micro); line-height: 1.6; color: #a9333b; }
+.site .s-modal-acts { display: flex; gap: var(--sp-5); align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+
+.site .s-field { display: grid; gap: 6px; }
+.site .s-field label {
+  font: 500 var(--t-micro)/1 var(--sans);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 76%, transparent);
+}
+.site .s-input {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  color: var(--si);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--si) 24%, transparent);
+  border-radius: 0;
+  padding: 8px 0;
+  width: 100%;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.site .s-input:focus { outline: 0; border-bottom-color: var(--sa); }
+.site textarea.s-input { resize: vertical; line-height: 1.6; }
+
+/* --------------------------------------------- the invitation's short teaser */
+.site .s-reg-note {
+  font-family: var(--serif);
+  font-size: var(--t-lead);
+  line-height: 1.8;
+  color: var(--si);
+  opacity: var(--muted);
+  max-width: 54ch;
+  margin: 0 auto var(--sp-7);
+  text-align: center;
+}
+.site .s-reg-preview { max-width: 860px; margin-inline: auto; }
+
+/* Touch targets for the wishlist controls.
+   Declared here, at the end, deliberately: these selectors tie on specificity
+   with the base rules above, so the later declaration is the one that wins.
+   Placed with the other coarse-pointer rules it lost silently, and the buttons
+   stayed 36px on a phone. */
+@media (pointer: coarse) {
+  .site .s-gbtn, .site .s-gbtn-quiet { padding-block: 16px; }
+  .site .s-switch { padding-block: 14px; }
+}

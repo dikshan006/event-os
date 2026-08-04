@@ -8,28 +8,10 @@ import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
+import { THEMES } from "@/lib/themes";
 import { EventActions, ScheduleCalendarLink, VenueDirections } from "./EventActions";
 import { hasPlace, resolvePlace } from "@/lib/maps";
 
-/**
- * Template palettes.
- *
- * The `lace`, `heart` and `rule` flags are gone: repeating-dot borders, a ♥
- * glyph and a double rule are the visual signature of a 2010s wedding
- * template, and they were the loudest thing on the page. Distinction now comes
- * from typography, rhythm and how the photography is toned.
- */
-const THEMES = {
-  BLUSH_ROMANCE: { bg: "#F6EFEA", ink: "#211E1B", accent: "#9B5B63", deep: "#211E1B", names: "caps",
-    photo: "linear-gradient(120deg,#4a4340,#7c655b 60%,#a3897a)" },
-  // Sage was #87A07A on white: 2.86:1, which fails WCAG AA even for large
-  // text, and it carried every link and the RSVP button. Darkened until both
-  // the text-on-background and white-on-button directions pass.
-  MODERN_SAGE: { bg: "#FFFFFF", ink: "#414B3C", accent: "#5E7052", deep: "#54654A", names: "caps",
-    photo: "linear-gradient(120deg,#1f2a22,#3c5240 55%,#6e8264)" },
-  CLASSIC_ELEGANCE: { bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42", names: "script",
-    photo: "linear-gradient(120deg,#241f24,#57404a 55%,#8d6f72)" },
-} as const;
 
 type Props = {
   wedding: Wedding & { faqs: Faq[]; registry: RegistryItem[]; funds: CashFund[] };
@@ -59,6 +41,13 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
   const venuePlace = resolvePlace({ location: null, address: null, lat: null, lng: null }, wedding);
   const venueMappable = hasPlace(venuePlace);
   const venueAddressLine = venuePlace.address;
+
+  // The teaser shows three. Whatever the planner marked as featured, topped up
+  // from the front of the list so the section is never half-empty.
+  const featuredGifts = [
+    ...wedding.registry.filter(g => g.featured),
+    ...wedding.registry.filter(g => !g.featured),
+  ].slice(0, 3);
   const appUrl = (process.env.APP_URL ?? "").replace(/\/$/, "");
 
   /**
@@ -290,39 +279,49 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
 
         {/* Registry as a gift list, set like a printed page: title, then the
             quiet detail line, then a restrained link. No boxes. */}
+        {/* The invitation stays short. Three gifts as a taste, one line of
+            copy, and a link — the wishlist itself is a page of its own, which
+            is where twenty gifts belong. */}
         {has("REGISTRY") && wedding.registry.length > 0 && (
           <section className="s-sec" id="registry">
             <h2 className="s-h">Registry</h2>
-            <div className="s-hs">gifts we would love</div>
-            <ul className="s-gifts">
-              {wedding.registry.map(g => (
-                <li className="s-gift" key={g.id}>
-                  {/* The whole card is the link. One target instead of two, and
-                      the image is not separately tabbable — it carries no
-                      information the title does not already give. */}
-                  <a className="s-gift-link" href={g.url} target="_blank" rel="noopener noreferrer">
-                    <span className="s-gift-frame">
-                      {g.imageUrl ? (
-                        <img src={g.imageUrl} alt="" loading="lazy" decoding="async" />
-                      ) : (
-                        // No photograph: a monogram rather than a broken frame
-                        // or a stock placeholder, so the grid keeps its rhythm.
-                        <span className="s-gift-mono" aria-hidden="true">{g.title.trim()[0] ?? "·"}</span>
-                      )}
-                    </span>
-                    <span className="s-gift-body">
-                      <span className="s-gift-title">{g.title}</span>
-                      {g.retailer && <span className="s-gift-store">{g.retailer}</span>}
-                      {g.price && <span className="s-gift-price">{g.price}</span>}
-                      <span className="s-gift-cta">
-                        View gift<span aria-hidden="true"> ↗</span>
-                        <span className="sr-only"> (opens in a new tab)</span>
+            <div className="s-hs">with love and thanks</div>
+
+            <Reveal>
+              <p className="s-reg-note">
+                Your presence is the greatest gift of all. For those who have
+                asked, we have put together a wishlist of things we would love
+                as we begin this new chapter together.
+              </p>
+            </Reveal>
+
+            {featuredGifts.length > 0 && (
+              <Reveal>
+                <ul className="s-gifts s-reg-preview">
+                  {featuredGifts.map(g => (
+                    <li className="s-gift" key={g.id}>
+                      <span className="s-gift-frame">
+                        {g.imageUrl
+                          ? <img src={g.imageUrl} alt="" loading="lazy" decoding="async" />
+                          : <span className="s-gift-mono" aria-hidden="true">{g.title.trim()[0] ?? "·"}</span>}
                       </span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+                      <span className="s-gift-body">
+                        <span className="s-gift-title">{g.title}</span>
+                        {g.retailer && <span className="s-gift-store">{g.retailer}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            )}
+
+            <Reveal>
+              <div style={{ textAlign: "center", marginTop: "var(--sp-7)" }}>
+                <a className="s-quiet-link" href={`/w/${wedding.slug}/registry`}>
+                  View wishlist<span aria-hidden="true"> →</span>
+                </a>
+              </div>
+            </Reveal>
           </section>
         )}
 

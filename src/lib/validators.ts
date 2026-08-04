@@ -68,11 +68,19 @@ export const zRsvp = z.object({
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
 
+/** A guest claiming a gift. Name only — there is nothing to verify against. */
+export const zGiftClaim = z.object({
+  name: z.string().trim().min(2, "Please add your name so the couple know who to thank.").max(80),
+  note: z.string().trim().max(600).optional().or(z.literal("")),
+});
+
 export const zRegistryItem = z.object({
-  title: z.string().min(1).max(200),
-  url: z.string().url(),
+  title: z.string().min(1).max(140),
+  url: z.string().url("Paste the full product link, including https://"),
+  imageUrl: z.string().max(600).optional().or(z.literal("")),
   price: z.string().max(30).optional().or(z.literal("")),
   retailer: z.string().max(80).optional().or(z.literal("")),
+  featured: z.boolean().default(false),
 });
 
 export const zStudioBranding = z.object({

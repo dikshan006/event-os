@@ -311,6 +311,23 @@ model RegistryItem {
   retailer  String?
   url       String
   sortOrder Int     @default(0)
+  /** Shown in the short teaser on the invitation. Three at most. */
+  featured  Boolean @default(false)
+
+  /**
+   * Claimed by a guest, on the honour system.
+   *
+   * There is no payment here and no account: a guest buys from the retailer
+   * and comes back to say so. That is how every registry of this kind works,
+   * and it is why the planner can always release a claim — a mistyped name or
+   * a guest who changed their mind must not permanently retire a gift.
+   */
+  purchasedBy   String?
+  purchasedAt   DateTime?
+  purchaseNote  String?   @db.Text
+
+  @@index([weddingId, sortOrder])
+  @@index([weddingId, purchasedAt])
 }
 
 model CashFund {

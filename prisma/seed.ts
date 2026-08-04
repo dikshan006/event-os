@@ -1,3 +1,4 @@
+import { DEMO_GIFTS, giftTile } from "../src/lib/demo-gifts";
 import { PrismaClient, TemplateKey, WeddingStatus, RsvpStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
@@ -65,11 +66,22 @@ async function main() {
             { question: "Can I bring a plus one?", answer: "Invitations are addressed to everyone included in your party.", sortOrder: 1 },
           ],
         },
+        // The same twenty gifts the template preview uses, so a freshly seeded
+        // database shows the wishlist as guests will actually meet it. Two are
+        // pre-claimed, which is the only way to see the toggle and the badge
+        // without buying something.
         registry: {
-          create: [
-            { title: "Artisan Stand Mixer \u2014 Matte Cream", price: "$449.95", retailer: "Williams Sonoma", url: "https://www.williams-sonoma.com", sortOrder: 0 },
-            { title: "Signature Dutch Oven, 5.5 qt", price: "$419.95", retailer: "Crate & Barrel", url: "https://www.crateandbarrel.com", sortOrder: 1 },
-          ],
+          create: DEMO_GIFTS.map((g, i) => ({
+            title: g.title.replace(/&amp;/g, "&"),
+            retailer: g.retailer.replace(/&amp;/g, "&"),
+            price: g.price,
+            url: g.url,
+            imageUrl: giftTile(g.tint, g.title.trim()[0] ?? "\u00b7"),
+            featured: Boolean(g.featured),
+            sortOrder: i * 10,
+            ...(i === 4 ? { purchasedBy: "Sarah Whitfield", purchasedAt: new Date() } : {}),
+            ...(i === 11 ? { purchasedBy: "Tom Iversen", purchasedAt: new Date() } : {}),
+          })),
         },
         funds: {
           create: [{ name: "Honeymoon Fund", blurb: "Help us toast to a week on the Amalfi Coast.", venmoUrl: "https://venmo.com", goalCents: 500000 }],

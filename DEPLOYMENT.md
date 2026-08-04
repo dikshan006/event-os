@@ -68,6 +68,9 @@ This includes:
 
 - `20260803170000_access_request` — the table behind the public site's Request
   access form. Until it is applied that form errors.
+- `20260804140000_registry_purchases` — gift claims (`purchasedBy`,
+  `purchasedAt`, `purchaseNote`) and a `featured` flag for the invitation
+  teaser. Additive only; existing gifts are unaffected.
 - `20260804090000_calendar_and_maps` — real start/end instants on events, venue
   address, coordinates and a timezone. It also best-effort backfills `startsAt`
   for existing events whose time reads like "7:00 PM" or "19:00", anchored to

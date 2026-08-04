@@ -1,3 +1,4 @@
+import { demoGiftRows } from "./demo-gifts";
 import type { PhotoSet, PhotoView } from "./photo-view";
 import { toneStyle, type PhotoTone } from "./photo-tone";
 
@@ -121,22 +122,12 @@ export const DEMO_WEDDING = {
       question: "Is there parking at the villa?",
       answer: "Yes, through the upper gate, with attendants from four o'clock." },
   ],
-  registry: [
-    // Six, and two without a photograph — the preview should show the grid
-    // handling a mixed registry rather than an unrealistically tidy one.
-    { id: "r1", weddingId: "demo", sortOrder: 0, title: "Copper cookware set",
-      imageUrl: giftTile("#8d6f5a", "C"), price: "£320", retailer: "Divertimenti", url: "https://example.com" },
-    { id: "r2", weddingId: "demo", sortOrder: 1, title: "Hand-thrown dinner service",
-      imageUrl: giftTile("#7d8478", "D"), price: "£240", retailer: "Leach Pottery", url: "https://example.com" },
-    { id: "r3", weddingId: "demo", sortOrder: 2, title: "Linen bedding, ivory",
-      imageUrl: giftTile("#b9ac97", "L"), price: "£180", retailer: "Piglet in Bed", url: "https://example.com" },
-    { id: "r4", weddingId: "demo", sortOrder: 3, title: "Cast iron casserole",
-      imageUrl: null, price: "£260", retailer: "Le Creuset", url: "https://example.com" },
-    { id: "r5", weddingId: "demo", sortOrder: 4, title: "Crystal coupes, set of six",
-      imageUrl: giftTile("#9aa3ab", "G"), price: "£140", retailer: "Richard Brendon", url: "https://example.com" },
-    { id: "r6", weddingId: "demo", sortOrder: 5, title: "Walnut serving board",
-      imageUrl: null, price: "£95", retailer: "Blackcreek", url: "https://example.com" },
-  ],
+  registry: demoGiftRows("demo").map((g, i) =>
+    // Two already claimed, so the preview shows the toggle and the badge doing
+    // something rather than an unrealistically untouched list.
+    i === 4 ? { ...g, purchasedBy: "Sarah Whitfield", purchasedAt: new Date("2027-04-02T10:00:00Z") }
+    : i === 11 ? { ...g, purchasedBy: "Tom Iversen", purchasedAt: new Date("2027-04-06T18:20:00Z") }
+    : g),
   funds: [
     { id: "c1", weddingId: "demo", name: "Honeymoon in Kyoto",
       blurb: "Two weeks in spring, mostly walking and eating.",
@@ -144,21 +135,6 @@ export const DEMO_WEDDING = {
   ],
 };
 
-
-/** A flat tinted tile with a monogram, used only by the template preview. */
-function giftTile(hex: string, letter: string) {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">` +
-    `<rect width="400" height="500" fill="${hex}"/>` +
-    `<text x="200" y="285" text-anchor="middle" font-family="Georgia,serif" ` +
-    `font-size="150" fill="rgba(255,255,255,.34)">${letter}</text></svg>`;
-  // base64 rather than `;utf8,` + percent-encoding: the latter is a
-  // non-standard media-type parameter and browsers reject the URI outright,
-  // which showed up as empty frames in the template preview.
-  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
-}
-
-/** Public events for the preview — the same programme in every template. */
 /**
  * Public events for the preview — the same programme in every template.
  *
