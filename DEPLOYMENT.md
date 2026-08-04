@@ -84,8 +84,34 @@ DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" \
   npm run db:create-admin -- you@yourdomain.com "Platform Owner" 'a-long-passphrase'
 ```
 
-Migrations are run manually rather than in the build so a failed migration can
-never take the site down mid-deploy.
+### Migrations run in the build, on purpose
+
+`package.json` now runs `prisma migrate deploy` as part of `build`.
+
+This reverses an earlier decision, for a reason worth recording. Running them
+by hand was meant to stop a bad migration taking the site down mid-deploy. What
+actually happened was the opposite failure, and it is the more likely one: code
+was pushed, Vercel deployed it, the migration was forgotten, and every planner
+got a 500 because the Prisma client selected four columns the database did not
+have.
+
+Running them in the build makes that impossible. A migration that fails fails
+the build, and Vercel keeps serving the **previous** deployment — so the worst
+case is "the new version did not ship", not "the live site is broken". Code can
+never get ahead of the schema again.
+
+Two consequences to know about:
+
+- `DIRECT_URL` must be present at build time, not just at runtime.
+- A destructive migration still deserves a look before you push. The build
+  guard protects against forgetting; it does not protect against a bad
+  migration you wrote on purpose.
+
+To apply migrations without deploying (the old behaviour):
+
+```bash
+DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npm run db:deploy
+```
 
 ---
 
@@ -234,15 +260,25 @@ token is a guest's invite code or a published wedding's slug. Authorisation is
 inherited from the same rules the invitation page uses, so the file can never
 contain an event the page would not show.
 
-Two things the planner must set for it to work:
+The timezone fills itself in from the city or address the planner already
+typed — "Charleston, SC" resolves to America/New_York, "Tuscany" to Europe/Rome
+— using an offline IANA lookup, no geocoding key. It stays editable, and
+changing it re-anchors every existing event so the times keep the clock values
+the planner entered rather than silently shifting by the offset.
 
-1. **A timezone on the wedding** (Content tab). Event times are entered as local
-   wall time at the venue and stored as the instant they correspond to, so a
-   guest opening the invitation from another country gets the right moment.
-   Defaults to UTC, which is only correct for a wedding in the UK in winter.
-2. **A start time on each event** (Schedule Builder). Events without one still
-   appear on the invitation but offer no calendar button — the builder shows a
-   "No time set" chip so this is visible rather than silent.
+One thing the planner must still set:
+
+- **A start time on each event** (Schedule Builder). Events without one appear
+  on the invitation but offer no calendar button; the builder shows a
+  "No time set" chip so this is visible rather than silent.
+
+Weddings created before timezones existed are left on UTC. To give them the
+right zone in one go, reusing the same lookup the app uses:
+
+```bash
+DATABASE_URL="…" DIRECT_URL="…" npm run db:backfill-timezones           # dry run
+DATABASE_URL="…" DIRECT_URL="…" npm run db:backfill-timezones -- --apply
+```
 
 ## Known limitations to revisit after launch
 

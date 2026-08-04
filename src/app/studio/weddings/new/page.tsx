@@ -4,7 +4,7 @@ import { createWedding } from "@/server/services/weddings";
 import { importGuests } from "@/server/services/guests";
 import { PageHead } from "@/components/ui";
 import { zWedding } from "@/lib/validators";
-import { COMMON_TIME_ZONES } from "@/lib/timezone";
+import { TimeZoneField } from "@/components/TimeZoneField";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
 
 export default async function NewWedding() {
@@ -77,12 +77,7 @@ export default async function NewWedding() {
             <input className="inp" name="venueAddress" placeholder="Street, city, postcode" />
             <span className="hint">Gives guests one-tap directions. You can add it later.</span>
           </div>
-          <div className="field"><label>Time zone</label>
-            <select className="inp" name="timeZone" defaultValue="Europe/London">
-              {COMMON_TIME_ZONES.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
-            </select>
-            <span className="hint">Where the wedding happens. Event times are read in this zone.</span>
-          </div>
+          <TimeZoneField />
           <div className="field"><label>Your story</label>
             <textarea className="inp" name="story" placeholder="Our journey began with a chance meeting…" /></div>
           <div className="field"><label>Website sections</label>

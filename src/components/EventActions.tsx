@@ -1,19 +1,20 @@
 import type { Event, Wedding } from "@prisma/client";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { toCalendarEvent } from "@/server/services/calendar-feed";
-import { appleMapsUrl, googleMapsUrl, hasPlace, placeLabel, resolvePlace } from "@/lib/maps";
+import { appleMapsUrl, googleMapsUrl, hasPlace, placeQuery, resolvePlace } from "@/lib/maps";
 
 /**
- * "Add to calendar" and "Directions", under each event on the invitation.
+ * Everything practical about an event, in one block under it: where it is, how
+ * to get there, and how to put it in a calendar.
  *
- * Built as native <details> disclosures rather than as a JavaScript popover.
- * That gives keyboard support, screen-reader semantics and Escape-to-close for
- * free, works before hydration and with scripting off, and adds nothing to the
- * bundle — the whole feature ships as HTML. A hand-written menu would have been
- * more code and less accessible.
+ * The first version hid these behind two <details> disclosures. That kept the
+ * page quiet but made a guest hunt — two taps to find out an address, and no
+ * way to see at a glance that directions existed at all. They are now simply
+ * present. Five links is not clutter when they are the five things a guest
+ * actually wants; grouping and type weight do the work that hiding was doing.
  *
- * Both controls are entirely derived. The planner enters a venue and a time;
- * nothing here is configured.
+ * Still no JavaScript, and no icons: a wedding invitation set in Cormorant does
+ * not want an emoji in it, and the labels already say what each link is.
  */
 
 type Props = {
@@ -29,75 +30,67 @@ export function EventActions({ event, wedding, studioName, token, appUrl }: Prop
   const place = resolvePlace(event, wedding);
   const canMap = hasPlace(place);
 
-  // An event with no start time cannot become a calendar entry. Rather than
-  // offering a button that produces a broken file, it is simply absent — the
-  // planner is prompted for the time in the schedule editor instead.
+  // An event with no start cannot become a calendar entry. Rather than offering
+  // a control that produces a broken file, it is absent — and the planner is
+  // prompted for the time in the Schedule Builder instead.
   const canCalendar = event.startsAt instanceof Date;
-
-  if (!canCalendar && !canMap) return null;
+  if (!canMap && !canCalendar) return null;
 
   const ics = `${appUrl}/calendar/${encodeURIComponent(token)}/${event.id}.ics`;
+  // The address line, but never a repeat of the venue name already printed
+  // directly above it.
+  const address = place.address && place.address !== place.name ? place.address : null;
 
   return (
-    <div className="s-act">
-      {canCalendar && (
-        <details className="s-act-item">
-          <summary>
-            Add to calendar
-            <span className="s-act-caret" aria-hidden="true" />
-          </summary>
-          <div className="s-act-menu">
+    <div className="s-detail">
+      {address && <p className="s-detail-address">{address}</p>}
+
+      <div className="s-detail-groups">
+        {canMap && (
+          <div className="s-detail-group">
+            <p className="s-detail-label">Directions</p>
+            <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+              Open in Google Maps
+            </a>
+            <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+              Open in Apple Maps
+            </a>
+          </div>
+        )}
+
+        {canCalendar && (
+          <div className="s-detail-group">
+            <p className="s-detail-label">Add to calendar</p>
             <a
-              href={googleCalendarUrl(toCalendarEvent(event, wedding, studioName, `${appUrl}/invite/${token}`))}
+              href={googleCalendarUrl(
+                toCalendarEvent(event, wedding, studioName, `${appUrl}/invite/${token}`),
+              )}
               target="_blank"
               rel="noopener noreferrer"
             >
               Google Calendar
-              <span className="s-act-hint">Opens in a new tab</span>
             </a>
             {/*
               One file serves both: Apple Calendar and Outlook read the same
-              RFC 5545 payload. They are listed separately because guests look
-              for the name of their own application, not for a file format.
+              RFC 5545 payload. They are named separately because a guest looks
+              for their own application, not for a file format.
             */}
             <a href={ics} download>
               Apple Calendar
-              <span className="s-act-hint">Downloads .ics</span>
             </a>
             <a href={ics} download>
               Outlook
-              <span className="s-act-hint">Downloads .ics</span>
             </a>
           </div>
-        </details>
-      )}
-
-      {canMap && (
-        <details className="s-act-item">
-          <summary>
-            Directions
-            <span className="s-act-caret" aria-hidden="true" />
-          </summary>
-          <div className="s-act-menu">
-            <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-              Google Maps
-            </a>
-            <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-              Apple Maps
-            </a>
-            {placeLabel(place) && <p className="s-act-place">{placeLabel(place)}</p>}
-          </div>
-        </details>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 /**
  * "Add the whole schedule" — one tap for every event a guest can see.
- *
- * Sits once at the head of the programme rather than repeating per event, and
- * is hidden entirely when nothing has a time yet.
+ * Once, at the foot of the programme, and hidden when nothing has a time yet.
  */
 export function ScheduleCalendarLink({
   events,
@@ -117,26 +110,23 @@ export function ScheduleCalendarLink({
 }
 
 /**
- * Directions to the main venue, for the travel section.
- *
- * Separate from the per-event control because a guest looking at "Getting
- * here" wants the venue, not whichever event they last scrolled past.
+ * Directions to the main venue, for the Travel section — separate from the
+ * per-event block because a guest reading "Getting here" wants the venue, not
+ * whichever event they last scrolled past.
  */
 export function VenueDirections({ wedding }: { wedding: Wedding }) {
-  const place = resolvePlace(
-    { location: null, address: null, lat: null, lng: null },
-    wedding,
-  );
+  const place = resolvePlace({ location: null, address: null, lat: null, lng: null }, wedding);
   if (!hasPlace(place)) return null;
 
   return (
-    <div className="s-act s-act-venue">
-      <a className="s-act-flat" href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+    <div className="s-detail-group s-detail-venue">
+      <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
         Open in Google Maps
       </a>
-      <a className="s-act-flat" href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+      <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
         Open in Apple Maps
       </a>
+      <p className="s-detail-address">{placeQuery(place)}</p>
     </div>
   );
 }

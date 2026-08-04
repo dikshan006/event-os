@@ -13,6 +13,28 @@
  */
 
 /**
+ * Every entry point runs the zone through this first.
+ *
+ * `Intl.DateTimeFormat` throws a RangeError on an unknown timezone, and these
+ * functions are called during render on the Schedule Builder and the guest
+ * invitation. A single bad string in one row — a zone renamed between tzdata
+ * releases, a value written before validation existed, a hand-edited record —
+ * would take those pages down with an unhandled server exception. That is the
+ * same class of failure as the missing column that broke the dashboard, so it
+ * is closed the same way: degrade, do not throw.
+ */
+function safeZone(zone: string | null | undefined): string {
+  if (!zone) return "UTC";
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: zone });
+    return zone;
+  } catch {
+    console.warn(`[timezone] unknown zone ${JSON.stringify(zone)} — falling back to UTC`);
+    return "UTC";
+  }
+}
+
+/**
  * The offset, in minutes, that `zone` was at on the given instant.
  * Positive means ahead of UTC (Europe/Rome in summer is +120).
  */
@@ -68,8 +90,9 @@ function offsetMinutesAt(instant: Date, zone: string): number {
  */
 export function zonedWallTimeToUtc(
   parts: { year: number; month: number; day: number; hour: number; minute: number },
-  zone: string,
+  rawZone: string,
 ): Date {
+  const zone = safeZone(rawZone);
   const naive = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, 0);
 
   let guess = new Date(naive - offsetMinutesAt(new Date(naive), zone) * 60_000);
@@ -88,9 +111,9 @@ export function parseLocalInput(date: string, time: string) {
 }
 
 /** The civil time an instant corresponds to in `zone`, for re-filling a form. */
-export function utcToZonedInputs(instant: Date, zone: string): { date: string; time: string } {
+export function utcToZonedInputs(instant: Date, rawZone: string): { date: string; time: string } {
   const dtf = new Intl.DateTimeFormat("en-CA", {
-    timeZone: zone,
+    timeZone: safeZone(rawZone),
     hour12: false,
     year: "numeric",
     month: "2-digit",
@@ -108,7 +131,7 @@ export function utcToZonedInputs(instant: Date, zone: string): { date: string; t
 
 /** Human display of an instant in the venue's zone, e.g. "Saturday, 12 September". */
 export function formatInZone(instant: Date, zone: string, opts: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: zone, ...opts }).format(instant);
+  return new Intl.DateTimeFormat("en-GB", { timeZone: safeZone(zone), ...opts }).format(instant);
 }
 
 /**
@@ -153,11 +176,5 @@ export const COMMON_TIME_ZONES = [
 
 /** True when the string is a zone this runtime actually knows. */
 export function isValidTimeZone(zone: string): boolean {
-  if (!zone) return false;
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: zone });
-    return true;
-  } catch {
-    return false;
-  }
+  return Boolean(zone) && safeZone(zone) === zone;
 }

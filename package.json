@@ -7,13 +7,14 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:create-admin": "tsx --env-file=.env prisma/create-admin.ts",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:backfill-timezones": "tsx --env-file=.env prisma/backfill-timezones.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

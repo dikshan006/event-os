@@ -785,96 +785,82 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 }
 
 /* ============================================ calendar & directions ======
-   Two native <details> disclosures under each event. Deliberately quiet: this
-   is a utility a guest reaches for once, not something that should compete
-   with the event it belongs to. No icons — a caret and a rule carry it.
+   The practical block under each event: address, directions, calendar.
 
-   Everything below is inside `.site`, so it cannot reach the dashboards. */
-.site .s-act {
+   Everything is visible. An earlier version hid these behind disclosures,
+   which kept the page quiet at the cost of making a guest hunt for an address.
+   Two labelled columns, hairline-separated from the event above, carry five
+   links without reading as clutter — and no icons, because the labels already
+   say what each link is and an emoji in Cormorant looks like a mistake.
+
+   Scoped to `.site`, so none of it reaches the dashboards. */
+.site .s-detail {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid color-mix(in srgb, var(--si) 14%, transparent);
+  display: grid;
+  gap: var(--sp-4);
+  /* The programme is centred, so this is too — but the columns inside are
+     left-aligned, because a list of links reads badly ragged on both sides. */
+  justify-items: center;
+  text-align: center;
+}
+
+.site .s-detail-address {
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  letter-spacing: .04em;
+  color: color-mix(in srgb, var(--si) 72%, transparent);
+  max-width: 34ch;
+}
+
+.site .s-detail-groups {
   display: flex;
   flex-wrap: wrap;
-  /* The programme is set centred, so these follow it. Left-aligned controls
-     under a centred event read as a different component that wandered in. */
   justify-content: center;
-  gap: 8px 22px;
-  margin-top: 18px;
+  gap: var(--sp-5) clamp(32px, 7vw, 72px);
+  text-align: left;
 }
 
-.site .s-act-item { position: relative; }
+.site .s-detail-group { display: grid; gap: 6px; align-content: start; }
 
-.site .s-act-item > summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  list-style: none;
-  /* 44px of touch target without 44px of visible chrome: the padding is
-     vertical breathing room the label needed anyway. */
-  padding: 8px 0;
-  font: 500 var(--t-micro)/1 var(--sans);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--si) 78%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--si) 22%, transparent);
-  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
-}
-.site .s-act-item > summary::-webkit-details-marker { display: none; }
-.site .s-act-item > summary:hover {
-  color: var(--si);
-  border-bottom-color: color-mix(in srgb, var(--si) 55%, transparent);
-}
-
-.site .s-act-caret {
-  inline-size: 5px;
-  block-size: 5px;
-  border-right: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-  transform: rotate(45deg) translate(-1px, -1px);
-  transition: transform var(--dur-fast) var(--ease);
-}
-.site .s-act-item[open] > summary .s-act-caret { transform: rotate(225deg) translate(-2px, -2px); }
-
-.site .s-act-menu {
-  display: grid;
-  gap: 2px;
-  padding: 12px 0 4px;
-  max-width: 22rem;
-  margin-inline: auto;
-  min-inline-size: 12rem;
-}
-.site .s-act-menu a {
-  display: grid;
-  gap: 2px;
-  /* Comfortably past the 44px minimum on touch, and the whole row is the
-     target rather than just the words. */
-  padding: 10px 0;
-  font-size: var(--t-body);
-  color: var(--si);
-  border-bottom: 1px solid color-mix(in srgb, var(--si) 12%, transparent);
-  transition: color var(--dur-fast) var(--ease);
-}
-.site .s-act-menu a:last-of-type { border-bottom: 0; }
-.site .s-act-menu a:hover { color: var(--sa); }
-.site .s-act-hint {
-  font-size: var(--t-micro);
-  letter-spacing: 0.14em;
+.site .s-detail-label {
+  font: 500 var(--t-eyebrow)/1 var(--sans);
+  letter-spacing: .28em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--si) 62%, transparent);
+  margin-bottom: 4px;
 }
-.site .s-act-place {
-  padding-top: 10px;
-  font-size: var(--t-micro);
-  line-height: 1.5;
-  color: color-mix(in srgb, var(--si) 68%, transparent);
+
+.site .s-detail-group a {
+  /* 44px of touch target from padding alone, so the row is tappable without
+     drawing a button around it. */
+  display: block;
+  padding: 7px 0;
+  font-size: var(--t-body);
+  line-height: 1.3;
+  color: var(--si);
+  border-bottom: 1px solid transparent;
+  width: fit-content;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
+.site .s-detail-group a:hover {
+  color: var(--sa);
+  border-bottom-color: color-mix(in srgb, var(--sa) 45%, transparent);
+}
+
+/* In the Travel section the block stands alone, so it needs its own spacing
+   and reads left-aligned with the prose around it. */
+.site .s-detail-venue { margin-top: var(--sp-3); text-align: left; justify-items: start; }
+.site .s-detail-venue .s-detail-address { max-width: 40ch; padding-top: 6px; }
 
 /* Whole-schedule link, once at the foot of the programme. */
 .site .s-act-all {
   display: inline-block;
   margin-top: clamp(28px, 5vw, 48px);
-  padding: 8px 0;
+  padding: 10px 0;
   font: 500 var(--t-micro)/1.4 var(--sans);
-  letter-spacing: 0.18em;
+  letter-spacing: .18em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--si) 78%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--si) 30%, transparent);
@@ -882,24 +868,12 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 }
 .site .s-act-all:hover { color: var(--si); border-bottom-color: var(--si); }
 
-/* Venue directions in the Travel section: no disclosure, both links shown. */
-.site .s-act-venue { margin-top: 14px; gap: 8px 20px; justify-content: flex-start; }
-.site .s-act-flat {
-  padding: 8px 0;
-  font: 500 var(--t-micro)/1 var(--sans);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--si) 78%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--si) 30%, transparent);
-  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
-}
-.site .s-act-flat:hover { color: var(--si); border-bottom-color: var(--si); }
-
-@media (max-width: 30rem) {
-  /* Stacked on a phone, so each control gets the full width to be tapped. */
-  .site .s-act { flex-direction: column; gap: 4px; }
-  .site .s-act-item > summary { justify-content: space-between; width: 100%; }
-  .site .s-act-menu { max-width: none; }
+@media (max-width: 32rem) {
+  /* One column on a phone: two columns of links at this width leaves each of
+     them about eight characters wide. */
+  .site .s-detail-groups { flex-direction: column; align-items: center; gap: var(--sp-5); }
+  .site .s-detail-group { justify-items: center; text-align: center; }
+  .site .s-detail-group a { width: auto; }
 }
 
 /* A folded group inside a dashboard form. Used for the handful of fields most

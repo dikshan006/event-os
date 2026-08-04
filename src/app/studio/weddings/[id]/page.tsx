@@ -4,7 +4,7 @@ import { updateWedding } from "@/server/services/weddings";
 import { PageHead, StatusChip } from "@/components/ui";
 import { zWedding } from "@/lib/validators";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
-import { COMMON_TIME_ZONES } from "@/lib/timezone";
+import { TimeZoneField } from "@/components/TimeZoneField";
 import { revalidatePath } from "next/cache";
 
 export default async function WeddingEditor({ params }: { params: Promise<{ id: string }> }) {
@@ -81,18 +81,7 @@ export default async function WeddingEditor({ params }: { params: Promise<{ id: 
           <span className="hint">Powers one-tap directions on every guest&rsquo;s invitation. Every event inherits it unless it sets its own.</span>
         </div>
 
-        <div className="field"><label htmlFor="w-tz">Time zone</label>
-          <select id="w-tz" className="inp" name="timeZone" defaultValue={w.timeZone}>
-            {/* The wedding's stored zone is listed first even when it is not
-                one of the common ones, so opening and saving this form can
-                never silently change it. */}
-            {!COMMON_TIME_ZONES.includes(w.timeZone as (typeof COMMON_TIME_ZONES)[number]) && (
-              <option value={w.timeZone}>{w.timeZone}</option>
-            )}
-            {COMMON_TIME_ZONES.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
-          </select>
-          <span className="hint">Event times are entered in this zone, so calendars are right for guests anywhere.</span>
-        </div>
+        <TimeZoneField value={w.timeZone} />
 
         <details className="frm-more">
           <summary>Venue coordinates</summary>

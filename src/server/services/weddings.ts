@@ -5,7 +5,8 @@ import { logAudit } from "./audit";
 import type { z } from "zod";
 import type { zWedding } from "@/lib/validators";
 import { parseCoord } from "@/lib/validators";
-import { isValidTimeZone } from "@/lib/timezone";
+import { isValidTimeZone, utcToZonedInputs, zonedWallTimeToUtc, parseLocalInput } from "@/lib/timezone";
+import { resolveTimeZone } from "@/lib/timezone-lookup";
 
 /**
  * Venue and timezone fields, mapped once.
@@ -15,14 +16,58 @@ import { isValidTimeZone } from "@/lib/timezone";
  * editor and the invitation together.
  */
 function placeFields(input: z.infer<typeof zWedding>) {
+  // A blank or unknown zone is derived from the location the planner already
+  // typed, so the field is one they confirm rather than one they fill in.
+  const asked = input.timeZone?.trim() ?? "";
+  const timeZone = isValidTimeZone(asked)
+    ? asked
+    : resolveTimeZone({ city: input.city, venue: input.venue, venueAddress: input.venueAddress });
+
   return {
     venue: input.venue || null,
     city: input.city || null,
     venueAddress: input.venueAddress || null,
     venueLat: parseCoord(input.venueLat, 90),
     venueLng: parseCoord(input.venueLng, 180),
-    timeZone: isValidTimeZone(input.timeZone) ? input.timeZone : "UTC",
+    timeZone,
   };
+}
+
+/**
+ * Move every event so it keeps the same clock time in a new timezone.
+ *
+ * Event instants are stored in UTC, derived from local wall time at the venue.
+ * Change the venue's zone and those instants still name the old moment — a
+ * 2:00 PM ceremony moved from UTC to America/Chicago would start showing as
+ * 8:00 AM. Nobody would connect that to having corrected a dropdown.
+ *
+ * So the wall time is read back in the old zone and re-anchored in the new one.
+ * The numbers the planner typed are what survives, which is what they meant.
+ */
+async function reanchorEvents(weddingId: string, from: string, to: string) {
+  if (from === to) return;
+
+  const events = await prisma.event.findMany({
+    where: { weddingId, OR: [{ startsAt: { not: null } }, { endsAt: { not: null } }] },
+    select: { id: true, startsAt: true, endsAt: true },
+  });
+  if (!events.length) return;
+
+  const shift = (instant: Date | null) => {
+    if (!instant) return null;
+    const wall = utcToZonedInputs(instant, from);
+    const parts = parseLocalInput(wall.date, wall.time);
+    return parts ? zonedWallTimeToUtc(parts, to) : instant;
+  };
+
+  await prisma.$transaction(
+    events.map(e =>
+      prisma.event.update({
+        where: { id: e.id },
+        data: { startsAt: shift(e.startsAt), endsAt: shift(e.endsAt) },
+      }),
+    ),
+  );
 }
 
 export function listWeddings(studioId: string) {
@@ -61,6 +106,16 @@ export async function createWedding(studioId: string, actorName: string, input: 
 }
 
 export async function updateWedding(studioId: string, weddingId: string, input: z.infer<typeof zWedding>) {
+  // Read the current zone before writing, so a change can be detected and the
+  // events moved with it. Scoped by studioId, so this cannot read another
+  // tenant's wedding any more than the update below could write one.
+  const current = await prisma.wedding.findFirst({
+    where: { id: weddingId, studioId },
+    select: { timeZone: true },
+  });
+
+  const place = placeFields(input);
+
   // updateMany + studioId in the WHERE clause = tenant isolation at the query level
   await prisma.wedding.updateMany({
     where: { id: weddingId, studioId },
@@ -69,7 +124,7 @@ export async function updateWedding(studioId: string, weddingId: string, input: 
       partnerOne: input.partnerOne,
       partnerTwo: input.partnerTwo,
       date: new Date(input.date + "T16:00:00Z"),
-      ...placeFields(input),
+      ...place,
       story: input.story || null,
       venueNote: input.venueNote || null,
       accommodation: input.accommodation || null,
@@ -77,6 +132,10 @@ export async function updateWedding(studioId: string, weddingId: string, input: 
       sections: input.sections,
     },
   });
+
+  if (current && current.timeZone !== place.timeZone) {
+    await reanchorEvents(weddingId, current.timeZone, place.timeZone);
+  }
 }
 
 export async function unpublishWedding(studioId: string, weddingId: string) {
