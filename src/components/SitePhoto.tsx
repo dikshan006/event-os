@@ -18,7 +18,7 @@ export function SitePhoto({
   priority = false,
   ratio,
   className = "",
-  tone = true,
+  treatment = "page",
 }: {
   photo: PhotoView;
   /** Tells the browser how wide this image renders, so it picks the right rendition. */
@@ -29,28 +29,32 @@ export function SitePhoto({
   ratio?: number;
   className?: string;
   /**
-   * Blend the photograph into the page palette.
+   * How much of the house treatment to apply.
    *
-   * Uploaded photos arrive at whatever contrast and colour temperature the
-   * camera produced, and a bright, saturated frame next to fine serif type
-   * fights it. A small desaturation plus a wash of the template's own
-   * background colour settles the image into the layout so it reads as art
-   * direction rather than an asset dropped onto the page. Disabled inside the
-   * gallery, where the photographs are the subject.
+   * `page` — the default. Exposure, colour, hairline and contact shadow, plus
+   * the gradients that settle the photograph into a page of serif type.
+   *
+   * `print` — everything except those gradients. Used in the full-screen
+   * gallery, where there is no type for the image to sit under and a vignette
+   * would read as a filter. The frame and the colour still apply, so a
+   * photograph looks like the same photograph in both places.
+   *
+   * There is no way to opt out entirely, and that is the point: the treatment
+   * is what makes twenty uploads from four cameras look like one album.
    */
-  tone?: boolean;
+  treatment?: "page" | "print";
 }) {
   const aspect = ratio ?? photo.width / photo.height;
 
   return (
     <figure
-      className={`s-ph${tone ? " toned" : ""} ${className}`.trim()}
+      className={`s-ph ${treatment === "page" ? "toned" : "framed"} ${className}`.trim()}
       style={{
         aspectRatio: String(aspect),
         backgroundImage: `url("${photo.blurData}")`,
-        // Per-image measurements, resolved server-side. The CSS below reads
-        // these rather than hard-coding one treatment for every photograph.
-        ...(tone ? photo.style : undefined),
+        // Per-image measurements, resolved server-side. The CSS reads these
+        // rather than hard-coding one treatment for every photograph.
+        ...photo.style,
       } as React.CSSProperties}
     >
       <picture>

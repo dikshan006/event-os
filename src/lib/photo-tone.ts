@@ -58,20 +58,38 @@ const round = (v: number, dp = 3) => Number(v.toFixed(dp));
  * the treatment, only that the page looks considered.
  */
 export function toneStyle(tone: PhotoTone): Record<string, string> {
-  // --- Scrim -------------------------------------------------------------
-  // A bright photograph next to text is what actually breaks the hierarchy, so
-  // the wash of template background scales with luminance. Dark images already
-  // sit back and get almost none, which stops them turning muddy.
-  const scrim = clamp((tone.lum - 0.42) * 0.62, 0, 0.3);
+  // --- Exposure ----------------------------------------------------------
+  // The single biggest reason an uploaded photograph reads as pasted on: it
+  // arrives at whatever exposure the camera chose, which is almost always
+  // brighter than a page of cream and fine serif type wants.
+  //
+  // Everything is brought down, but not by a fixed amount. A bright frame is
+  // the one actually competing with the type and takes the most; a dim
+  // candlelit reception takes very little, because crushing it further turns
+  // it muddy and the guest sees a broken photo rather than a styled one.
+  // A normal exposure lands around 0.84 — the 15–20% the house style wants.
+  const bright = clamp(0.84 - (tone.lum - 0.45) * 0.28, 0.78, 0.93);
 
-  // A dark image is instead lifted very slightly, so it reads as intentional
-  // low-key rather than underexposed.
-  const lift = clamp((0.4 - tone.lum) * 0.22, 0, 0.09);
+  // --- Scrim -------------------------------------------------------------
+  // Now that exposure does the global work, the scrim is only what it should
+  // always have been: a gradient at the top and bottom edges so overlaid type
+  // has something to sit on. Much lighter than before, or the two treatments
+  // compound and a bright photograph goes grey.
+  const scrim = clamp((tone.lum - 0.5) * 0.34, 0, 0.16);
 
   // --- Saturation --------------------------------------------------------
-  // Only vivid images are pulled back, and never below 0.82 — beyond that
-  // skin tones go grey and the photograph looks broken rather than styled.
-  const saturate = clamp(1 - (tone.sat - 0.34) * 0.42, 0.82, 1);
+  // A gentle, near-universal pull — 5–10% on a normal frame, more on a vivid
+  // one. Never below 0.82: past that, skin goes grey and it stops reading as
+  // art direction.
+  const saturate = clamp(0.95 - (tone.sat - 0.34) * 0.35, 0.82, 0.97);
+
+  // --- Warmth ------------------------------------------------------------
+  // A trace of sepia, so a cool phone photograph and a warm film scan sit in
+  // the same family on the same page. At this strength it is invisible on any
+  // single image and only shows as coherence across several — which is the
+  // entire objective. Slightly more on brighter frames, where a cool cast is
+  // most obvious against cream.
+  const warm = clamp(0.04 + (tone.lum - 0.45) * 0.06, 0.03, 0.08);
 
   // --- Contrast ----------------------------------------------------------
   // High-contrast frames fight fine serif type; flat ones look washed out
@@ -81,25 +99,31 @@ export function toneStyle(tone: PhotoTone): Record<string, string> {
   // --- Vignette ----------------------------------------------------------
   // Enough to settle the edges into the page, more on brighter images where
   // the corners would otherwise glare.
-  const vignette = clamp(0.1 + (tone.lum - 0.4) * 0.2, 0.08, 0.22);
+  const vignette = clamp(0.09 + (tone.lum - 0.4) * 0.18, 0.07, 0.2);
 
   // --- Edge and depth ----------------------------------------------------
   // The photograph is framed rather than dissolved: a hairline plus a shadow
-  // that sits tight to the edge. Both are mixed from the template's own ink
-  // and background, never from pure black or white, so a sage invitation gets
-  // a sage-grey edge and a champagne one gets a warm edge.
+  // held tight to the edge — a print resting on paper, not a card floating
+  // above it.
   //
   // Strength is inverted against luminance, because a bright photograph nearly
   // matches a pale page and needs the edge to define where it ends, while a
   // dark one already separates and would look outlined if given the same
-  // weight. Both stay under 0.2 — the effect should register as depth, not as
-  // a border.
-  const edge = clamp(0.07 + (tone.lum - 0.42) * 0.16, 0.05, 0.15);
-  const depth = clamp(0.05 + (tone.lum - 0.42) * 0.1, 0.04, 0.1);
+  // weight. Both stay low: the effect should register as depth, not a border.
+  // The rule is drawn on the page, outside the photograph, so it meets the
+  // template background rather than the image — which is why it no longer
+  // varies much. It used to be inverted against luminance and inset, and the
+  // result was that a dark reception photo got the faintest line of all,
+  // drawn in dark ink on a dark image: invisible exactly where an edge was
+  // most needed. A near-constant weight is both more visible and more like a
+  // print, which does not change its mount to suit the exposure.
+  const edge = clamp(0.34 + (tone.lum - 0.45) * 0.1, 0.3, 0.42);
+  const depth = clamp(0.06 + (tone.lum - 0.42) * 0.1, 0.05, 0.12);
 
   return {
+    "--ph-bright": String(round(bright)),
+    "--ph-warm": String(round(warm)),
     "--ph-scrim": String(round(scrim)),
-    "--ph-lift": String(round(lift)),
     "--ph-saturate": String(round(saturate)),
     "--ph-contrast": String(round(contrast)),
     "--ph-vignette": String(round(vignette)),

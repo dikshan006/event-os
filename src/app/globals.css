@@ -298,7 +298,8 @@ body:has(dialog[open]){overflow:hidden}
 .s-meta{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;
   text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.18em;
   margin-top:var(--sp-6);line-height:1.9}
-.s-dot{margin:0 .7em;opacity:.5}
+/* Separator between meta items. At .5 it measured 2.41:1. */
+.s-dot{margin:0 .7em;opacity:var(--muted)}
 
 /* ----------------------------------------------------------- hero plate --
    Inset rather than full-bleed, so the page frames the photograph instead of
@@ -340,54 +341,99 @@ body:has(dialog[open]){overflow:hidden}
    Every value here comes from the photograph itself. src/lib/images.ts
    measures each upload once — luminance, saturation, tonal spread and a detail
    centroid — and src/lib/photo-tone.ts converts those into the custom
-   properties below. A bright frame therefore receives a stronger wash of the
-   template's background than a dark one, a vivid frame is eased back further
-   than a muted one, and the crop favours wherever the detail actually sits.
+   properties below.
 
-   The point is that a planner uploads whatever their photographer delivered
-   and it lands looking like it belongs to this template, with nothing to
-   adjust. The defaults are neutral, so photographs uploaded before this
-   existed still render sensibly.
+   Two classes, one look:
+     `.framed`  the print itself — exposure, colour, hairline, contact shadow
+     `.toned`   all of that plus the gradients that settle it into a page
 
-   Fallback values keep the rules valid if a photo has no measurements. */
-.s-ph.toned img{
-  filter:saturate(var(--ph-saturate,.92)) contrast(var(--ph-contrast,.98));
+   Every photograph on the site is at least `.framed`, so the hero, the couple
+   portrait, the story images and the gallery all carry the same edge and the
+   same colour. Only the gradients differ, because a photograph inside the
+   full-screen viewer has no type to sit under and a vignette there would read
+   as a filter rather than as art direction. */
+.s-ph.toned img,
+.s-ph.framed img{
+  /* Order matters. Exposure first, then colour, then the warmth that ties a
+     cool phone frame and a warm film scan into one family, then contrast last
+     so it acts on the corrected image rather than the original.
+
+     Individually none of these is visible. Together they are the difference
+     between photographs that sit on the page and photographs that belong to
+     it. Fallbacks keep the rule valid for uploads made before measurement
+     existed. */
+  filter:
+    brightness(var(--ph-bright,.85))
+    saturate(var(--ph-saturate,.93))
+    sepia(var(--ph-warm,.04))
+    contrast(var(--ph-contrast,.98));
   /* Intelligent crop: the detail centroid rather than the geometric middle. */
   object-position:var(--ph-focus-x,50%) var(--ph-focus-y,50%)}
 
-/* Scrim + vignette, scaled per image. */
+/* Scrim + vignette, scaled per image. Only where there is a page to blend
+   into — see the note above. */
 .s-ph.toned::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:
     linear-gradient(to bottom,
-      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.08) * 130%), transparent),
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.06) * 130%), transparent),
       transparent 36%, transparent 64%,
-      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.08) * 165%), transparent)),
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.06) * 165%), transparent)),
     radial-gradient(125% 95% at 50% 50%, transparent 55%,
-      color-mix(in srgb, var(--sb) calc(var(--ph-vignette,.12) * 165%), transparent))}
+      color-mix(in srgb, var(--sb) calc(var(--ph-vignette,.11) * 165%), transparent))}
 
 /* ------------------------------------------------------- frame and depth --
    A printed-album edge: one hairline and a shadow held tight against it.
 
-   The hairline is mixed from the template's own ink and background, never
-   pure black or white — so Modern Sage gets a sage-grey edge, Classic
-   Elegance a warm one, and neither reads as a UI border. It is drawn with an
-   inset box-shadow rather than `border` so it costs no layout and cannot
-   shift the image by a pixel.
+   The hairline is never black or white. It is mixed from the template's own
+   typography colour with a little of its accent stirred in, so Classic
+   Elegance gets a warm wine-tinged edge, Modern Sage a sage-grey one, and
+   Blush Romance a rose-tinged charcoal — each recognisably of its own
+   template, and any future template inherits the behaviour for free because
+   both inputs are theme variables rather than constants.
 
-   The shadow is deliberately short and close: 1px contact plus a 10px
-   diffusion pulled in by a negative spread. A larger blur or any vertical
-   offset immediately reads as a card floating above the page, which is the
-   thing to avoid. Both strengths come from the image's own luminance — a
-   bright photograph nearly matches a pale page and needs the edge to say
-   where it ends, a dark one already separates and would look outlined.
+   It is drawn with an inset box-shadow rather than `border` so it costs no
+   layout and cannot shift the image by a pixel.
 
-   Corners stay square. At this weight a radius is invisible, and square is
-   the more editorial choice. */
-.s-ph.toned{
+   The shadow is deliberately short and close: a 1px contact edge plus a 10px
+   diffusion pulled back by a negative spread, with no vertical offset worth
+   the name. Offset and blur are what make a shadow read as a card floating
+   above the page; a print resting on paper has neither.
+
+   Corners stay square. At this weight a radius is invisible, and square is the
+   more editorial choice. */
+.s-ph.toned,
+.s-ph.framed{
+  --ph-edge-color: color-mix(in srgb, var(--sa) 26%, var(--si));
+  /* The rule sits *outside* the photograph, not inset.
+     
+     Inset, it was invisible on exactly the images that needed it most: a dark
+     reception photo with a dark ink hairline drawn on top of it has no edge at
+     all, and the strength was inverted against luminance, so those images got
+     the faintest line of the lot. Drawn on the page instead, it always meets
+     cream and always reads — which is also how a print sits in an album, with
+     a rule around it rather than a line inked onto the photograph.
+
+     2px, because 1px of a low-opacity mix disappears on a retina screen:
+     present in the stylesheet, absent on the page. */
+  --ph-edge-w: 2px;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--si) calc(var(--ph-edge,.08) * 100%), transparent),
-    0 1px 1px color-mix(in srgb, var(--si) calc(var(--ph-depth,.06) * 60%), transparent),
-    0 4px 10px -6px color-mix(in srgb, var(--si) calc(var(--ph-depth,.06) * 100%), transparent)}
+    0 0 0 var(--ph-edge-w) color-mix(in srgb, var(--ph-edge-color) calc(var(--ph-edge,.32) * 100%), transparent),
+    /* Contact shadow: tight, barely offset, pulled back by a negative spread.
+       Offset and blur are what make a shadow read as a card floating above the
+       page; a print resting on paper has neither. */
+    0 1px 2px color-mix(in srgb, var(--si) calc(var(--ph-depth,.07) * 55%), transparent),
+    0 3px 11px -7px color-mix(in srgb, var(--si) calc(var(--ph-depth,.07) * 100%), transparent)}
+
+/* The same treatment for any other photograph on the site — a registry gift
+   image, or anything added later — without needing the SitePhoto wrapper. */
+.site .s-framed{
+  --ph-edge-color: color-mix(in srgb, var(--sa) 26%, var(--si));
+  border-radius:2px;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ph-edge-color) 32%, transparent),
+    0 1px 1px color-mix(in srgb, var(--si) 4%, transparent),
+    0 3px 10px -7px color-mix(in srgb, var(--si) 7%, transparent)}
+.site .s-framed img{filter:brightness(.85) saturate(.93) sepia(.04) contrast(.98)}
 
 /* The placeholder shown before a hero is uploaded is framed identically, so
    the composition holds whether or not a photograph exists yet. */
@@ -514,7 +560,10 @@ body:has(dialog[open]){overflow:hidden}
   border-bottom:1px solid color-mix(in srgb, var(--sa) 35%, transparent);
   transition:border-color var(--dur) var(--ease),opacity var(--dur) var(--ease)}
 .s-gallery-link:hover,.s-gallery-link:focus-visible{border-color:var(--sa);outline:none}
-.s-gallery-count{font-size:var(--t-eyebrow);letter-spacing:.1em;opacity:var(--muted);text-indent:0}
+/* Sits on the accent, which is lighter than the ink; --muted is the floor
+   for ink, not for accent, so this needed its own. */
+.s-gallery-count{font-size:var(--t-eyebrow);letter-spacing:.1em;opacity:1;
+  color:color-mix(in srgb, var(--sa) 76%, var(--si));text-indent:0}
 
 /* --------------------------------------------------------------- gallery --
    A scrolling editorial column, one photograph at a time. No thumbnail grid,
@@ -669,9 +718,11 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .s-foot{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
 .s-foot-names{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
   letter-spacing:.14em;color:var(--sd)}
+/* --muted-lg is the floor documented for *large* text, where AA allows 3:1.
+   At 11px this needs 4.5 and measured 4.49. */
 .s-foot-date{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
-  text-transform:uppercase;opacity:var(--muted-lg);text-indent:.2em;margin-top:var(--sp-3)}
-.s-foot .by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-top:8px}
+  text-transform:uppercase;opacity:var(--muted);text-indent:.2em;margin-top:var(--sp-3)}
+.s-foot .by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--muted);margin-top:8px}
 
 /* --------------------------------------------------- planner photo manager */
 .ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:20px}
