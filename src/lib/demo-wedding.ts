@@ -122,12 +122,20 @@ export const DEMO_WEDDING = {
       answer: "Yes, through the upper gate, with attendants from four o'clock." },
   ],
   registry: [
+    // Six, and two without a photograph — the preview should show the grid
+    // handling a mixed registry rather than an unrealistically tidy one.
     { id: "r1", weddingId: "demo", sortOrder: 0, title: "Copper cookware set",
-      imageUrl: null, price: "£320", retailer: "Divertimenti", url: "https://example.com" },
+      imageUrl: giftTile("#8d6f5a", "C"), price: "£320", retailer: "Divertimenti", url: "https://example.com" },
     { id: "r2", weddingId: "demo", sortOrder: 1, title: "Hand-thrown dinner service",
-      imageUrl: null, price: "£240", retailer: "Leach Pottery", url: "https://example.com" },
+      imageUrl: giftTile("#7d8478", "D"), price: "£240", retailer: "Leach Pottery", url: "https://example.com" },
     { id: "r3", weddingId: "demo", sortOrder: 2, title: "Linen bedding, ivory",
-      imageUrl: null, price: "£180", retailer: "Piglet in Bed", url: "https://example.com" },
+      imageUrl: giftTile("#b9ac97", "L"), price: "£180", retailer: "Piglet in Bed", url: "https://example.com" },
+    { id: "r4", weddingId: "demo", sortOrder: 3, title: "Cast iron casserole",
+      imageUrl: null, price: "£260", retailer: "Le Creuset", url: "https://example.com" },
+    { id: "r5", weddingId: "demo", sortOrder: 4, title: "Crystal coupes, set of six",
+      imageUrl: giftTile("#9aa3ab", "G"), price: "£140", retailer: "Richard Brendon", url: "https://example.com" },
+    { id: "r6", weddingId: "demo", sortOrder: 5, title: "Walnut serving board",
+      imageUrl: null, price: "£95", retailer: "Blackcreek", url: "https://example.com" },
   ],
   funds: [
     { id: "c1", weddingId: "demo", name: "Honeymoon in Kyoto",
@@ -135,6 +143,20 @@ export const DEMO_WEDDING = {
       venmoUrl: null, paypalUrl: "https://example.com", stripeUrl: "https://example.com", goalCents: null },
   ],
 };
+
+
+/** A flat tinted tile with a monogram, used only by the template preview. */
+function giftTile(hex: string, letter: string) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">` +
+    `<rect width="400" height="500" fill="${hex}"/>` +
+    `<text x="200" y="285" text-anchor="middle" font-family="Georgia,serif" ` +
+    `font-size="150" fill="rgba(255,255,255,.34)">${letter}</text></svg>`;
+  // base64 rather than `;utf8,` + percent-encoding: the latter is a
+  // non-standard media-type parameter and browsers reject the URI outright,
+  // which showed up as empty frames in the template preview.
+  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
+}
 
 /** Public events for the preview — the same programme in every template. */
 /**

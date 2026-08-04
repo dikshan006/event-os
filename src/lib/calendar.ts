@@ -75,6 +75,72 @@ export function googleCalendarUrl(e: CalendarEvent): string {
   return `https://calendar.google.com/calendar/render?${p}`;
 }
 
+/* -------------------------------------------------------------- Outlook -- */
+
+/**
+ * Outlook on the web, via its documented compose deeplink.
+ *
+ * Opens the new-event form with everything filled in — no download, no import
+ * step. Times are given as UTC instants with a trailing Z, which Outlook
+ * converts to the signed-in user's calendar timezone.
+ *
+ * `outlook.live.com` is the personal-account host. Work and school accounts
+ * live on `outlook.office.com`, and there is no way to know which a guest has
+ * from a link on a wedding website — the two are separate products behind the
+ * same brand. Personal accounts are overwhelmingly the case for wedding
+ * guests, so that is the host used, and the .ics remains for everyone else:
+ * Outlook desktop, Office 365, and any other calendar application.
+ */
+export function outlookCalendarUrl(e: CalendarEvent): string {
+  const p = new URLSearchParams({
+    path: "/calendar/action/compose",
+    rru: "addevent",
+    subject: calendarTitle(e),
+    startdt: e.startsAt.toISOString(),
+    enddt: eventEnd(e).toISOString(),
+  });
+  const body = calendarBody(e);
+  if (body) p.set("body", body);
+  const where = calendarLocation(e);
+  if (where) p.set("location", where);
+  return `https://outlook.live.com/calendar/0/deeplink/compose?${p}`;
+}
+
+/* ---------------------------------------------------------- subscriptions -- */
+
+/**
+ * Adding a whole schedule without downloading anything.
+ *
+ * Neither Google nor Outlook has a URL that creates several events at once —
+ * the compose links above take exactly one. What both *do* have is a way to
+ * subscribe to a calendar feed, which turns out to be the better answer
+ * anyway: the guest gets every event in one action, and if the planner moves
+ * the dinner an hour later, it moves in the guest's calendar too. An imported
+ * file would have gone stale the moment the schedule changed.
+ *
+ * Both take the public URL of an .ics feed — the same endpoint the download
+ * uses, which is already addressable by the guest's own capability token.
+ */
+export function googleSubscribeUrl(icsUrl: string): string {
+  // `webcal:` is the conventional scheme for a subscribable feed; Google
+  // rewrites it to https on its side.
+  return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(toWebcal(icsUrl))}`;
+}
+
+export function outlookSubscribeUrl(icsUrl: string, name: string): string {
+  const p = new URLSearchParams({ url: toWebcal(icsUrl), name });
+  return `https://outlook.live.com/calendar/0/addfromweb/?${p}`;
+}
+
+/** Apple subscribes natively from a webcal: link, without a download. */
+export function webcalUrl(icsUrl: string): string {
+  return toWebcal(icsUrl);
+}
+
+function toWebcal(url: string) {
+  return url.replace(/^https?:/i, "webcal:");
+}
+
 /* ------------------------------------------------------------------ ics -- */
 
 /**

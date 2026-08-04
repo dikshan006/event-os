@@ -785,25 +785,21 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 }
 
 /* ============================================ calendar & directions ======
-   The practical block under each event: address, directions, calendar.
+   Two tiers under each event.
 
-   Everything is visible. An earlier version hid these behind disclosures,
-   which kept the page quiet at the cost of making a guest hunt for an address.
-   Two labelled columns, hairline-separated from the event above, carry five
-   links without reading as clutter — and no icons, because the labels already
-   say what each link is and an emoji in Cormorant looks like a mistake.
+   Directions are a quiet inline pair, because a guest glances at them once and
+   five full-weight blocks down a schedule were louder than the events they
+   belonged to. The calendar row keeps a label, because choosing where to save
+   something is a decision rather than a glance.
 
    Scoped to `.site`, so none of it reaches the dashboards. */
 .site .s-detail {
   margin-top: var(--sp-5);
   padding-top: var(--sp-4);
-  border-top: 1px solid color-mix(in srgb, var(--si) 14%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--si) 12%, transparent);
   display: grid;
-  gap: var(--sp-4);
-  /* The programme is centred, so this is too — but the columns inside are
-     left-aligned, because a list of links reads badly ragged on both sides. */
+  gap: var(--sp-3);
   justify-items: center;
-  text-align: center;
 }
 
 .site .s-detail-address {
@@ -811,69 +807,169 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   line-height: 1.6;
   letter-spacing: .04em;
   color: color-mix(in srgb, var(--si) 72%, transparent);
-  max-width: 34ch;
+  max-width: 38ch;
+  text-align: center;
 }
 
-.site .s-detail-groups {
+/* A row of links separated by space rather than by punctuation, so each one
+   keeps a full tap target instead of sharing an edge with a middot. */
+.site .s-inline {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--sp-5) clamp(32px, 7vw, 72px);
-  text-align: left;
+  align-items: baseline;
+  gap: 2px clamp(18px, 4vw, 30px);
 }
+.site .s-inline a {
+  /* 40px of height from padding alone at the smaller size, 44 at the larger. */
+  padding: 10px 0;
+  font-size: var(--t-body);
+  line-height: 1.2;
+  color: var(--si);
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.site .s-inline a:hover,
+.site .s-inline a:focus-visible { color: var(--sa); border-bottom-color: color-mix(in srgb, var(--sa) 45%, transparent); }
 
-.site .s-detail-group { display: grid; gap: 6px; align-content: start; }
+/* The secondary tier: smaller, tracked, and set in the muted ink so it reads
+   as a utility beneath the venue rather than as a second heading. */
+.site .s-inline-quiet a {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  padding: 8px 0;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+.site .s-inline-quiet a:hover,
+.site .s-inline-quiet a:focus-visible { color: var(--sa); }
+
+/* A little more air above the calendar row than inside it, so the quiet map
+   links and the labelled calendar read as two tiers rather than one list. */
+.site .s-detail-group { display: grid; gap: 2px; justify-items: center; margin-top: var(--sp-2); }
 
 .site .s-detail-label {
   font: 500 var(--t-eyebrow)/1 var(--sans);
   letter-spacing: .28em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--si) 62%, transparent);
-  margin-bottom: 4px;
+  color: color-mix(in srgb, var(--si) 66%, transparent);
 }
 
-.site .s-detail-group a {
-  /* 44px of touch target from padding alone, so the row is tappable without
-     drawing a button around it. */
+/* The whole-schedule block, once at the foot of the programme. */
+.site .s-detail-all {
+  margin-top: clamp(32px, 6vw, 56px);
+  padding-top: var(--sp-5);
+  gap: var(--sp-2);
+}
+
+/* In the Travel section the links stand alone with the prose around them. */
+.site .s-detail-venue { margin-top: var(--sp-3); display: grid; gap: 2px; justify-items: start; }
+.site .s-detail-venue .s-inline { justify-content: flex-start; }
+.site .s-detail-venue .s-detail-address { text-align: left; max-width: 40ch; }
+
+/* ------------------------------------------------------------- gift grid --
+   Three columns, then two, then one. Same serif, same palette, same hairlines
+   as the printed list it replaces — the change is arrangement, not design. A
+   registry of eighteen gifts was eighteen full-height rows to scroll past. */
+.site .s-gifts {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 40px) clamp(20px, 2.5vw, 32px);
+  max-width: 1040px;
+  margin-inline: auto;
+  text-align: left;
+}
+@media (max-width: 60rem) { .site .s-gifts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 34rem) { .site .s-gifts { grid-template-columns: minmax(0, 1fr); } }
+
+.site .s-gift-link {
+  display: grid;
+  gap: var(--sp-3);
+  height: 100%;
+  align-content: start;
+  color: inherit;
+}
+
+/* The frame carries the same treatment as photographs elsewhere on the site:
+   one hairline, a very soft shadow close to the edge, almost no radius. */
+.site .s-gift-frame {
   display: block;
-  padding: 7px 0;
-  font-size: var(--t-body);
-  line-height: 1.3;
-  color: var(--si);
-  border-bottom: 1px solid transparent;
-  width: fit-content;
-  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--si) 14%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--si) 4%, var(--sb));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--si) 6%, transparent),
+              0 14px 34px -22px color-mix(in srgb, var(--si) 30%, transparent);
 }
-.site .s-detail-group a:hover {
-  color: var(--sa);
-  border-bottom-color: color-mix(in srgb, var(--sa) 45%, transparent);
+.site .s-gift-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* A gift photograph is a product shot on someone else's white background;
+     a touch of desaturation stops it shouting next to the page's palette. */
+  filter: saturate(.92);
+  transition: transform var(--dur-slow) var(--ease);
+}
+.site .s-gift-link:hover .s-gift-frame img { transform: scale(1.02); }
+
+.site .s-gift-mono {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: clamp(38px, 5vw, 54px);
+  font-weight: 400;
+  color: color-mix(in srgb, var(--si) 22%, transparent);
 }
 
-/* In the Travel section the block stands alone, so it needs its own spacing
-   and reads left-aligned with the prose around it. */
-.site .s-detail-venue { margin-top: var(--sp-3); text-align: left; justify-items: start; }
-.site .s-detail-venue .s-detail-address { max-width: 40ch; padding-top: 6px; }
+.site .s-gift-body { display: grid; gap: 5px; }
+.site .s-gift-title {
+  font-family: var(--serif);
+  font-size: var(--t-lead);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--sd);
+}
+.site .s-gift-store,
+.site .s-gift-price {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .14em;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+.site .s-gift-store { text-transform: uppercase; }
+.site .s-gift-price { font-variant-numeric: tabular-nums; }
 
-/* Whole-schedule link, once at the foot of the programme. */
-.site .s-act-all {
-  display: inline-block;
-  margin-top: clamp(28px, 5vw, 48px);
-  padding: 10px 0;
-  font: 500 var(--t-micro)/1.4 var(--sans);
-  letter-spacing: .18em;
+.site .s-gift-cta {
+  margin-top: 6px;
+  font: 500 var(--t-micro)/1 var(--sans);
+  letter-spacing: .2em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--si) 78%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--si) 30%, transparent);
-  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  color: var(--sa);
+  border-bottom: 1px solid color-mix(in srgb, var(--sa) 30%, transparent);
+  padding-bottom: 6px;
+  width: fit-content;
+  transition: border-color var(--dur-fast) var(--ease);
 }
-.site .s-act-all:hover { color: var(--si); border-bottom-color: var(--si); }
+.site .s-gift-link:hover .s-gift-cta,
+.site .s-gift-link:focus-visible .s-gift-cta { border-bottom-color: var(--sa); }
 
-@media (max-width: 32rem) {
-  /* One column on a phone: two columns of links at this width leaves each of
-     them about eight characters wide. */
-  .site .s-detail-groups { flex-direction: column; align-items: center; gap: var(--sp-5); }
-  .site .s-detail-group { justify-items: center; text-align: center; }
-  .site .s-detail-group a { width: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .site .s-gift-link:hover .s-gift-frame img { transform: none; }
+}
+
+/* On a touch device the quiet links measured 30px tall — past the 24px WCAG
+   minimum but well short of a comfortable thumb. Padding is added only where
+   the pointer is coarse, so the desktop layout keeps its tighter rhythm. */
+@media (pointer: coarse) {
+  .site .s-inline a { padding-block: 14px; }
+  .site .s-inline-quiet a { padding-block: 15px; }
 }
 
 /* A folded group inside a dashboard form. Used for the handful of fields most

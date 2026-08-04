@@ -1,20 +1,25 @@
 import type { Event, Wedding } from "@prisma/client";
-import { googleCalendarUrl } from "@/lib/calendar";
+import {
+  googleCalendarUrl,
+  outlookCalendarUrl,
+  googleSubscribeUrl,
+  outlookSubscribeUrl,
+} from "@/lib/calendar";
 import { toCalendarEvent } from "@/server/services/calendar-feed";
 import { appleMapsUrl, googleMapsUrl, hasPlace, placeQuery, resolvePlace } from "@/lib/maps";
 
 /**
- * Everything practical about an event, in one block under it: where it is, how
- * to get there, and how to put it in a calendar.
+ * The practical block under each event.
  *
- * The first version hid these behind two <details> disclosures. That kept the
- * page quiet but made a guest hunt — two taps to find out an address, and no
- * way to see at a glance that directions existed at all. They are now simply
- * present. Five links is not clutter when they are the five things a guest
- * actually wants; grouping and type weight do the work that hiding was doing.
+ * Two tiers, deliberately. Directions are a quiet pair of links immediately
+ * under the venue — a guest glances at them once, and on a page with five
+ * events, five full-weight "DIRECTIONS" blocks were the loudest thing on the
+ * schedule. The calendar row keeps a label because "add to calendar" is a
+ * decision rather than a glance.
  *
- * Still no JavaScript, and no icons: a wedding invitation set in Cormorant does
- * not want an emoji in it, and the labels already say what each link is.
+ * Only Apple downloads a file. Google and Outlook open their own web calendar
+ * with the event already composed, which is what a guest on a phone actually
+ * wants — a downloaded .ics on Android is a file in a folder, not an event.
  */
 
 type Props = {
@@ -29,89 +34,103 @@ type Props = {
 export function EventActions({ event, wedding, studioName, token, appUrl }: Props) {
   const place = resolvePlace(event, wedding);
   const canMap = hasPlace(place);
-
-  // An event with no start cannot become a calendar entry. Rather than offering
-  // a control that produces a broken file, it is absent — and the planner is
-  // prompted for the time in the Schedule Builder instead.
   const canCalendar = event.startsAt instanceof Date;
   if (!canMap && !canCalendar) return null;
 
   const ics = `${appUrl}/calendar/${encodeURIComponent(token)}/${event.id}.ics`;
-  // The address line, but never a repeat of the venue name already printed
-  // directly above it.
+  const cal = canCalendar
+    ? toCalendarEvent(event, wedding, studioName, `${appUrl}/invite/${token}`)
+    : null;
+
+  // Never repeat the venue name already printed directly above.
   const address = place.address && place.address !== place.name ? place.address : null;
 
   return (
     <div className="s-detail">
       {address && <p className="s-detail-address">{address}</p>}
 
-      <div className="s-detail-groups">
-        {canMap && (
-          <div className="s-detail-group">
-            <p className="s-detail-label">Directions</p>
-            <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-              Open in Google Maps
-            </a>
-            <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-              Open in Apple Maps
-            </a>
-          </div>
-        )}
+      {canMap && (
+        <p className="s-inline s-inline-quiet">
+          <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+            Google Maps
+          </a>
+          <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+            Apple Maps
+          </a>
+        </p>
+      )}
 
-        {canCalendar && (
-          <div className="s-detail-group">
-            <p className="s-detail-label">Add to calendar</p>
-            <a
-              href={googleCalendarUrl(
-                toCalendarEvent(event, wedding, studioName, `${appUrl}/invite/${token}`),
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Google Calendar
+      {cal && (
+        <div className="s-detail-group">
+          <p className="s-detail-label">Add to calendar</p>
+          <p className="s-inline">
+            <a href={googleCalendarUrl(cal)} target="_blank" rel="noopener noreferrer">
+              Google
             </a>
-            {/*
-              One file serves both: Apple Calendar and Outlook read the same
-              RFC 5545 payload. They are named separately because a guest looks
-              for their own application, not for a file format.
-            */}
-            <a href={ics} download>
-              Apple Calendar
-            </a>
-            <a href={ics} download>
+            <a href={outlookCalendarUrl(cal)} target="_blank" rel="noopener noreferrer">
               Outlook
             </a>
-          </div>
-        )}
-      </div>
+            {/* The only download. On an Apple device this opens the system's
+                own Add to Calendar sheet, which is the native workflow; it is
+                also the file every other calendar application can read. */}
+            <a href={ics} download>
+              Apple
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * "Add the whole schedule" — one tap for every event a guest can see.
- * Once, at the foot of the programme, and hidden when nothing has a time yet.
+ * The whole schedule, once at the foot of the programme.
+ *
+ * Google and Outlook subscribe to the feed rather than importing a copy of it.
+ * Neither has a URL that creates several events at once, and subscribing is the
+ * better answer regardless: one action for every event, and if the planner
+ * moves the dinner an hour later it moves in the guest's calendar too. An
+ * imported file goes stale the moment the schedule changes.
  */
 export function ScheduleCalendarLink({
   events,
   token,
   appUrl,
+  weddingName,
 }: {
   events: Event[];
   token: string;
   appUrl: string;
+  weddingName: string;
 }) {
   if (!events.some(e => e.startsAt instanceof Date)) return null;
+
+  const feed = `${appUrl}/calendar/${encodeURIComponent(token)}/all.ics`;
+
   return (
-    <a className="s-act-all" href={`${appUrl}/calendar/${encodeURIComponent(token)}/all.ics`} download>
-      Add the whole schedule to your calendar
-    </a>
+    <div className="s-detail s-detail-all">
+      <p className="s-detail-label">Add the whole schedule</p>
+      <p className="s-inline">
+        <a href={googleSubscribeUrl(feed)} target="_blank" rel="noopener noreferrer">
+          Google
+        </a>
+        <a href={outlookSubscribeUrl(feed, weddingName)} target="_blank" rel="noopener noreferrer">
+          Outlook
+        </a>
+        <a href={feed} download>
+          Apple
+        </a>
+      </p>
+      <p className="s-detail-address">
+        Google and Outlook stay up to date if anything changes.
+      </p>
+    </div>
   );
 }
 
 /**
  * Directions to the main venue, for the Travel section — separate from the
- * per-event block because a guest reading "Getting here" wants the venue, not
+ * per-event links because a guest reading "Getting here" wants the venue, not
  * whichever event they last scrolled past.
  */
 export function VenueDirections({ wedding }: { wedding: Wedding }) {
@@ -119,13 +138,15 @@ export function VenueDirections({ wedding }: { wedding: Wedding }) {
   if (!hasPlace(place)) return null;
 
   return (
-    <div className="s-detail-group s-detail-venue">
-      <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-        Open in Google Maps
-      </a>
-      <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
-        Open in Apple Maps
-      </a>
+    <div className="s-detail-venue">
+      <p className="s-inline s-inline-quiet">
+        <a href={googleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+          Google Maps
+        </a>
+        <a href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">
+          Apple Maps
+        </a>
+      </p>
       <p className="s-detail-address">{placeQuery(place)}</p>
     </div>
   );

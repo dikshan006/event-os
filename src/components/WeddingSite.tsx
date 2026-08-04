@@ -226,7 +226,8 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           {!events.length && <p className="s-empty">The schedule will appear here soon.</p>}
           {events.length > 0 && (
             <Reveal>
-              <ScheduleCalendarLink events={events} token={calToken} appUrl={appUrl} />
+              <ScheduleCalendarLink events={events} token={calToken} appUrl={appUrl}
+                weddingName={`${wedding.partnerOne} & ${wedding.partnerTwo}`} />
             </Reveal>
           )}
         </section>
@@ -293,16 +294,31 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           <section className="s-sec" id="registry">
             <h2 className="s-h">Registry</h2>
             <div className="s-hs">gifts we would love</div>
-            <ul className="s-list">
+            <ul className="s-gifts">
               {wedding.registry.map(g => (
-                <li className="s-list-item" key={g.id}>
-                  <h3>{g.title}</h3>
-                  {[g.price, g.retailer].filter(Boolean).length > 0 && (
-                    <p className="s-list-detail">{[g.price, g.retailer].filter(Boolean).join(" · ")}</p>
-                  )}
-                  <a className="s-quiet-link" href={g.url} target="_blank" rel="noopener noreferrer">
-                    View gift<span aria-hidden="true"> ↗</span>
-                    <span className="sr-only"> (opens in a new tab)</span>
+                <li className="s-gift" key={g.id}>
+                  {/* The whole card is the link. One target instead of two, and
+                      the image is not separately tabbable — it carries no
+                      information the title does not already give. */}
+                  <a className="s-gift-link" href={g.url} target="_blank" rel="noopener noreferrer">
+                    <span className="s-gift-frame">
+                      {g.imageUrl ? (
+                        <img src={g.imageUrl} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        // No photograph: a monogram rather than a broken frame
+                        // or a stock placeholder, so the grid keeps its rhythm.
+                        <span className="s-gift-mono" aria-hidden="true">{g.title.trim()[0] ?? "·"}</span>
+                      )}
+                    </span>
+                    <span className="s-gift-body">
+                      <span className="s-gift-title">{g.title}</span>
+                      {g.retailer && <span className="s-gift-store">{g.retailer}</span>}
+                      {g.price && <span className="s-gift-price">{g.price}</span>}
+                      <span className="s-gift-cta">
+                        View gift<span aria-hidden="true"> ↗</span>
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </span>
+                    </span>
                   </a>
                 </li>
               ))}
