@@ -506,6 +506,16 @@
 .m-two-wide { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 62rem) { .m-two-wide { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
 
+/* Sign-in, forgot and reset share one shape: an explanation and a form. On a
+   wide screen they read left to right. Below the two-column breakpoint the
+   form goes first, because someone who came here to sign in should not scroll
+   past two paragraphs about guests to reach the password field. Marketing
+   pages are read; this one is used. */
+@media (max-width: 61.999rem) {
+  .m-auth > :last-child { order: -1; }
+  .m-auth { gap: clamp(2.5rem, 7vw, 3.5rem); }
+}
+
 /* A list of claims separated by rules rather than boxed into cards. Cards were
    explicitly out, and rules hold an editorial page together better anyway. */
 /* A container query, not a viewport one. `.m-row` is used both full-bleed and
@@ -700,6 +710,16 @@ textarea.m-input { resize: vertical; min-height: 6rem; line-height: 1.55; }
 select.m-input { appearance: none; cursor: pointer; }
 .m-field[data-invalid="true"] .m-input { border-bottom-color: #a9333b; }
 .m-err { font-size: var(--m-small); color: #a9333b; }
+
+/* The row a form ends on: the action, and whatever quiet thing sits beside it.
+   Three forms had this as an inline style each; it is one rule. */
+.m-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
 .m-note {
   border-left: 2px solid var(--rule);
   padding: 0.25rem 0 0.25rem 1rem;

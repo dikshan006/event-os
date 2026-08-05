@@ -105,7 +105,7 @@ export function AccessForm({
         <input id="ar-role" name="role" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap", paddingTop: "0.5rem" }}>
+      <div className="m-actions">
         <button className="m-btn m-btn-solid m-btn-lg" type="submit" disabled={pending}>
           {pending ? "Sending…" : "Send request"}
           {!pending && <span className="m-arrow" aria-hidden="true">→</span>}

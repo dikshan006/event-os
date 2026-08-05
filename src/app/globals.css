@@ -239,7 +239,6 @@ textarea.inp{resize:vertical;min-height:92px}
 /* The page behind a modal must not scroll under it. */
 body:has(dialog[open]){overflow:hidden}
 
-.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
 
 /* Guest wedding site */
 /* Fallbacks so the guest-site rules stay valid anywhere the theme variables

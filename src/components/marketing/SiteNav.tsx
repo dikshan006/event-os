@@ -78,9 +78,14 @@ export function SiteNav({
             </Link>
           ) : (
             <>
-              <Link href="/login" className="m-nav-hide" aria-current={on("/login")}>
-                Sign in
-              </Link>
+              {/* Hidden on the sign-in page itself: a link to where you already
+                  are is clutter, and it is the one place the button beside it
+                  is the more useful of the two. */}
+              {pathname !== "/login" && (
+                <Link href="/login" className="m-nav-hide">
+                  Sign in
+                </Link>
+              )}
               <Link href="/request-access" className="m-btn m-btn-solid">
                 Request access
               </Link>
