@@ -252,8 +252,15 @@ body:has(dialog[open]){overflow:hidden}
   min-height:var(--nav-h);align-items:center;padding:var(--sp-4) var(--gutter);
   letter-spacing:.24em;font-size:var(--t-eyebrow);font-family:var(--sans);font-weight:500;
   text-transform:uppercase;position:sticky;top:0;z-index:5;
-  background:color-mix(in srgb, var(--sb) 88%, transparent);
-  -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
+  /* Opaque, not a pane.
+     This was 88% of the page colour with a backdrop blur, which over a flat
+     background is indistinguishable from solid. With the couple's photograph
+     held behind the page, the remaining 12% is photograph — and measured
+     against it the 11px nav links fell to 3.67:1, under the 4.5 AA needs. A
+     translucent bar cannot promise contrast over an image it does not control.
+     Solid also drops a per-frame backdrop-filter from the one element that is
+     on screen the entire time. */
+  background:var(--sb);
   /* Was a fixed black at 6%, which is invisible on a dark page. Mixed off the
      ink instead, so the rule belongs to whichever palette is active. */
   border-bottom:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent)}
@@ -756,7 +763,10 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   transition:border-color var(--dur) var(--ease)}
 .s-rsvp-change:hover,.s-rsvp-change:focus-visible{border-color:var(--sa);outline:none}
 
-.s-foot{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
+/* The wedding site stops here. The top padding keeps the closing names clear of
+   the last section; the bottom is a fixed, modest tail so no template ends with
+   a screen of nothing under it. */
+.s-foot{padding:var(--sp-9) var(--gutter) 5rem;text-align:center}
 .s-foot-names{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
   letter-spacing:.14em;color:var(--sd)}
 /* --muted-lg is the floor documented for *large* text, where AA allows 3:1.
@@ -1978,4 +1988,93 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .site[data-art="floral"] .s-masthead::after{background-size:100% 100%, 100% 100%, 190% auto}
   .site[data-template="VELVET_BOTANICAL"] .s-masthead{
     padding-block:clamp(72px,14vw,120px) clamp(120px,34vw,200px)}
+}
+
+/* ═════════════════════════════════════════════════════════════ the ground ═══
+   The couple's photograph, held behind the whole page.
+
+   A fixed *element*, not `background-attachment: fixed`. The two look the same
+   and cost very differently: the CSS property repaints the background against a
+   moving scroll offset on the main thread every frame — measured at 25.1ms
+   median and 47.3ms at p95 on this codebase, against 16.7ms — while a fixed
+   element promoted to its own layer is pinned by the compositor for free.
+
+   `translateZ(0)` is the promotion. `will-change` would do the same and is the
+   more modern spelling, but it is a standing hint that costs memory for the
+   life of the page; this layer never changes, so a one-off transform is the
+   cheaper way to say the same thing.
+   ───────────────────────────────────────────────────────────────────────── */
+.site .s-ground{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  transform:translateZ(0);backface-visibility:hidden}
+.site .s-ground picture,
+.site .s-ground img{display:block;width:100%;height:100%}
+.site .s-ground img{
+  object-fit:cover;object-position:var(--ground-pos,50% 42%);
+  background-size:cover;background-position:center;
+  /* The same house treatment every photograph on the site gets, pushed
+     further: this one is furniture, not a picture. */
+  filter:brightness(var(--ground-bright,.9)) saturate(var(--ground-sat,.86))
+         sepia(.05) blur(var(--ground-blur,2px));
+  /* Blur samples from outside the element and leaves a soft edge at the
+     viewport border; scaling past the edges puts that seam off-screen. */
+  transform:scale(1.06)}
+
+/* The scrim is what makes the type legible, and it is doing real work: every
+   template's contrast was measured against a flat colour, and a photograph is
+   not flat. It is a wash of the page's own background, so a pale template
+   stays pale and a dark one stays dark, with a little more weight at the top
+   and bottom where the nav and the footer sit.
+
+   The weights are not chosen by eye. Each one is the lowest that keeps every
+   string on the page at or above its AA threshold, measured by hiding the type
+   and reading the actual rendered pixels behind each text box. Pale templates
+   need the most: near-black ink on cream has far less headroom against a
+   photograph than cream ink on near-black, so they sit at 95% while the dark
+   pair can afford 82% and show noticeably more of the picture. */
+.site .s-ground-scrim{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(to bottom,
+      var(--sb) 0%,
+      color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent) 18%,
+      color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent) 82%,
+      var(--sb) 100%),
+    color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent)}
+
+/* Everything that is not the ground sits above it. */
+.site .s-above{position:relative;z-index:1}
+
+/* The nav and the footer are outside `.s-wrap`, so they need saying too. */
+.site .s-nav{z-index:5}
+.site .s-foot{position:relative;z-index:1}
+
+/* Dark templates need less veil to stay readable — cream on near-black keeps
+   its contrast against a darkened photograph far better than near-black ink on
+   cream does, so they can afford to show more of it. */
+.site[data-template="MIDNIGHT_BLOOM"],
+.site[data-template="VELVET_BOTANICAL"]{
+  --ground-veil:82%;--ground-bright:.62;--ground-sat:.72}
+
+/* Pacific Linen already has a printed ground of its own. The photograph sits
+   under the paper rather than instead of it, so it needs the most veil of the
+   six or the grain and the washes stop reading. */
+.site[data-template="PACIFIC_LINEN"]{--ground-veil:93%;--ground-bright:1;--ground-blur:3px}
+/* The paper surface is painted on `.site` itself, which is below the ground in
+   the stack; it moves onto the scrim so the texture stays on top of the photo. */
+.site[data-surface="paper"] .s-ground-scrim{background-blend-mode:normal}
+
+@media (prefers-reduced-motion:reduce){
+  /* A pinned background against scrolling content is parallax, and parallax is
+     motion whatever it is built from. Under the preference it scrolls with the
+     page like any other element. */
+  .site .s-ground{position:absolute;height:100%}
+}
+
+@media (max-width:720px){
+  /* Cheaper on a phone: less blur to composite, and a touch more veil, since a
+     small screen puts type over more of the frame at once. */
+  .site .s-ground{--ground-blur:1px;--ground-veil:92%}
+  .site[data-template="MIDNIGHT_BLOOM"],
+  .site[data-template="VELVET_BOTANICAL"]{--ground-veil:88%}
 }

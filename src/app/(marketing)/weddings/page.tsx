@@ -3,25 +3,15 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { showcaseWeddings } from "@/server/services/showcase";
 import { fmtDate } from "@/lib/utils";
-import {
-  GuestListSpecimen,
-  ScheduleSpecimen,
-  SeatingSpecimen,
-  InvitationSpecimen,
-  RsvpSpecimen,
-  GallerySpecimen,
-  DashboardSpecimen,
-  RegistrySpecimen,
-  EmailSpecimen,
-} from "@/components/marketing/Specimens";
+import { InvitationSpecimen } from "@/components/marketing/Specimens";
 
 export const metadata: Metadata = {
   title: "Weddings — EventOS",
   description:
-    "Websites, guest invitations, RSVPs, schedule and seating. Everything a wedding planner runs, in one place.",
+    "A personal wedding website for every guest, generated automatically. One dashboard for the planner; one link each for the guests.",
   openGraph: {
     title: "Weddings — EventOS",
-    description: "Everything a wedding planner runs, in one place.",
+    description: "A personal wedding website for every guest, generated automatically.",
     type: "website",
   },
 };
@@ -29,60 +19,62 @@ export const metadata: Metadata = {
 /**
  * The flagship product page.
  *
- * One visual key from top to bottom — deep warm charcoal, the photograph as the
- * only thing that changes. The earlier draft alternated ivory and near-black,
- * and scrolling it felt like moving between two different products.
+ * Rewritten around one idea rather than nine.
  *
- * Copy is deliberately short. Each block makes one point and then shows the
- * thing rather than describing it; the drawn specimens carry the detail that
- * paragraphs used to.
+ * The previous version was an inventory: a grid of nine drawn specimens, one
+ * per feature, each with a caption. It was accurate and it was the wrong shape
+ * — a planner reading it had to assemble the point themselves out of nine
+ * parts, and the page ran to six thousand pixels of scroll with half-screen
+ * gaps between rows. Everything on it was true and none of it said what the
+ * product is *for*.
+ *
+ * What it is for is this: every guest gets their own wedding website, generated
+ * automatically, showing only what applies to them. That is the sentence a
+ * planner needs, and it is now the whole top of the page. The films that follow
+ * are meant to carry the explanation; the copy exists to get someone to them.
+ *
+ * One visual key from top to bottom — deep warm charcoal, the photograph as the
+ * only thing that changes.
  */
 
-const TOUR: { title: string; line: string; figure: React.ReactNode }[] = [
+/** What a planner does. Verbs, not features. */
+const PLANNER = [
+  "Create the wedding website",
+  "Import and group the guest list",
+  "Send personal invitations",
+  "Collect RSVPs",
+  "Build the schedule",
+  "Arrange the seating",
+  "Publish from one place",
+];
+
+/** What a guest gets. All of it on one link, none of it to be asked for. */
+const GUEST = [
+  "Their invitation, addressed to them",
+  "Their RSVP",
+  "Their own schedule",
+  "Directions and travel",
+  "Where they are sitting",
+  "The gallery",
+  "The registry",
+];
+
+/** The three films. Ordered as someone learns the product, not as we built it. */
+const FILMS = [
   {
-    title: "Invitation website",
-    line: "A finished design, with the couple's photographs and your studio's name.",
-    figure: <InvitationSpecimen />,
+    n: "01",
+    title: "What EventOS is",
+    line: "The idea in a couple of minutes, and how the pieces fit together.",
   },
   {
-    title: "Guest management",
-    line: "Import the list. Tag people into groups. Everything else follows from that.",
-    figure: <GuestListSpecimen />,
+    n: "02",
+    title: "How a planner runs a wedding",
+    line: "From an empty studio to a published website and invitations sent.",
   },
   {
-    title: "RSVP",
-    line: "Replies land on the wedding, with dietary and access notes attached.",
-    figure: <RsvpSpecimen />,
-  },
-  {
-    title: "Schedule",
-    line: "Build the day once. Each guest sees only their part of it.",
-    figure: <ScheduleSpecimen />,
-  },
-  {
-    title: "Seating",
-    line: "A plan per event. Decline a seat and it frees itself.",
-    figure: <SeatingSpecimen />,
-  },
-  {
-    title: "Gallery",
-    line: "Photographs optimised on upload and toned to sit under the type.",
-    figure: <GallerySpecimen />,
-  },
-  {
-    title: "Planner dashboard",
-    line: "Every wedding in your studio, and where each one stands.",
-    figure: <DashboardSpecimen />,
-  },
-  {
-    title: "Registry",
-    line: "Gifts and cash funds, on the couple's own website.",
-    figure: <RegistrySpecimen />,
-  },
-  {
-    title: "Email invitations",
-    line: "One personal link per guest, sent from your studio.",
-    figure: <EmailSpecimen />,
+    n: "03",
+    title: "What a guest sees",
+    line: "One link, from the invitation arriving to the morning of the day.",
   },
 ];
 
@@ -119,22 +111,22 @@ export default async function WeddingsPage() {
           </Reveal>
           <Reveal delay={80}>
             <h1 className="m-cine-title" style={{ marginBlock: "1.25rem 1.5rem" }}>
-              Everything a wedding needs. <em>In one place.</em>
+              A wedding website for <em>every guest.</em>
             </h1>
           </Reveal>
           <Reveal delay={140}>
             <p className="m-lead m-cine-sub">
-              The website, the invitations, the guest list, the seating. Built
-              for planners who are trusted with one day.
+              Not one site everybody shares. One each, generated automatically,
+              showing only what applies to them.
             </p>
           </Reveal>
           <Reveal delay={200}>
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
+            <div className="m-actions m-actions-center">
               <Link href="/request-access" className="m-btn m-btn-solid m-btn-lg">
                 Request access <span className="m-arrow" aria-hidden="true">→</span>
               </Link>
-              <a href="#tour" className="m-btn m-btn-line m-btn-lg">
-                See the product
+              <a href="#films" className="m-btn m-btn-line m-btn-lg">
+                Watch the films
               </a>
             </div>
           </Reveal>
@@ -145,76 +137,103 @@ export default async function WeddingsPage() {
         </div>
       </section>
 
-      {/* ============================================================ tour */}
-      <section id="tour">
-        <div className="m-wrap" style={{ paddingBlock: "var(--m-chapter)" }}>
+      {/* ========================================================= the idea */}
+      <section id="what">
+        <div className="m-wrap m-chapter">
+          <div className="m-two-wide m-two" style={{ alignItems: "center" }}>
+            <Reveal className="m-col">
+              <span className="m-eyebrow">What it is</span>
+              <h2 className="m-title m-serif" style={{ marginBlock: "1.25rem 1rem" }}>
+                An operating system for a wedding.
+              </h2>
+              <p className="m-lead">
+                One place to run everything a wedding needs — the website, the
+                guest list, the invitations, the replies, the day itself — and
+                one place it all comes from.
+              </p>
+              <p className="m-body" style={{ marginTop: "1.25rem" }}>
+                Tag a guest as evening-only and their invitation, their schedule
+                and their seat all change with them. Move the ceremony an hour
+                and every guest&rsquo;s copy moves with it. There is nothing to
+                re-send, because nothing was sent as a copy in the first place.
+              </p>
+            </Reveal>
+
+            <Reveal delay={80}>
+              <InvitationSpecimen />
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================ planners / guests */}
+      <section id="both" className="m-wed-raise">
+        <div className="m-wrap m-chapter">
+          <div className="m-two">
+            <Reveal className="m-col">
+              <span className="m-eyebrow">For planners</span>
+              <h3 className="m-head" style={{ marginBlock: "0.9rem 1.25rem" }}>
+                One dashboard.
+              </h3>
+              <ul className="m-ticks">
+                {PLANNER.map(x => <li key={x}>{x}</li>)}
+              </ul>
+            </Reveal>
+
+            <Reveal className="m-col" delay={80}>
+              <span className="m-eyebrow">For guests</span>
+              <h3 className="m-head" style={{ marginBlock: "0.9rem 1.25rem" }}>
+                One link.
+              </h3>
+              <ul className="m-ticks">
+                {GUEST.map(x => <li key={x}>{x}</li>)}
+              </ul>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================== films */}
+      <section id="films">
+        <div className="m-wrap m-chapter">
           <Reveal>
-            <span className="m-eyebrow">The product</span>
+            <span className="m-eyebrow">Watch</span>
             <h2 className="m-title m-serif" style={{ maxWidth: "18ch", marginBlock: "1.25rem 1rem" }}>
-              Nine things, one record.
+              Three films, start to finish.
             </h2>
             <p className="m-lead">
-              Change a guest&rsquo;s group and the invitation, the schedule and
-              the seating all change with them.
+              Shorter than reading about it, and closer to the truth.
             </p>
           </Reveal>
 
-          <div className="m-tour" style={{ marginTop: "var(--m-block)" }}>
-            {TOUR.map((t, i) => (
-              <Reveal key={t.title} className="m-tour-item" delay={(i % 3) * 50}>
-                {t.figure}
-                <h3>{t.title}</h3>
-                <p>{t.line}</p>
+          {/*
+            Placeholders with the final proportions and the final copy. Each
+            card is a 16:9 frame; dropping a <video> or an embed inside
+            `.m-film-frame` needs no other change to the layout.
+          */}
+          <div className="m-films" style={{ marginTop: "var(--m-block)" }}>
+            {FILMS.map((f, i) => (
+              <Reveal key={f.n} className="m-film" delay={i * 60}>
+                <div className="m-film-frame">
+                  <span className="m-play" aria-hidden="true" />
+                  <span className="m-film-n" aria-hidden="true">{f.n}</span>
+                </div>
+                <h3>{f.title}</h3>
+                <p>{f.line}</p>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* =========================================================== video */}
-      <section id="demo" className="m-wed-raise">
-        <div className="m-wrap" style={{ paddingBlock: "var(--m-chapter)" }}>
-          <Reveal>
-            <span className="m-eyebrow">Demo</span>
-            <h2 className="m-title m-serif" style={{ maxWidth: "16ch", marginBlock: "1.25rem var(--m-block)" }}>
-              Watch a wedding come together.
-            </h2>
-          </Reveal>
-
-          <Reveal delay={60}>
-            <div className="m-video">
-              <div className="m-video-body">
-                <span className="m-play" aria-hidden="true" />
-                <span className="m-eyebrow">Film coming soon</span>
-                <p className="m-small" style={{ maxWidth: "34ch" }}>
-                  A short walkthrough, from the first guest import to the
-                  invitation landing in someone&rsquo;s inbox.
-                </p>
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal delay={100}>
-            <div className="m-slots" style={{ marginTop: "var(--m-block)" }}>
-              <span className="m-slot">Studio still</span>
-              <span className="m-slot">Invitation on a phone</span>
-              <span className="m-slot">Seating plan</span>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ========================================================= example */}
-      <section id="example">
-        <div className="m-wrap" style={{ paddingBlock: "var(--m-chapter)" }}>
+      <section id="example" className="m-wed-raise">
+        <div className="m-wrap m-chapter">
           <Reveal>
             <span className="m-eyebrow">Live example</span>
             <h2 className="m-title m-serif" style={{ maxWidth: "18ch", marginBlock: "1.25rem 1rem" }}>
-              View an example wedding.
+              A real one, running now.
             </h2>
-            <p className="m-lead">
-              A real wedding website running on EventOS right now. Not a mockup.
-            </p>
           </Reveal>
 
           <div style={{ marginTop: "var(--m-block)" }}>
@@ -232,7 +251,7 @@ export default async function WeddingsPage() {
                     >
                       <em>{fmtDate(w.date)}</em>
                       <b>{w.couple}</b>
-                      <span>{[w.venue, w.city].filter(Boolean).join(" · ") || " "}</span>
+                      <span>{[w.venue, w.city].filter(Boolean).join(" · ") || " "}</span>
                       <span className="m-example-foot">
                         View website <span className="m-arrow" aria-hidden="true">↗</span>
                       </span>
@@ -255,8 +274,8 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ============================================================= cta */}
-      <section className="m-wed-raise">
-        <div className="m-wrap" style={{ paddingBlock: "var(--m-chapter)" }}>
+      <section>
+        <div className="m-wrap m-chapter">
           <Reveal className="m-quote">
             <h2 className="m-serif" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", maxWidth: "14ch", marginInline: "auto" }}>
               Run your next wedding on it.
@@ -264,7 +283,7 @@ export default async function WeddingsPage() {
             <p className="m-lead" style={{ marginInline: "auto", marginTop: "1.25rem" }}>
               We set up each studio ourselves, so the first one goes properly.
             </p>
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap", marginTop: "var(--m-block)" }}>
+            <div className="m-actions m-actions-center" style={{ marginTop: "var(--m-block)" }}>
               <Link href="/request-access" className="m-btn m-btn-solid m-btn-lg">
                 Request access <span className="m-arrow" aria-hidden="true">→</span>
               </Link>

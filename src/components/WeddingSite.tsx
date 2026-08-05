@@ -7,6 +7,7 @@ import { SmoothScroll } from "./SmoothScroll";
 import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
 import { Botanical, BotanicalDefs } from "./Botanical";
+import { SiteGround } from "./SiteGround";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
 import { themeFor, themeVars } from "@/lib/themes";
@@ -139,6 +140,12 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           <link rel="preload" as="image" type="image/webp" href="/art/dark-floral.webp" />
         </>
       )}
+      {/* The couple's photograph, held behind the entire page. Only when there
+          is one: a site without photography keeps the flat ground it was
+          designed to have, rather than a grey rectangle pinned to the
+          viewport. */}
+      {photos.hero && <SiteGround photo={photos.hero} />}
+
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
@@ -161,7 +168,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         </span>
       </nav>
 
-      <div className="s-wrap">
+      <div className="s-wrap s-above">
         <main id="main">
           {/* --- Masthead: type first, generous air, no ornament. --------- */}
           <header className="s-masthead" id="home">

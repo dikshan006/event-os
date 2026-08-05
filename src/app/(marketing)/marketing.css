@@ -83,7 +83,11 @@
      Chapter rhythm is the loudest signal of production value. Generous, and
      scaling faster than the type does. */
   --m-gutter: clamp(1.25rem, 5vw, 5rem);
-  --m-chapter: clamp(5.5rem, 12vw, 11.5rem);
+  /* Between sections. Was clamp(5.5rem, 12vw, 11.5rem), which at a typical
+     desktop width put 307px of nothing between every pair of sections — a
+     third of a screen, repeated down the page. Still generous, no longer a
+     gap someone scrolls through. */
+  --m-chapter: clamp(4.5rem, 8.5vw, 8.5rem);
   --m-block: clamp(2.5rem, 5vw, 4.5rem);
   --m-max: 78rem;
 
@@ -399,7 +403,10 @@
 .m :target, .m [id] { scroll-margin-top: calc(var(--m-nav-h, 4.25rem) + 2rem); }
 
 /* ----------------------------------------------------------------- footer */
-.m-foot { padding-block: var(--m-block) var(--m-block); }
+/* The page stops here. A fixed, modest tail rather than a proportional one, so
+   the last thing below the copyright line is always about the same amount of
+   air on every page and at every viewport height. */
+.m-foot { padding-block: var(--m-block) 5rem; }
 .m-foot-top {
   display: flex;
   flex-wrap: wrap;
@@ -432,7 +439,13 @@
    as a landing page, which is the whole intent. */
 .m-hero {
   position: relative;
-  min-height: min(100svh, 60rem);
+  /* A floor, not a screen.
+     `min(100svh, 60rem)` gave the hero a full viewport on any display shorter
+     than 960px and a fixed 960 on anything taller — so on a large monitor the
+     content sat in the top half and the rest was a scrollable void. Sized to
+     its content with a generous floor instead: tall enough to feel like an
+     opening on a laptop, never taller than it needs to be on a big screen. */
+  min-height: min(78svh, 44rem);
   display: flex;
   align-items: flex-end;
   padding-block: calc(var(--m-nav-h, 4.25rem) + var(--m-block)) var(--m-block);
@@ -596,7 +609,8 @@
 /* The cinematic hero. The photograph is a real <img> underneath, not a CSS
    background, so it can be preloaded, sized, and given an empty alt — and so
    the browser can pick AVIF over WebP. */
-.m-cine { position: relative; isolation: isolate; min-height: min(100svh, 58rem); display: grid; }
+/* Same reasoning as `.m-hero`: a floor rather than a claim on the viewport. */
+.m-cine { position: relative; isolation: isolate; min-height: min(76svh, 42rem); display: grid; }
 .m-cine-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #3d3a2c; }
 .m-cine-media img {
   width: 100%;
@@ -1126,3 +1140,68 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
   border-bottom: 1px solid var(--rule);
   padding-bottom: 2px;
 }
+
+/* ─────────────────────────────────────────────────────────── ticked lists ──
+   The planner and guest columns. Rules rather than bullets, and no cards:
+   two short lists that should read as a pair, not as two boxes. */
+.m-ticks { list-style: none; display: grid; gap: 0; }
+.m-ticks li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding-block: 0.72rem;
+  font-size: var(--m-body);
+  color: var(--soft);
+  border-top: 1px solid var(--rule);
+}
+.m-ticks li:last-child { border-bottom: 1px solid var(--rule); }
+/* A drawn mark rather than a character: a bullet or a check glyph changes
+   shape with whichever font is loaded, and this one never does. */
+.m-ticks li::before {
+  content: "";
+  flex: none;
+  inline-size: 0.42rem;
+  block-size: 0.42rem;
+  border-radius: 50%;
+  background: var(--fg);
+  opacity: 0.34;
+  translate: 0 -0.18em;
+}
+
+/* ──────────────────────────────────────────────────────────────── films ──
+   Three 16:9 frames. Placeholders now, and sized so that dropping a <video>
+   or an embed inside `.m-film-frame` needs no other change. */
+.m-films {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 52rem) { .m-films { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.m-film { display: grid; gap: 0.9rem; align-content: start; }
+.m-film-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  overflow: hidden;
+}
+.m-film-frame > video, .m-film-frame > img, .m-film-frame > iframe {
+  position: absolute; inset: 0; inline-size: 100%; block-size: 100%;
+  object-fit: cover; border: 0;
+}
+.m-film-n {
+  position: absolute;
+  inset-block-start: 0.85rem;
+  inset-inline-start: 1rem;
+  font-size: var(--m-small);
+  letter-spacing: 0.18em;
+  color: var(--faint);
+}
+.m-film > h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
+.m-film > p { font-size: var(--m-small); color: var(--soft); max-width: 34ch; }
+
+/* A row of actions, centred. The two hero blocks each had this inline. */
+.m-actions-center { justify-content: center; }
