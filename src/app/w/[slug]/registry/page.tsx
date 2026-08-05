@@ -8,7 +8,7 @@ import { reportError } from "@/lib/errors";
 import { Wishlist, type ClaimResult } from "@/components/Wishlist";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Reveal } from "@/components/Reveal";
-import { THEMES, themeVars } from "@/lib/themes";
+import { themeFor, themeVars } from "@/lib/themes";
 import { fmtDate } from "@/lib/utils";
 
 /**
@@ -67,7 +67,7 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
   if (!wedding) notFound();
 
   const { items } = await publicRegistry(wedding.id);
-  const theme = THEMES[wedding.template];
+  const theme = themeFor(wedding.template);
   const vars = themeVars(theme) as React.CSSProperties;
 
   const couple = `${wedding.partnerOne} & ${wedding.partnerTwo}`;

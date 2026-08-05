@@ -9,7 +9,7 @@ import { Gallery } from "./Gallery";
 import { Botanical, BotanicalDefs } from "./Botanical";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
-import { THEMES, themeVars } from "@/lib/themes";
+import { themeFor, themeVars } from "@/lib/themes";
 import { EventActions, ScheduleCalendarLink, VenueDirections } from "./EventActions";
 import { hasPlace, resolvePlace } from "@/lib/maps";
 
@@ -26,7 +26,7 @@ type Props = {
 };
 
 export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHOTOS, tableByEvent = {}, rsvpAction }: Props) {
-  const theme = THEMES[wedding.template];
+  const theme = themeFor(wedding.template);
   const has = (s: string) => wedding.sections.includes(s);
   // Decoration is a property of the palette, so the page asks the theme
   // rather than checking which template is active.

@@ -161,6 +161,33 @@ export const THEMES: Record<TemplateKey, Theme> = {
   },
 };
 
+/**
+ * The palette for a template, with a floor under it.
+ *
+ * `THEMES[key]` is typed as total, and it is — for values this build knows
+ * about. A database is older and longer-lived than a deployment: a row written
+ * by a newer build, or a value removed from the enum in a later one, arrives
+ * here as a string with no entry. Indexing straight into the record then yields
+ * `undefined`, and the first property read on it takes down the render of an
+ * entire wedding site with a 500.
+ *
+ * A wedding site that renders in the wrong palette is a cosmetic problem a
+ * planner can fix in one click. A wedding site that does not render at all, on
+ * the morning guests are opening their invitations, is not.
+ */
+export function themeFor(key: string): Theme {
+  const theme = (THEMES as Record<string, Theme | undefined>)[key];
+  if (theme) return theme;
+  console.error(
+    `[themes] unknown template ${JSON.stringify(key)} — falling back to ${FALLBACK_TEMPLATE}. ` +
+      `This row was probably written by a different build.`,
+  );
+  return THEMES[FALLBACK_TEMPLATE];
+}
+
+/** The template anything unrecognised is rendered in. */
+const FALLBACK_TEMPLATE = "BLUSH_ROMANCE" as const;
+
 /* --------------------------------------------------------------- polarity -- */
 
 /** Relative luminance, WCAG 2.x. */

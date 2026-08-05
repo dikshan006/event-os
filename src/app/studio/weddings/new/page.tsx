@@ -7,13 +7,29 @@ import { zWedding } from "@/lib/validators";
 import { TimeZoneField } from "@/components/TimeZoneField";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
 
-export default async function NewWedding() {
+export default async function NewWedding({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   await requireStudio();
+  const { error } = await searchParams;
 
   async function create(formData: FormData) {
     "use server";
     const { studioId, user } = await requireStudio();
-    const input = zWedding.parse({
+
+    /**
+     * `safeParse`, not `parse`.
+     *
+     * A throw here is an unhandled exception inside a server action, which
+     * Next renders as "Application error: a server-side exception has occurred"
+     * with a digest and nothing else — no field, no value, no hint. That is
+     * what a planner saw for three of the six templates. A validation failure
+     * is an expected outcome of a form submission, not a crash, and it should
+     * read like one.
+     */
+    const parsed = zWedding.safeParse({
       partnerOne: formData.get("partnerOne"),
       partnerTwo: formData.get("partnerTwo"),
       date: formData.get("date"),
@@ -25,7 +41,14 @@ export default async function NewWedding() {
       template: formData.get("template"),
       sections: formData.getAll("sections").map(String),
     });
-    const wedding = await createWedding(studioId, user.name, input);
+
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = issue?.path.join(".") || "form";
+      redirect(`/studio/weddings/new?error=${encodeURIComponent(`${field}: ${issue?.message ?? "invalid value"}`)}`);
+    }
+
+    const wedding = await createWedding(studioId, user.name, parsed.data);
     const csv = String(formData.get("guests") ?? "").trim();
     if (csv) await importGuests(studioId, wedding.id, user.name, csv);
     redirect(`/studio/weddings/${wedding.id}`);
@@ -35,6 +58,11 @@ export default async function NewWedding() {
     <>
       <PageHead back="/studio/weddings" eyebrow="New wedding" title="Create New Wedding"
         sub="Choose a template, add the couple, personalize the content. The layout can never break." />
+      {error && (
+        <p className="note" role="alert" style={{ maxWidth: 760, marginBottom: 16, borderColor: "var(--wine)", color: "var(--wine)" }}>
+          {error}
+        </p>
+      )}
       <form action={create} className="frm" style={{ maxWidth: 760 }}>
         <div className="card pad frm">
           <h2 className="section-t">Choose your template</h2>

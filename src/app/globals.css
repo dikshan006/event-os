@@ -1047,10 +1047,26 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   gap: var(--sp-2);
 }
 
-/* In the Travel section the links stand alone with the prose around them. */
-.site .s-detail-venue { margin-top: var(--sp-3); display: grid; gap: 2px; justify-items: start; }
-.site .s-detail-venue .s-inline { justify-content: flex-start; }
-.site .s-detail-venue .s-detail-address { text-align: left; max-width: 40ch; }
+/* In the Travel section the links stand alone with the prose around them, and
+   they centre with it.
+
+   These three rules used to force the block left — `justify-items: start`,
+   `justify-content: flex-start`, `text-align: left` — inside a `.s-notes`
+   column that is centred, and with a `max-width` of 40ch against the 38ch used
+   everywhere else. So the venue name and address sat on the page's axis while
+   the map links and the supporting address hung off to one side, on all six
+   templates.
+
+   `VenueDirections` has exactly one caller, so the overrides were not serving
+   some other context: they were simply wrong. Removed rather than re-pointed,
+   which lets the centred base rules apply and gives every template the same
+   alignment and the same measure from one place. */
+.site .s-detail-venue {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin-block: var(--sp-4);
+}
 
 /* ------------------------------------------------------------- gift list --
    A wishlist reads like a hotel's recommendation list, not a product grid.

@@ -1,3 +1,4 @@
+import { TEMPLATE_KEYS } from "./utils";
 import { z } from "zod";
 
 export const zWedding = z.object({
@@ -22,7 +23,17 @@ export const zWedding = z.object({
   venueNote: z.string().max(1200).optional().or(z.literal("")),
   accommodation: z.string().max(1200).optional().or(z.literal("")),
   travelNote: z.string().max(1200).optional().or(z.literal("")),
-  template: z.enum(["BLUSH_ROMANCE", "MODERN_SAGE", "CLASSIC_ELEGANCE"]),
+  /**
+   * Derived from the registry, never written out again.
+   *
+   * This line used to list three template keys literally. Three more templates
+   * were added to the Prisma enum, to the registry and to the picker — and not
+   * here, because nothing connected them. The picker offered six, the form
+   * posted one of the new three, `parse` threw, and the server action returned
+   * a 500. Templates 1-3 worked, which is exactly what made it look like a
+   * problem with the new templates rather than with this list.
+   */
+  template: z.enum(TEMPLATE_KEYS),
   sections: z.array(z.string()).default([]),
 });
 

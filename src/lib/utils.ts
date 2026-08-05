@@ -1,3 +1,4 @@
+import type { TemplateKey } from "@prisma/client";
 import { customAlphabet } from "nanoid";
 
 const codeAlphabet = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZ23456789", 10);
@@ -27,12 +28,36 @@ export const SECTIONS = [
   ["GALLERY", "Photo Gallery"],
 ] as const;
 
-export const TEMPLATES = {
+/**
+ * The template registry.
+ *
+ * Typed as `Record<TemplateKey, ...>` rather than left to inference, which is
+ * what makes it impossible to add a value to the Prisma enum without adding it
+ * here: the build fails. `THEMES` is already keyed the same way, so the enum,
+ * the palettes and this registry now rise and fall together.
+ *
+ * `import type` — erased at compile time, so this stays safe to import from a
+ * Client Component.
+ */
+export const TEMPLATES: Record<TemplateKey, { name: string; color: string; desc: string }> = {
   BLUSH_ROMANCE: { name: "Blush Romance", color: "#9D5C64", desc: "Romantic and elegant with soft blush tones and delicate details." },
   MODERN_SAGE: { name: "Modern Sage", color: "#87A07A", desc: "Clean, modern and timeless with a fresh sage green palette." },
   CLASSIC_ELEGANCE: { name: "Classic Elegance", color: "#A93A42", desc: "Timeless and sophisticated with a classic red and cream aesthetic." },
   MIDNIGHT_BLOOM: { name: "Midnight Bloom", color: "#C8A99E", desc: "Dark, botanical and cinematic — hairline type and photography lit out of near-black." },
   PACIFIC_LINEN: { name: "Pacific Linen", color: "#26313A", desc: "Bright and textured — a signature hand on soft printed paper, with air to spare." },
   VELVET_BOTANICAL: { name: "Velvet Botanical", color: "#DDB9AD", desc: "A painted still life brought onto the web — burgundy and cream, dramatic serif, deep shadow." },
-} as const;
-export type TemplateId = keyof typeof TEMPLATES;
+};
+
+export type TemplateId = TemplateKey;
+
+/**
+ * Every template key, as a tuple, for the places that need a runtime list —
+ * form validation above all. Derived, never written out: a hand-maintained
+ * second copy of this list is what took wedding creation down for the three
+ * newest templates.
+ */
+export const TEMPLATE_KEYS = Object.keys(TEMPLATES) as [TemplateKey, ...TemplateKey[]];
+
+/** Is this string a template this build knows about? */
+export const isTemplateKey = (v: unknown): v is TemplateKey =>
+  typeof v === "string" && v in TEMPLATES;
