@@ -1425,10 +1425,16 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* Larger and more widely tracked than the house setting. A hairline face needs
    the size to show its contrast and the air to stop the thin strokes filling
    in — set it at the house size and it just looks like a light serif. */
+/* 58px against the house 50, not 78.
+   A hairline face does need more size than Cormorant to hold together — its
+   thin strokes fail before its counters do — but 78px was the template
+   shouting, and the reference is not shouting. It is confident and restrained,
+   and the luxury sits in the tracking and the air around the words, both of
+   which went up as the size came down. */
 .site[data-template="MIDNIGHT_BLOOM"] .s-name{
-  font-size:clamp(34px,7.4vw,78px);letter-spacing:.10em;line-height:1.06;
-  color:var(--s-name-ink)}
-.site[data-template="MIDNIGHT_BLOOM"] .s-names{gap:var(--sp-5)}
+  font-size:clamp(29px,4.4vw,58px);letter-spacing:.20em;line-height:1.18;
+  color:var(--s-name-ink);text-indent:.20em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-names{gap:var(--sp-3)}
 
 /* Two voices, not three. The house script is retired for this template and its
    two jobs — the conjunction and the invitation line — go to the serif italic.
@@ -1436,7 +1442,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    competing in the same sentence, and the one that loses is the one carrying
    the couple's names. */
 .site[data-template="MIDNIGHT_BLOOM"] .s-and{
-  font-family:var(--serif);font-style:italic;font-size:clamp(15px,2vw,20px);
+  font-family:var(--serif);font-style:italic;font-size:clamp(13px,1.5vw,17px);
   letter-spacing:.02em;color:var(--si);opacity:var(--muted)}
 .site[data-template="MIDNIGHT_BLOOM"] .inv-line{
   font-family:var(--serif);font-style:italic;font-size:clamp(17px,2.6vw,23px);
@@ -1444,10 +1450,11 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .site[data-template="MIDNIGHT_BLOOM"] .inv-date{letter-spacing:.26em}
 
 .site[data-template="MIDNIGHT_BLOOM"] .s-h{
-  font-size:clamp(21px,3.1vw,31px);letter-spacing:.26em;text-indent:.26em}
+  font-size:clamp(17px,1.9vw,24px);letter-spacing:.32em;text-indent:.32em}
 .site[data-template="MIDNIGHT_BLOOM"] .inv-guest{
-  font-size:clamp(34px,7vw,60px);letter-spacing:.06em}
-.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names{letter-spacing:.22em}
+  font-size:clamp(26px,3.6vw,44px);letter-spacing:.10em;text-indent:.10em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names{
+  font-size:clamp(17px,1.9vw,24px);letter-spacing:.26em;text-indent:.26em}
 
 /* --------------------------------------------------------------- chrome -- */
 /* Solid rather than translucent. A blurred bar over near-black is nearly black
@@ -1462,8 +1469,8 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* The names, in the display face, above the links. */
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-mark{
   font-family:var(--s-face);font-weight:400;
-  font-size:clamp(22px,3.4vw,38px);letter-spacing:.14em;
-  color:var(--sd);text-indent:.14em}
+  font-size:clamp(15px,1.5vw,21px);letter-spacing:.26em;
+  color:var(--sd);text-indent:.26em}
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-mark .amp{
   font-family:var(--serif);font-style:italic;font-size:.62em;
   letter-spacing:0;opacity:var(--muted)}
@@ -1472,7 +1479,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    underline drawn as a rule under the word instead of a hover flourish. */
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-links{gap:clamp(18px,3.2vw,42px)}
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a{
-  font-family:var(--serif);font-size:clamp(15px,1.7vw,19px);font-weight:500;
+  font-family:var(--serif);font-size:clamp(13px,1.05vw,15px);font-weight:500;
   letter-spacing:.01em;text-transform:none;opacity:var(--muted)}
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a:hover,
 .site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a:focus-visible{
@@ -1528,15 +1535,18 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* Top-left and bottom-right of the masthead, so the names sit inside a frame
    rather than beside a pile. Atmosphere that overlaps a name has stopped being
    atmosphere, which is what the size and the opacity are holding back. */
-.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:50vmin;--bot-opacity:.62}
-.site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:40vmin;--bot-opacity:.5}
+/* Smaller and quieter than before. Once the names came down to 58px the
+   sprays were the largest thing on the page, and an ornament that outweighs
+   the couple has stopped framing and started competing. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:33vmin;--bot-opacity:.52}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:27vmin;--bot-opacity:.42}
 
 /* On a narrow column there is no room to be framed on two sides: the second
    spray closes over the names. The remaining one also shrinks, because a
    fixed vmin on a tall phone viewport is a much larger share of the width. */
 @media (max-width:720px){
   .site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:40vmin;--bot-opacity:.5}
-  .site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:34vmin;--bot-opacity:.42}
+  .site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:30vmin;--bot-opacity:.36}
   .site[data-template="MIDNIGHT_BLOOM"] .bot-br{display:none}
 }
 
@@ -1628,7 +1638,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* Links in the serif at reading size, not sans caps at 11px. This is the
    single loudest difference between this template and the house chrome. */
 .site[data-template="PACIFIC_LINEN"] .s-nav-links a{
-  font-family:var(--serif);font-size:clamp(15px,1.7vw,18px);font-weight:500;
+  font-family:var(--serif);font-size:clamp(13px,1.05vw,15px);font-weight:500;
   letter-spacing:.005em;text-transform:none;opacity:var(--muted)}
 .site[data-template="PACIFIC_LINEN"] .s-nav-links a:hover{opacity:1;color:var(--sa)}
 /* RSVP is a link among links here, not a pill. The reference sets it level
@@ -1644,30 +1654,34 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 /* ------------------------------------------------------------ typography --
    The signature hand carries the names and every section heading; the serif
    carries everything that has to be read. Two voices, clearly divided. */
+/* 66px against the house script's 84. A monoline hand has no thick strokes to
+   carry weight, so it reads lighter than the copperplate at the same size and
+   can afford to be smaller still — and the reference sets its names with far
+   more page around them than on them. */
 .site[data-template="PACIFIC_LINEN"] .s-name.script{
-  font-size:clamp(40px,8.6vw,92px);line-height:1.12;padding-bottom:.1em;
-  letter-spacing:.005em}
-.site[data-template="PACIFIC_LINEN"] .s-names{gap:var(--sp-4)}
+  font-size:clamp(34px,5.2vw,66px);line-height:1.16;padding-bottom:.1em;
+  letter-spacing:.01em}
+.site[data-template="PACIFIC_LINEN"] .s-names{gap:var(--sp-3)}
 /* "and" drops to a small roman. In the script it was a third the size of the
    names in the same hand, which read as a mistake rather than a hierarchy. */
 .site[data-template="PACIFIC_LINEN"] .s-and{
-  font-family:var(--serif);font-style:normal;font-size:clamp(15px,1.9vw,19px);
+  font-family:var(--serif);font-style:normal;font-size:clamp(13px,1.4vw,16px);
   letter-spacing:.02em;color:var(--si);opacity:var(--muted)}
 
 .site[data-template="PACIFIC_LINEN"] .s-h,
 .site[data-template="PACIFIC_LINEN"] .s-story-text .s-h{
-  font-family:var(--s-script);font-size:clamp(32px,5.4vw,56px);font-weight:400;
+  font-family:var(--s-script);font-size:clamp(26px,3.2vw,38px);font-weight:400;
   text-transform:none;letter-spacing:.005em;text-indent:0;line-height:1.2;
   padding-bottom:.08em;color:var(--sa)}
 .site[data-template="PACIFIC_LINEN"] .s-hs{
   font-family:var(--serif);font-size:var(--t-body);letter-spacing:.02em;
   text-transform:none}
 .site[data-template="PACIFIC_LINEN"] .inv-guest{
-  font-size:clamp(38px,7.4vw,68px);padding-bottom:.1em}
+  font-size:clamp(30px,4.4vw,52px);padding-bottom:.1em}
 .site[data-template="PACIFIC_LINEN"] .inv-line{
-  font-family:var(--s-script);font-size:clamp(22px,3.4vw,32px)}
+  font-family:var(--s-script);font-size:clamp(19px,2.4vw,26px)}
 .site[data-template="PACIFIC_LINEN"] .s-foot-names{
-  font-family:var(--s-script);font-size:clamp(26px,3.6vw,40px);letter-spacing:.01em}
+  font-family:var(--s-script);font-size:clamp(22px,2.6vw,30px);letter-spacing:.01em}
 
 /* ----------------------------------------------------------- composition --
    Centred and airy. Everything reads down a single axis. */
@@ -1679,19 +1693,15 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    touches both margins, so it is dropped here and only here — every other
    photograph on the template keeps the full treatment, and the exposure,
    colour and vignette still apply to this one. */
-/* Breaking out of `.s-wrap`, which is capped at 1120px. The margin trick is
-   the only way to reach the viewport edges without moving the element out of
-   the layout it belongs to. `100vw` includes the scrollbar, so the tiny
-   overhang is clipped rather than allowed to create a horizontal scroll. */
-.site[data-template="PACIFIC_LINEN"]{overflow-x:clip}
-.site[data-template="PACIFIC_LINEN"] .s-plate{
-  max-width:100vw;width:100vw;margin-inline:calc(50% - 50vw);padding:0}
+/* The hero keeps the house plate — inset, 1080px, framed. A full-bleed hero
+   was closer to this one reference and further from every other template in
+   the system, and a template library is worth more than a single screen. The
+   photograph is a member of the same layout everywhere. */
 /* Set in the serif, not tracked-out sans caps. */
 .site[data-template="PACIFIC_LINEN"] .s-meta{
-  font-family:var(--serif);font-size:var(--t-body);letter-spacing:.01em;
+  font-family:var(--serif);font-size:var(--t-micro);letter-spacing:.03em;
   text-transform:none;text-indent:0}
 .site[data-template="PACIFIC_LINEN"] .s-kicker{letter-spacing:.3em;text-indent:.3em}
-.site[data-template="PACIFIC_LINEN"] .s-plate .s-ph{--ph-edge:0;--ph-depth:0}
 
 /* The story reads as one centred column with the photograph beneath it,
    rather than as a two-column spread. */
@@ -1712,9 +1722,9 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    One solid block of ink on a pale sheet. Square, wide, and set in the serif
    rather than tracked-out sans — the reference's single strongest gesture. */
 .site[data-template="PACIFIC_LINEN"] .s-btn{
-  border-radius:0;min-height:58px;padding-inline:clamp(48px,9vw,110px);
-  font-family:var(--serif);font-size:clamp(15px,1.7vw,18px);font-weight:600;
-  letter-spacing:.08em;text-indent:.08em;text-transform:none}
+  border-radius:0;min-height:54px;padding-inline:clamp(44px,7vw,92px);
+  font-family:var(--serif);font-size:clamp(13px,1.2vw,15px);font-weight:600;
+  letter-spacing:.1em;text-indent:.1em;text-transform:none}
 
 /* Panes on paper are a shade of the ink, never white — a white card on a
    textured sheet reads as a hole cut in it. */
@@ -1755,27 +1765,38 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    the artwork ends and no need for the PNG to be pre-faded. */
 .site[data-art="floral"] .s-masthead{
   position:relative;isolation:isolate;
-  /* Out to the viewport edges. `.s-wrap` caps its children at 1120px, and a
-     bouquet that stops 80px short of each margin is a picture of a bouquet
-     rather than a painted page. */
+  /* Out to the viewport edges, but only as a band along the foot of the
+     masthead. `cover` made the arrangement fill the whole first screen, and a
+     bouquet at that scale is a poster: the names became a caption on someone
+     else's painting. At 56% of the masthead's height, anchored to the bottom,
+     it does what a printed border does — it frames what is above it. */
   max-width:100vw;width:100vw;margin-inline:calc(50% - 50vw);
   padding-inline:var(--gutter);
   background-image:
-    /* Fades top and bottom, above the image in the stack. They are why the
-       PNG does not have to be pre-faded, and why swapping in a different
-       piece of artwork needs no image editing. */
+    /* A flat wash of the page colour over the artwork. Layer order in CSS is
+       front to back, so this sits on top and takes roughly a third of the
+       paint's weight out — which is cheaper and far more controllable than
+       re-exporting the PNG at a lower opacity. */
+    linear-gradient(color-mix(in srgb, var(--sb) 34%, transparent),
+                    color-mix(in srgb, var(--sb) 34%, transparent)),
+    /* Fades top and bottom. They are why the PNG needs no pre-fading, and why
+       swapping in different artwork needs no image editing. */
     linear-gradient(to bottom,
       var(--sb) 0%,
-      color-mix(in srgb, var(--sb) 70%, transparent) 20%,
-      transparent 46%,
-      transparent 84%,
-      color-mix(in srgb, var(--sb) 62%, transparent) 95%,
-      var(--sb) 100%),
+      color-mix(in srgb, var(--sb) 88%, transparent) 26%,
+      color-mix(in srgb, var(--sb) 30%, transparent) 52%,
+      transparent 70%,
+      color-mix(in srgb, var(--sb) 40%, transparent) 88%,
+      var(--sb) 99%),
     image-set(url("/art/dark-floral.avif") type("image/avif"),
               url("/art/dark-floral.webp") type("image/webp"));
-  background-repeat:no-repeat, no-repeat;
-  background-position:center, center bottom;
-  background-size:100% 100%, cover}
+  background-repeat:no-repeat, no-repeat, no-repeat;
+  background-position:center, center, center bottom;
+  /* `100% auto` keeps the arrangement's proportions: a fixed band height
+     stretched a 2400x1500 painting to fit and the flowers came out squat.
+     Full width, natural height, anchored to the foot — so what shows is the
+     base of the bouquet, undistorted, and the top fade dissolves the rest. */
+  background-size:100% 100%, 100% 100%, 100% auto}
 
 /* Type sits on the paint, and needs its own ground to be legible over the lit
    petals. A scrim behind the words rather than a wash over the whole image:
@@ -1784,11 +1805,11 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   position:relative;z-index:1}
 .site[data-art="floral"] .s-masthead > .reveal::before{
   content:"";position:absolute;z-index:-1;
-  inset:-8% -6%;
-  background:radial-gradient(62% 54% at 50% 50%,
-    color-mix(in srgb, var(--sb) 82%, transparent),
-    color-mix(in srgb, var(--sb) 46%, transparent) 58%,
-    transparent 78%)}
+  inset:-14% -8%;
+  background:radial-gradient(58% 50% at 50% 48%,
+    color-mix(in srgb, var(--sb) 72%, transparent),
+    color-mix(in srgb, var(--sb) 34%, transparent) 62%,
+    transparent 82%)}
 
 .site[data-template="VELVET_BOTANICAL"]{
   /* Cream on near-black halates the same way Midnight Bloom's does, so small
@@ -1808,29 +1829,35 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .site[data-template="VELVET_BOTANICAL"] .s-rsvp-thanks{
   font-family:var(--s-face);font-weight:400}
 
+/* 52px against the house 50 — the smallest names of the three, because this
+   is the heaviest face. Playfair at 80px over a painting was a poster; the
+   reference sets it barely above body size and lets the artwork and the space
+   do the work. */
 .site[data-template="VELVET_BOTANICAL"] .s-name{
-  font-size:clamp(34px,7.6vw,80px);letter-spacing:.055em;line-height:1.1;
-  color:var(--s-name-ink);text-indent:.055em}
-.site[data-template="VELVET_BOTANICAL"] .s-names{gap:var(--sp-4)}
+  font-size:clamp(27px,3.9vw,52px);letter-spacing:.1em;line-height:1.2;
+  color:var(--s-name-ink);text-indent:.1em}
+.site[data-template="VELVET_BOTANICAL"] .s-names{gap:var(--sp-3)}
 /* A small roman, matching the reference: the conjunction is a joint, not a
    flourish, and the script face would be a third voice on a page that already
    has a painting on it. */
 .site[data-template="VELVET_BOTANICAL"] .s-and{
-  font-family:var(--sans);font-style:normal;font-size:clamp(12px,1.5vw,15px);
-  letter-spacing:.06em;color:var(--si);opacity:var(--muted)}
+  font-family:var(--sans);font-style:normal;font-size:clamp(11px,1.1vw,13px);
+  letter-spacing:.1em;color:var(--si);opacity:var(--muted)}
 
 .site[data-template="VELVET_BOTANICAL"] .s-h{
-  font-size:clamp(22px,3.2vw,34px);letter-spacing:.2em;text-indent:.2em;
+  font-size:clamp(16px,1.8vw,23px);letter-spacing:.28em;text-indent:.28em;
   text-transform:uppercase;color:var(--sd)}
 .site[data-template="VELVET_BOTANICAL"] .s-hs{
   font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;
   text-transform:none}
 .site[data-template="VELVET_BOTANICAL"] .inv-guest{
-  font-size:clamp(30px,6vw,54px);letter-spacing:.05em;text-transform:uppercase}
+  font-size:clamp(24px,3.2vw,40px);letter-spacing:.1em;text-indent:.1em;
+  text-transform:uppercase}
 .site[data-template="VELVET_BOTANICAL"] .inv-line{
   font-family:var(--sans);font-size:var(--t-body);letter-spacing:.02em;
   line-height:1.8}
-.site[data-template="VELVET_BOTANICAL"] .s-foot-names{letter-spacing:.16em}
+.site[data-template="VELVET_BOTANICAL"] .s-foot-names{
+  font-size:clamp(16px,1.8vw,22px);letter-spacing:.24em;text-indent:.24em}
 
 /* --------------------------------------------------------------- chrome -- */
 .site[data-template="VELVET_BOTANICAL"] .s-nav{
@@ -1839,14 +1866,14 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   padding-block:var(--sp-5) var(--sp-4);
   border-bottom:1px solid color-mix(in srgb, var(--si) 10%, transparent)}
 .site[data-template="VELVET_BOTANICAL"] .s-nav-mark{
-  font-size:clamp(20px,3vw,34px);letter-spacing:.16em;
-  color:var(--sd);text-indent:.16em}
+  font-size:clamp(14px,1.4vw,19px);letter-spacing:.24em;
+  color:var(--sd);text-indent:.24em}
 .site[data-template="VELVET_BOTANICAL"] .s-nav-mark .amp{
   font-family:var(--sans);font-size:.5em;letter-spacing:0;opacity:var(--muted)}
 /* Links in the sans, sentence case, at reading size. */
 .site[data-template="VELVET_BOTANICAL"] .s-nav-links{gap:clamp(16px,3vw,38px)}
 .site[data-template="VELVET_BOTANICAL"] .s-nav-links a{
-  font-family:var(--sans);font-size:clamp(13px,1.4vw,15px);font-weight:400;
+  font-family:var(--sans);font-size:clamp(12px,.95vw,13.5px);font-weight:400;
   letter-spacing:.02em;text-transform:none;opacity:var(--muted)}
 .site[data-template="VELVET_BOTANICAL"] .s-nav-links a:hover,
 .site[data-template="VELVET_BOTANICAL"] .s-nav-links a:focus-visible{
@@ -1860,25 +1887,23 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .site[data-template="VELVET_BOTANICAL"] .s-nav-cta::after{display:block}
 
 /* ----------------------------------------------------------- composition -- */
+/* Air above the names, and enough below them for the band to sit under the
+   type rather than behind it. */
 .site[data-template="VELVET_BOTANICAL"] .s-masthead{
-  padding-block:clamp(96px,15vw,180px) clamp(150px,24vw,300px)}
+  padding-block:clamp(88px,13vw,160px) clamp(128px,19vw,240px)}
 .site[data-template="VELVET_BOTANICAL"] .s-sec{padding-block:var(--sp-9)}
-/* Hero edge to edge, as in the reference. The hairline has no page to meet
-   when an image touches both margins, so it stands down here and only here;
-   exposure, colour and vignette still apply. */
+/* The hero keeps the house plate, for the same reason as Pacific Linen: the
+   photography should be recognisably the same layout in every template. */
 .site[data-template="VELVET_BOTANICAL"]{overflow-x:clip}
-.site[data-template="VELVET_BOTANICAL"] .s-plate{
-  max-width:100vw;width:100vw;margin-inline:calc(50% - 50vw);padding:0}
-.site[data-template="VELVET_BOTANICAL"] .s-plate .s-ph{--ph-edge:0;--ph-depth:0}
 
 /* --------------------------------------------------------------- actions --
    A solid block of cream on near-black — the reference's one bright gesture,
    and the inverse of Pacific Linen's. */
 .site[data-template="VELVET_BOTANICAL"] .s-btn{
-  border-radius:0;min-height:56px;padding-inline:clamp(44px,8vw,96px);
+  border-radius:0;min-height:52px;padding-inline:clamp(40px,6.5vw,84px);
   background:var(--sd);color:var(--sb);border-color:var(--sd);
-  font-family:var(--sans);font-size:var(--t-micro);font-weight:600;
-  letter-spacing:.16em;text-indent:.16em}
+  font-family:var(--sans);font-size:clamp(11px,1vw,12.5px);font-weight:600;
+  letter-spacing:.2em;text-indent:.2em}
 .site[data-template="VELVET_BOTANICAL"] .s-count .t,
 .site[data-template="VELVET_BOTANICAL"] .s-inp{
   background:color-mix(in srgb, var(--si) 5%, var(--sb));
@@ -1888,7 +1913,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    bottom and letting it run wider keeps whole flowers in frame instead of
    three enormous petals. */
 @media (max-width:720px){
-  .site[data-art="floral"] .s-masthead{background-size:100% 100%, 180% auto}
+  .site[data-art="floral"] .s-masthead{background-size:100% 100%, 100% 100%, 190% auto}
   .site[data-template="VELVET_BOTANICAL"] .s-masthead{
     padding-block:clamp(72px,14vw,120px) clamp(120px,34vw,200px)}
 }

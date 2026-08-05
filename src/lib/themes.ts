@@ -135,7 +135,7 @@ export const THEMES: Record<TemplateKey, Theme> = {
   PACIFIC_LINEN: {
     bg: "#F3F0E9", ink: "#2A2825", accent: "#26313A", deep: "#26313A",
     names: "script", nameInk: "ink", face: "serif", body: "serif", art: "none", ornament: "none",
-    script: "monoline", surface: "paper", navMark: true,
+    script: "monoline", surface: "paper", navMark: false,
   },
   /**
    * Velvet Botanical — a painted still life brought onto the web.
