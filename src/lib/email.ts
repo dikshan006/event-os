@@ -341,6 +341,7 @@ export const emails = {
       replyTo: PLATFORM_REPLY_TO,
       message: {
         brand: "EventOS",
+        wordmark: true,
         color: PLATFORM_COLOR,
         preheader: `${o.studio} is set up and waiting for your first wedding.`,
         blocks: [
@@ -362,6 +363,7 @@ export const emails = {
       replyTo: PLATFORM_REPLY_TO,
       message: {
         brand: "EventOS",
+        wordmark: true,
         color: PLATFORM_COLOR,
         preheader: `Payment received: ${o.amount}.`,
         blocks: [
@@ -384,6 +386,7 @@ export const emails = {
       replyTo: o.email,
       message: {
         brand: "EventOS",
+        wordmark: true,
         color: PLATFORM_COLOR,
         preheader: `${o.name}${o.company ? ` of ${o.company}` : ""} asked for access.`,
         blocks: [
@@ -411,6 +414,7 @@ export const emails = {
       replyTo: PLATFORM_REPLY_TO,
       message: {
         brand: "EventOS",
+        wordmark: true,
         color: PLATFORM_COLOR,
         preheader: "A person reads every request. You will hear back either way.",
         blocks: [
@@ -431,6 +435,7 @@ export const emails = {
       // nonsense, and filters treat one on a transactional message as noise.
       message: {
         brand: "EventOS",
+        wordmark: true,
         color: PLATFORM_COLOR,
         preheader: "This link is valid for 60 minutes.",
         blocks: [

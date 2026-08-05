@@ -52,7 +52,7 @@ export default function HomePage() {
       <section className="m-hero">
         <div className="m-wrap m-hero-grid">
           <Reveal>
-            <span className="m-eyebrow">EventOS</span>
+            <span className="m-eyebrow m-brandmark">EventOS</span>
           </Reveal>
 
           <Reveal delay={60}>

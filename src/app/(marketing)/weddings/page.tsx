@@ -123,7 +123,7 @@ export default async function WeddingsPage() {
       <section className="m-cine" data-hero-tone="warm">
         <div className="m-wrap m-cine-body">
           <Reveal>
-            <span className="m-eyebrow">EventOS for weddings</span>
+            <span className="m-eyebrow">For weddings</span>
           </Reveal>
           <Reveal delay={80}>
             <h1 className="m-cine-title" style={{ marginBlock: "1.25rem 1.5rem" }}>

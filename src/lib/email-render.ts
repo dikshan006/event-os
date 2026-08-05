@@ -30,6 +30,16 @@ export type Message = {
   /** Shown in the inbox preview line, after the subject. */
   preheader: string;
   brand: string;
+  /**
+   * Whether `brand` is our own name rather than a studio's.
+   *
+   * The brand line is set in tracked uppercase, which is the right treatment
+   * for a studio's name — it reads as a letterhead. It is wrong for ours, which
+   * has fixed casing: EventOS, never EVENTOS. Guest-facing mail carries the
+   * studio's name and is unaffected; only the platform's own mail (access
+   * requests, password resets) sets this.
+   */
+  wordmark?: boolean;
   color: string;
   blocks: Block[];
   /** Optional line under the footer rule, e.g. why this email was received. */
@@ -184,14 +194,14 @@ ${esc(m.preheader)}${"&#847;&zwnj;&nbsp;".repeat(60)}
         <tr>
           <td class="p" style="padding:40px 44px">
 
-            <p style="margin:0 0 28px;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:${esc(m.color)}">${esc(m.brand)}</p>
+            <p style="margin:0 0 28px;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:${m.wordmark ? "0.4px" : "3px"};text-transform:${m.wordmark ? "none" : "uppercase"};color:${esc(m.color)}">${esc(m.brand)}</p>
 
 ${body}
 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:36px">
               <tr><td style="border-top:1px solid #EDE6DF;font-size:0;line-height:0">&nbsp;</td></tr>
             </table>
-            <p class="soft" style="margin:20px 0 0;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#A9A199">${esc(m.brand)}</p>
+            <p class="soft" style="margin:20px 0 0;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:${m.wordmark ? "0.3px" : "2px"};text-transform:${m.wordmark ? "none" : "uppercase"};color:#A9A199">${esc(m.brand)}</p>
 ${m.footnote ? `            <p class="soft" style="margin:12px 0 0;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:#A9A199">${esc(m.footnote)}</p>` : ""}
 
           </td>

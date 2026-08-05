@@ -32,15 +32,25 @@ export function StatusChip({ s }: { s: string }) {
   return <span className={`chip ${toneMap[s] ?? ""}`}><i className="dot" />{label}</span>;
 }
 
-export function Sidebar({ brand, brandMono, items, footer, accent }: {
+export function Sidebar({ brand, brandMono, items, footer, accent, wordmark }: {
   brand: string; brandMono: string; items: { href: string; label: string }[];
   footer: React.ReactNode; accent?: string;
+  /**
+   * Whether `brand` is our own name rather than a studio's.
+   *
+   * The sidebar sets the brand line in tracked uppercase, which is right for a
+   * studio's name — it reads as a label above the navigation. It is wrong for
+   * ours, which has fixed casing: EventOS, never EVENTOS. Passed explicitly
+   * rather than inferred from the string, because "is this our brand" is not a
+   * question a component should be guessing at.
+   */
+  wordmark?: boolean;
 }) {
   return (
     <aside className="side" style={accent ? ({ "--accent": accent, "--accent-soft": accent + "1A" } as React.CSSProperties) : undefined}>
       <div className="brand">
         <div className="brand-mono">{brandMono}</div>
-        <div className="brand-name">{brand}</div>
+        <div className={`brand-name${wordmark ? " is-wordmark" : ""}`}>{brand}</div>
       </div>
       <nav className="nav">
         {items.map(i => <Link key={i.href} href={i.href}>{i.label}</Link>)}

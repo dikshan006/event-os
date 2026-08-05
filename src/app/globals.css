@@ -111,6 +111,9 @@ html.lenis{scroll-behavior:auto}
 .brand{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0 26px;text-align:center}
 .brand-mono{font-family:var(--script);font-size:42px;line-height:1;color:var(--accent)}
 .brand-name{font-size:11px;letter-spacing:.32em;text-transform:uppercase;font-weight:500}
+/* Our own name is a wordmark, not a label: fixed casing, and tracking to suit
+   mixed case rather than caps. A studio's name keeps the uppercase treatment. */
+.brand-name.is-wordmark{font-size:13px;letter-spacing:.02em;text-transform:none}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav a{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:var(--soft);font-weight:500}
 .nav a:hover{background:var(--bg);color:var(--ink)}

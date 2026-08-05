@@ -373,15 +373,33 @@
   color: var(--fg);
 }
 
+/* The wordmark.
+ *
+ * Set in the brand's own casing — EventOS, never EVENTOS. It used to carry
+ * `text-transform: uppercase`, which is why the markup says `Event<span>OS
+ * </span>` and the page said EVENTOS: the casing was a rendering decision, so
+ * no amount of searching the source for the wrong spelling would ever have
+ * found it.
+ *
+ * Tracking comes down accordingly. 0.14em is a value for uppercase, where the
+ * letterforms are all one height and need air; on mixed case the same figure
+ * pulls the word apart. The lighter, slightly wider `OS` stays — it is the one
+ * part of the mark that was always doing typographic work rather than shouting. */
 .m-mark {
   font-size: 0.9375rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.005em;
   color: var(--fg);
   margin-right: auto;
 }
-.m-mark span { font-weight: 200; letter-spacing: 0.2em; }
+.m-mark span { font-weight: 300; letter-spacing: 0.04em; }
+
+/* The brand inside a label.
+ *
+ * `.m-eyebrow` is uppercase by design and that is right for a label — but not
+ * for the name sitting in one. Anywhere the brand appears inside an uppercased
+ * context it takes this instead, so the casing survives. */
+.m-brandmark { text-transform: none; letter-spacing: 0.01em; font-weight: 500; }
 
 .m-nav-links { display: flex; align-items: center; gap: clamp(1rem, 2.4vw, 2rem); }
 /* `:not(.m-btn)` is load-bearing, not tidiness. `.m-nav-links a` scores
