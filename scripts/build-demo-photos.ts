@@ -35,7 +35,7 @@ import path from "node:path";
 import { processImage, srcSet, fallbackSrc } from "../src/lib/images";
 import { toneStyle } from "../src/lib/photo-tone";
 
-const TEMPLATES = ["BLUSH_ROMANCE", "MODERN_SAGE", "CLASSIC_ELEGANCE", "MIDNIGHT_BLOOM"] as const;
+const TEMPLATES = ["BLUSH_ROMANCE", "MODERN_SAGE", "CLASSIC_ELEGANCE", "MIDNIGHT_BLOOM", "PACIFIC_LINEN"] as const;
 
 const SLOTS = [
   {

@@ -74,7 +74,7 @@ export default async function RegistryPage({ params }: { params: Promise<{ slug:
   const claimWithSlug = claim.bind(null, slug);
 
   return (
-    <div className="site" data-template={wedding.template} style={vars}>
+    <div className="site" data-template={wedding.template} data-surface={theme.surface} style={vars}>
       <SmoothScroll />
       <a href="#wishlist" className="skip">Skip to the wishlist</a>
 

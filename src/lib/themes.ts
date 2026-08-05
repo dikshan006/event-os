@@ -28,6 +28,32 @@ export type Theme = {
    */
   face: "serif" | "display";
   /**
+   * Which script the template writes in.
+   *
+   * `formal` is the house copperplate. `monoline` is the fine even-weight
+   * signature hand — a different register entirely, and the whole visual
+   * identity of the templates that use it, so it could not simply be the
+   * house script at a different size.
+   */
+  script: "formal" | "monoline";
+  /**
+   * What the page is printed on.
+   *
+   * `plain` is a flat colour. `paper` lays a procedural grain and soft washes
+   * over it — generated in CSS rather than shipped as an image, so it costs
+   * nothing to download, tiles at any size and takes its colour from the
+   * palette like everything else.
+   */
+  surface: "plain" | "paper";
+  /**
+   * Whether the couple's names sit above the navigation.
+   *
+   * A masthead in the bar rather than only further down the page. It changes
+   * the whole proportion of the first screen, so it belongs to the template
+   * rather than to the nav component.
+   */
+  navMark: boolean;
+  /**
    * Decoration at the page's corners.
    *
    * Opt-in per template and drawn in the template's own colours, so it is a
@@ -41,6 +67,7 @@ export const THEMES: Record<TemplateKey, Theme> = {
   BLUSH_ROMANCE: {
     bg: "#F6EFEA", ink: "#211E1B", accent: "#9B5B63", deep: "#211E1B",
     names: "caps", nameInk: "ink", face: "serif", ornament: "none",
+    script: "formal", surface: "plain", navMark: false,
   },
   // Sage was #87A07A on white: 2.86:1, which fails WCAG AA even for large
   // text, and it carried every link and the RSVP button. Darkened until both
@@ -48,10 +75,12 @@ export const THEMES: Record<TemplateKey, Theme> = {
   MODERN_SAGE: {
     bg: "#FFFFFF", ink: "#414B3C", accent: "#5E7052", deep: "#54654A",
     names: "caps", nameInk: "deep", face: "serif", ornament: "none",
+    script: "formal", surface: "plain", navMark: false,
   },
   CLASSIC_ELEGANCE: {
     bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42",
     names: "script", nameInk: "ink", face: "serif", ornament: "none",
+    script: "formal", surface: "plain", navMark: false,
   },
   /**
    * Midnight Bloom — the first dark template.
@@ -70,6 +99,25 @@ export const THEMES: Record<TemplateKey, Theme> = {
   MIDNIGHT_BLOOM: {
     bg: "#100F0E", ink: "#EFE9DF", accent: "#C8A99E", deep: "#F3EEE6",
     names: "caps", nameInk: "ink", face: "display", ornament: "botanical",
+    script: "formal", surface: "plain", navMark: false,
+  },
+  /**
+   * Pacific Linen — bright, textured, almost monochrome.
+   *
+   * The ground is the design. A flat off-white would be a blank page; the
+   * grain and the pale washes are what make it read as something *printed on*,
+   * which is the whole difference between this and a minimal white template.
+   *
+   * The accent carries two points of blue rather than being a true black, so
+   * it sits with the washes instead of against them, and it is dark enough
+   * (11.6:1) to do the work black would have done: the script names, the
+   * links and the solid RSVP block. A page this pale has nowhere to hide a
+   * weak accent.
+   */
+  PACIFIC_LINEN: {
+    bg: "#F3F0E9", ink: "#2A2825", accent: "#26313A", deep: "#26313A",
+    names: "script", nameInk: "ink", face: "serif", ornament: "none",
+    script: "monoline", surface: "paper", navMark: true,
   },
 };
 
@@ -124,6 +172,7 @@ export function themeVars(t: Theme): Record<string, string> {
     "--sd": t.deep,
     "--s-name-ink": t.nameInk === "deep" ? t.deep : t.ink,
     "--s-face": t.face === "display" ? "var(--display)" : "var(--serif)",
+    "--s-script": t.script === "monoline" ? "var(--script-mono)" : "var(--script)",
     "--s-shade": dark ? "#000000" : t.ink,
     "--s-edge-k": dark ? "1.6" : "1",
     "--s-depth-k": dark ? "0.5" : "1",

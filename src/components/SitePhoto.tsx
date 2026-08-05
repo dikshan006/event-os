@@ -50,7 +50,12 @@ export function SitePhoto({
     <figure
       className={`s-ph ${treatment === "page" ? "toned" : "framed"} ${className}`.trim()}
       style={{
-        aspectRatio: String(aspect),
+        // Through a custom property, not a bare value: a template needs to be
+        // able to re-crop a slot — a story portrait is 4:5 on one design and a
+        // wide landscape on another — and an inline `aspect-ratio` can only be
+        // overridden from a stylesheet with `!important`.
+        "--ph-ratio": String(aspect),
+        aspectRatio: "var(--ph-ratio)",
         backgroundImage: `url("${photo.blurData}")`,
         // Per-image measurements, resolved server-side. The CSS reads these
         // rather than hard-coding one treatment for every photograph.

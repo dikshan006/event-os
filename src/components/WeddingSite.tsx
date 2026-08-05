@@ -114,15 +114,33 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
     // `data-template` is the hook a template uses to change layout and rhythm
     // without any component knowing which template is active. Everything a
     // template overrides lives in one block of the stylesheet, keyed off this.
-    <div className="site" data-template={wedding.template} style={vars}>
+    <div
+      className="site"
+      data-template={wedding.template}
+      data-surface={theme.surface}
+      data-navmark={theme.navMark ? "1" : undefined}
+      style={vars}
+    >
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
       {/* Navigation leads the page rather than sitting between the names and
           the hero image, which split the masthead in two. */}
       <nav className="s-nav" aria-label="Sections">
-        {navLinks.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
-        <a className="s-nav-cta" href="#rsvp">RSVP</a>
+        {/* Some templates set the couple's names above the links, which changes
+            the proportion of the entire first screen. Rendered only where the
+            theme asks for it, and marked decorative: the names are already the
+            page's h1 further down, and a screen reader gains nothing from
+            hearing them twice before the navigation. */}
+        {theme.navMark && (
+          <p className="s-nav-mark" aria-hidden="true">
+            {wedding.partnerOne} <span className="amp">&amp;</span> {wedding.partnerTwo}
+          </p>
+        )}
+        <span className="s-nav-links">
+          {navLinks.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+          <a className="s-nav-cta" href="#rsvp">RSVP</a>
+        </span>
       </nav>
 
       <div className="s-wrap">

@@ -13,6 +13,9 @@
   --serif:var(--font-serif),'Cormorant Garamond',Georgia,serif;
   --sans:var(--font-sans),'Inter',system-ui,sans-serif;
   --script:var(--font-script),'Pinyon Script',cursive;
+  /* The monoline signature hand. A different register from the copperplate
+     above, not a different size of it. */
+  --script-mono:var(--font-script-mono),'Sacramento',cursive;
   /* Hairline display face. Only templates that ask for it ever render in it,
      and a font file is only fetched when a glyph actually uses it. */
   --display:var(--font-display),'Italiana',Didot,'Bodoni MT',Georgia,serif;
@@ -241,7 +244,7 @@ body:has(dialog[open]){overflow:hidden}
    one of these is overridden by `themeVars()` in practice. */
 .site{min-height:100vh;background:var(--sb);color:var(--si);font-family:var(--serif);font-size:16px;
   --s-shade:var(--si);--s-edge-k:1;--s-depth-k:1;--s-line:8%;
-  --s-name-ink:var(--si);--s-face:var(--serif)}
+  --s-name-ink:var(--si);--s-face:var(--serif);--s-script:var(--script)}
 .s-wrap{max-width:1120px;margin:0 auto}
 .s-nav{--nav-h:60px;display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(20px,4vw,40px);
   min-height:var(--nav-h);align-items:center;padding:var(--sp-4) var(--gutter);
@@ -296,9 +299,9 @@ body:has(dialog[open]){overflow:hidden}
 .s-names{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);
   font-weight:400;margin:0}
 .s-name{font-size:clamp(28px,6vw,50px);letter-spacing:.16em;font-weight:500;line-height:1.15}
-.s-name.script{font-family:var(--script);font-size:clamp(44px,10vw,84px);letter-spacing:0;
+.s-name.script{font-family:var(--s-script);font-size:clamp(44px,10vw,84px);letter-spacing:0;
   color:var(--sa);line-height:1.16;padding-bottom:.06em}
-.s-and{font-family:var(--script);font-size:var(--t-script);color:var(--sa);opacity:.85;line-height:1.2}
+.s-and{font-family:var(--s-script);font-size:var(--t-script);color:var(--sa);opacity:.85;line-height:1.2}
 
 /* -------------------------------------------------------------- masthead --
    Type first, and a great deal of air around it. Nothing competes with the
@@ -492,7 +495,7 @@ body:has(dialog[open]){overflow:hidden}
   letter-spacing:.38em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
   /* the trailing letter-space would otherwise push the line off-centre */
   text-indent:.38em;margin:0}
-.inv-guest{font-family:var(--script);font-weight:400;
+.inv-guest{font-family:var(--s-script);font-weight:400;
   font-size:clamp(46px,10vw,86px);line-height:1.18;color:var(--sa);
   /* script descenders and swashes need room below the baseline */
   margin:clamp(14px,2.4vw,22px) 0 0;padding-bottom:.08em;
@@ -507,7 +510,7 @@ body:has(dialog[open]){overflow:hidden}
    the contrast requirement — but it was measuring 2.92:1 and simply looked
    weak. Full strength; the accent is quiet enough on its own. */
 .inv-divider-mark{font-size:11px;color:var(--sa);opacity:1;line-height:1}
-.inv-line{font-family:var(--script);
+.inv-line{font-family:var(--s-script);
   font-size:clamp(25px,5.2vw,38px);line-height:1.55;color:var(--sa);
   max-width:22ch;margin:0 auto;padding-bottom:.06em}
 .inv-date{font-size:clamp(21px,4.6vw,34px);line-height:1.35;letter-spacing:.22em;
@@ -1461,3 +1464,186 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .site[data-template="MIDNIGHT_BLOOM"] .s-inp{
   background:color-mix(in srgb, var(--si) 4%, var(--sb));
   border-color:color-mix(in srgb, var(--si) 20%, transparent)}
+
+
+/* ═════════════════════════════════════════════════════════ PACIFIC LINEN ═══
+   Bright, textured, almost monochrome.
+
+   As with Midnight Bloom, everything below is typography, colour, rhythm and
+   surface. No section is added, removed or restructured.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* --------------------------------------------------------------- surface --
+   Paper, generated rather than downloaded.
+
+   Three layers: fractal-noise grain tiled at its native 220px, then two broad
+   washes, then the flat colour underneath. The grain is an inline SVG filter
+   as a data URI — 476 bytes, no request, and it tiles at any viewport instead
+   of a JPEG that would be either visibly repeating or a megabyte.
+
+   base64 rather than a raw `;utf8,` payload: that form is a non-standard
+   media-type parameter and has bitten this codebase once already.
+
+   Fixed attachment, so the page moves over the sheet rather than dragging it
+   along — which is what makes it read as printed on something. */
+.site[data-surface="paper"]{
+  --paper-warm:#C9BFAE;
+  --paper-cool:#8FA6B4;
+  background-image:
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMjAiIGhlaWdodD0iMjIwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjg1IiBudW1PY3RhdmVzPSI0IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjxmZUNvbXBvbmVudFRyYW5zZmVyPjxmZUZ1bmNBIHR5cGU9ImxpbmVhciIgc2xvcGU9Ii45IiBpbnRlcmNlcHQ9Ii0uMzQiLz48L2ZlQ29tcG9uZW50VHJhbnNmZXI+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjIyMCIgaGVpZ2h0PSIyMjAiIGZpbHRlcj0idXJsKCNuKSIvPjwvc3ZnPg=="),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MjAiIGhlaWdodD0iNTIwIj48ZmlsdGVyIGlkPSJtIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjAwOSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjxmZUNvbG9yTWF0cml4IHR5cGU9InNhdHVyYXRlIiB2YWx1ZXM9IjAiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHNsb3BlPSIuNSIgaW50ZXJjZXB0PSItLjIyIi8+PC9mZUNvbXBvbmVudFRyYW5zZmVyPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSI1MjAiIGhlaWdodD0iNTIwIiBmaWx0ZXI9InVybCgjbSkiLz48L3N2Zz4="),
+    radial-gradient(120% 82% at 78% 26%, color-mix(in srgb, var(--paper-cool) 34%, transparent), transparent 62%),
+    radial-gradient(96% 74% at 10% 70%, color-mix(in srgb, var(--paper-warm) 38%, transparent), transparent 60%),
+    radial-gradient(150% 90% at 46% 108%, color-mix(in srgb, var(--paper-cool) 20%, transparent), transparent 58%);
+  background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat;
+  background-size:220px 220px, 520px 520px, cover, cover, cover;
+  background-attachment:fixed, fixed, fixed, fixed, fixed;
+  background-color:var(--sb)}
+
+/* A fixed background is repainted on every scroll frame, which on a phone GPU
+   is the difference between smooth and not. The sheet scrolls with the page
+   there; nobody has ever noticed. */
+@media (pointer:coarse){
+  .site[data-surface="paper"]{background-attachment:scroll, scroll, scroll, scroll, scroll}
+}
+
+/* -------------------------------------------------------------- masthead --
+   The couple's names sit above the links, so the bar carries the first
+   impression rather than the section further down. */
+.s-nav-links{display:contents}
+.site[data-navmark="1"] .s-nav{flex-direction:column;gap:var(--sp-3);padding-block:var(--sp-5)}
+.site[data-navmark="1"] .s-nav-links{display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:clamp(16px,3vw,38px)}
+/* The bar is uppercase for its links. A script set in caps is not a script,
+   it is a mistake — so the mark opts out of the inherited transform and of
+   the tracking that goes with it. */
+.s-nav-mark{margin:0;line-height:1.1;text-align:center;text-transform:none;letter-spacing:normal}
+
+.site[data-template="PACIFIC_LINEN"]{
+  /* Ink on paper is a softer contrast than ink on white, and the washes lift
+     the mid-tones — small text can therefore sit a shade quieter here without
+     losing legibility. Measured, not guessed: 11px caps land at 7.9:1. */
+  --muted:.78;
+  --muted-lg:.6}
+
+/* The bar is the paper, not a pane over it: no blur, no tint, one hairline.
+   A translucent bar over a fixed texture shows the texture sliding underneath
+   it, which is the one way to make a paper ground look like a screenshot. */
+.site[data-template="PACIFIC_LINEN"] .s-nav{
+  background:var(--sb);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  border-bottom:1px solid color-mix(in srgb, var(--si) 12%, transparent)}
+
+.site[data-template="PACIFIC_LINEN"] .s-nav-mark{
+  font-family:var(--s-script);font-size:clamp(30px,5vw,50px);color:var(--sa);
+  letter-spacing:.01em;padding-bottom:.08em}
+.site[data-template="PACIFIC_LINEN"] .s-nav-mark .amp{font-size:.78em}
+
+/* Links in the serif at reading size, not sans caps at 11px. This is the
+   single loudest difference between this template and the house chrome. */
+.site[data-template="PACIFIC_LINEN"] .s-nav-links a{
+  font-family:var(--serif);font-size:clamp(15px,1.7vw,18px);font-weight:500;
+  letter-spacing:.005em;text-transform:none;opacity:var(--muted)}
+.site[data-template="PACIFIC_LINEN"] .s-nav-links a:hover{opacity:1;color:var(--sa)}
+/* RSVP is a link among links here, not a pill. The reference sets it level
+   with the rest and lets the solid block further down carry the action. */
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta{
+  border:0;border-radius:0;padding:6px 2px!important;margin-left:0;
+  color:var(--si)!important;opacity:var(--muted)}
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta:hover,
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta:focus-visible{
+  background:transparent;color:var(--sa)!important;opacity:1}
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta::after{display:block}
+
+/* ------------------------------------------------------------ typography --
+   The signature hand carries the names and every section heading; the serif
+   carries everything that has to be read. Two voices, clearly divided. */
+.site[data-template="PACIFIC_LINEN"] .s-name.script{
+  font-size:clamp(40px,8.6vw,92px);line-height:1.12;padding-bottom:.1em;
+  letter-spacing:.005em}
+.site[data-template="PACIFIC_LINEN"] .s-names{gap:var(--sp-4)}
+/* "and" drops to a small roman. In the script it was a third the size of the
+   names in the same hand, which read as a mistake rather than a hierarchy. */
+.site[data-template="PACIFIC_LINEN"] .s-and{
+  font-family:var(--serif);font-style:normal;font-size:clamp(15px,1.9vw,19px);
+  letter-spacing:.02em;color:var(--si);opacity:var(--muted)}
+
+.site[data-template="PACIFIC_LINEN"] .s-h,
+.site[data-template="PACIFIC_LINEN"] .s-story-text .s-h{
+  font-family:var(--s-script);font-size:clamp(32px,5.4vw,56px);font-weight:400;
+  text-transform:none;letter-spacing:.005em;text-indent:0;line-height:1.2;
+  padding-bottom:.08em;color:var(--sa)}
+.site[data-template="PACIFIC_LINEN"] .s-hs{
+  font-family:var(--serif);font-size:var(--t-body);letter-spacing:.02em;
+  text-transform:none}
+.site[data-template="PACIFIC_LINEN"] .inv-guest{
+  font-size:clamp(38px,7.4vw,68px);padding-bottom:.1em}
+.site[data-template="PACIFIC_LINEN"] .inv-line{
+  font-family:var(--s-script);font-size:clamp(22px,3.4vw,32px)}
+.site[data-template="PACIFIC_LINEN"] .s-foot-names{
+  font-family:var(--s-script);font-size:clamp(26px,3.6vw,40px);letter-spacing:.01em}
+
+/* ----------------------------------------------------------- composition --
+   Centred and airy. Everything reads down a single axis. */
+.site[data-template="PACIFIC_LINEN"] .s-masthead{
+  padding-block:clamp(64px,10vw,120px) clamp(48px,7vw,88px)}
+.site[data-template="PACIFIC_LINEN"] .s-sec{padding-block:var(--sp-9)}
+
+/* Hero edge to edge. The frame's hairline has no page to meet when an image
+   touches both margins, so it is dropped here and only here — every other
+   photograph on the template keeps the full treatment, and the exposure,
+   colour and vignette still apply to this one. */
+/* Breaking out of `.s-wrap`, which is capped at 1120px. The margin trick is
+   the only way to reach the viewport edges without moving the element out of
+   the layout it belongs to. `100vw` includes the scrollbar, so the tiny
+   overhang is clipped rather than allowed to create a horizontal scroll. */
+.site[data-template="PACIFIC_LINEN"]{overflow-x:clip}
+.site[data-template="PACIFIC_LINEN"] .s-plate{
+  max-width:100vw;width:100vw;margin-inline:calc(50% - 50vw);padding:0}
+/* Set in the serif, not tracked-out sans caps. */
+.site[data-template="PACIFIC_LINEN"] .s-meta{
+  font-family:var(--serif);font-size:var(--t-body);letter-spacing:.01em;
+  text-transform:none;text-indent:0}
+.site[data-template="PACIFIC_LINEN"] .s-kicker{letter-spacing:.3em;text-indent:.3em}
+.site[data-template="PACIFIC_LINEN"] .s-plate .s-ph{--ph-edge:0;--ph-depth:0}
+
+/* The story reads as one centred column with the photograph beneath it,
+   rather than as a two-column spread. */
+.site[data-template="PACIFIC_LINEN"] .s-story{
+  grid-template-columns:minmax(0,1fr);max-width:820px;gap:var(--sp-7);
+  text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text{order:-1;text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text .s-h{text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text p{margin-inline:auto;max-width:60ch}
+/* Full column width and re-cropped to landscape. The house slot is a 4:5
+   portrait, which suits a two-column spread; this template stacks the
+   photograph under a centred column of prose, where a tall crop leaves the
+   page reading as a corridor. */
+.site[data-template="PACIFIC_LINEN"] .s-portrait{width:100%;max-width:100%;margin-inline:auto}
+.site[data-template="PACIFIC_LINEN"] .s-portrait .s-ph{--ph-ratio:1.5}
+
+/* --------------------------------------------------------------- actions --
+   One solid block of ink on a pale sheet. Square, wide, and set in the serif
+   rather than tracked-out sans — the reference's single strongest gesture. */
+.site[data-template="PACIFIC_LINEN"] .s-btn{
+  border-radius:0;min-height:58px;padding-inline:clamp(48px,9vw,110px);
+  font-family:var(--serif);font-size:clamp(15px,1.7vw,18px);font-weight:600;
+  letter-spacing:.08em;text-indent:.08em;text-transform:none}
+
+/* Panes on paper are a shade of the ink, never white — a white card on a
+   textured sheet reads as a hole cut in it. */
+.site[data-template="PACIFIC_LINEN"] .s-count .t,
+.site[data-template="PACIFIC_LINEN"] .s-inp{
+  background:color-mix(in srgb, var(--si) 3%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 14%, transparent)}
+
+/* A signature hand cannot set an acronym. "Our Story" and "Cash Gifts" are
+   phrases and read beautifully in it; "RSVP" and "FAQ" become four unrelated
+   squiggles, because a joined hand has nothing to join. Those two sections
+   take the serif instead — the only place this template mixes the rule, and
+   the reference does the same thing for the same reason. */
+.site[data-template="PACIFIC_LINEN"] #rsvp .s-h,
+.site[data-template="PACIFIC_LINEN"] #faq .s-h{
+  font-family:var(--serif);font-size:clamp(20px,2.9vw,28px);font-weight:500;
+  letter-spacing:.22em;text-transform:uppercase;text-indent:.22em;
+  color:var(--sd);padding-bottom:0}

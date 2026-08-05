@@ -48,6 +48,7 @@ enum TemplateKey {
   MODERN_SAGE
   CLASSIC_ELEGANCE
   MIDNIGHT_BLOOM
+  PACIFIC_LINEN
 }
 
 enum EmailStatus {
