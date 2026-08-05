@@ -250,6 +250,36 @@ export function themeVars(t: Theme): Record<string, string> {
     "--s-face": { display: "var(--display)", didone: "var(--didone)", serif: "var(--serif)" }[t.face],
     "--s-body": t.body === "sans" ? "var(--sans)" : "var(--serif)",
     "--s-script": t.script === "monoline" ? "var(--script-mono)" : "var(--script)",
+    /**
+     * The accent, adjusted for a page that sits on a photograph.
+     *
+     * The accent carries the small text — event times, the table number, the
+     * registry vendor lines, the links — and on a pale template it is a
+     * mid-tone that starts at around 5:1 against flat background. That is a
+     * tenth of the ratio in hand, and a photograph showing through the section
+     * panels spends it immediately: measured at 4.0:1 with the panel at 80%
+     * and 1.1:1 with no panel at all.
+     *
+     * So it was the accent, not the panel, that was forcing the panels to be
+     * nearly opaque — and an opaque panel over a photograph is a photograph
+     * you cannot see. Mixing the accent a little under halfway toward the ink
+     * darkens it while holding the hue: the rose is still rose, the sage still
+     * sage, and all three pale templates clear AA by about 0.2 at a panel thin
+     * enough to read the picture through. Derived rather than hand-picked, so
+     * it stays correct for a palette nobody has written yet — the three
+     * existing accents needed different amounts and one ratio covers them.
+     *
+     * Dark templates are the opposite case — a light accent on a darkened
+     * ground, already at 9:1 — and mixing toward their light ink would do
+     * nothing useful, so they keep the accent as designed.
+     */
+    "--s-accent-ground": dark ? t.accent : `color-mix(in srgb, ${t.accent} 55%, ${t.ink})`,
+    /**
+     * And the same for `deep`, which on two of the three pale templates is the
+     * accent again under another name and carries its own share of small text.
+     * Adjusting one and not the other left exactly one line still failing.
+     */
+    "--s-deep-ground": dark ? t.deep : `color-mix(in srgb, ${t.deep} 55%, ${t.ink})`,
     "--s-shade": dark ? "#000000" : t.ink,
     "--s-edge-k": dark ? "1.6" : "1",
     "--s-depth-k": dark ? "0.5" : "1",

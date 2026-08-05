@@ -2055,9 +2055,9 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    and `.s-invite`, which then sat with their text directly on the photograph at
    1.1:1. A rule that has to be updated whenever a section is added is a rule
    that will be wrong. */
-.site .s-above > #main > *:not(.s-plate){
+.site[data-ground="1"] .s-above > #main > *:not(.s-plate){
   position:relative;
-  background:color-mix(in srgb, var(--sb) var(--pane,88%), transparent);
+  background:color-mix(in srgb, var(--sb) var(--pane,72%), transparent);
   -webkit-backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
   backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
   border-radius:var(--panel-r,14px);
@@ -2067,27 +2067,37 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 
 /* The seam. Small — a hairline of photograph between panels reads as depth;
    a wide one reads as a gap someone forgot to fill. */
-.site .s-above > #main > * + *{margin-top:var(--panel-gap,30px)}
+.site[data-ground="1"] .s-above > #main > * + *{margin-top:var(--panel-gap,30px)}
 /* A seam above the first panel too, so the photograph starts at the top of the
    page rather than at the second section. */
-.site .s-above > #main{padding-top:var(--panel-gap,30px)}
-.site .s-above{padding-bottom:var(--panel-gap,30px)}
+.site[data-ground="1"] .s-above > #main{padding-top:var(--panel-gap,30px)}
+.site[data-ground="1"] .s-above{padding-bottom:var(--panel-gap,30px)}
 /* The hero photograph is a picture on a photograph: it needs the seam
    around it, not a panel under it. */
-.site .s-above > #main > .s-plate{background:none;backdrop-filter:none;
+.site[data-ground="1"] .s-above > #main > .s-plate{background:none;backdrop-filter:none;
   -webkit-backdrop-filter:none;box-shadow:none}
 
 /* The navigation and the footer sit outside `.s-wrap`, so they have to be
    lifted out of the ground's way explicitly. The nav is opaque — a translucent
    bar over a moving photograph is a legibility problem that changes with every
    wedding — and the footer takes the same panel treatment as a section. */
+/* An opaque bar across the top is a lid on the scene: the photograph starts
+   below it instead of behind it. Frosted, it reads as the first panel. It is
+   also the one panel that is always over the *top* of the photograph rather
+   than a random part of it, so it can afford to be the thinnest. */
 .site .s-nav{position:relative;z-index:5;background:var(--sb)}
+.site[data-ground="1"] .s-nav{
+  position:sticky;top:0;
+  background:color-mix(in srgb, var(--sb) var(--nav-pane,86%), transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(1.06);
+  backdrop-filter:blur(18px) saturate(1.06);
+  border-bottom:1px solid color-mix(in srgb, var(--si) 8%, transparent)}
 .site .s-foot{
   position:relative;z-index:1;
   /* The footer sits outside `#main`, so the sibling seam rule does not reach
      it and it has to say the gap itself, or it welds onto the RSVP panel. */
   max-width:1080px;margin:var(--panel-gap,30px) auto 0;
-  background:color-mix(in srgb, var(--sb) var(--pane,88%), transparent);
+  background:color-mix(in srgb, var(--sb) var(--pane,72%), transparent);
   -webkit-backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
   backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
   border-radius:var(--panel-r,14px);
@@ -2112,8 +2122,8 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
  * darkened to 0.8 brightness — and holds 9:1 or better at a 64% panel. It can
  * show far more of the picture through the type, and does. */
 .site[data-template="MIDNIGHT_BLOOM"],
-.site[data-template="VELVET_BOTANICAL"]{--pane:64%}
-.site[data-template="PACIFIC_LINEN"]{--pane:82%}
+.site[data-template="VELVET_BOTANICAL"]{--pane:62%}
+.site[data-template="PACIFIC_LINEN"]{--pane:74%}
 
 @media (prefers-reduced-motion:reduce){
   .reveal.armed{opacity:1;transform:none;transition:none}
