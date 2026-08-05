@@ -30,10 +30,14 @@ export type Theme = {
   /**
    * What body copy is set in.
    *
-   * The house answer is the serif. A template built on weight and contrast
-   * rather than on fine strokes wants a sans underneath it — a high-contrast
-   * display serif over a matching body serif is one voice at two sizes, and
-   * the display loses.
+   * Every template currently answers `serif`, and the option exists because
+   * one of them briefly did not. Velvet Botanical was built with a sans
+   * underneath its display serif on the theory that two serifs would compete;
+   * what actually happened is that paragraphs of Inter made a wedding
+   * invitation read as a product page. A wedding site is a piece of
+   * stationery, and stationery is set in a serif. The axis stays because a
+   * future template may genuinely want otherwise, but the default is not a
+   * close call.
    */
   body: "serif" | "sans";
   /**
@@ -152,7 +156,7 @@ export const THEMES: Record<TemplateKey, Theme> = {
    */
   VELVET_BOTANICAL: {
     bg: "#14100F", ink: "#F0E7DA", accent: "#DDB9AD", deep: "#F7F1E6",
-    names: "caps", nameInk: "deep", face: "didone", body: "sans", art: "floral",
+    names: "caps", nameInk: "deep", face: "didone", body: "serif", art: "floral",
     ornament: "none", script: "formal", surface: "plain", navMark: true,
   },
 };

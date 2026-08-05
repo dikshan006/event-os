@@ -122,6 +122,23 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
       data-art={theme.art === "none" ? undefined : theme.art}
       style={vars}
     >
+      {/*
+        A CSS background is discovered only after the stylesheet is parsed and
+        the element is laid out, so the masthead painted flat and the artwork
+        arrived a beat later — the one template that visibly assembled itself
+        while every other one simply appeared. Preloading moves the fetch to the
+        head, alongside the fonts.
+
+        Both formats are declared with their type; a browser skips the one it
+        cannot decode, so exactly one is fetched. React hoists these into the
+        document head wherever they are rendered.
+      */}
+      {theme.art === "floral" && (
+        <>
+          <link rel="preload" as="image" type="image/avif" href="/art/dark-floral.avif" />
+          <link rel="preload" as="image" type="image/webp" href="/art/dark-floral.webp" />
+        </>
+      )}
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>

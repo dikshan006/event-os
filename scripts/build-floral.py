@@ -24,7 +24,15 @@ Seeded, so the committed PNG is reproducible and never churns in review.
 """
 import math, random, subprocess, sys, os
 
+# The arrangement is laid out in a 2400x1500 space and rasterised smaller — see
+# OUT_W below. Shrinking the canvas instead would crop the composition, which
+# is authored to these coordinates.
 W, H = 2400, 1500
+
+# What actually ships. The band renders at most 1440 CSS px wide, so 2000 is
+# still 1.4x on a standard display; 2400 bought nothing visible and cost a
+# third more bytes on a decorative background.
+OUT_W = 2000
 rnd = random.Random(20260806)
 
 # Light from the upper left, as in every still life of the period.
@@ -213,12 +221,12 @@ if __name__ == "__main__":
     # for licensed artwork. AVIF and WebP are what actually get served: a 1.2 MB
     # hero is not a hero, it is a wait.
     script = (
-        'const sharp=require("sharp");const s=%r;(async()=>{'
-        'await sharp(s,{density:96}).png({compressionLevel:9}).toFile(%r);'
-        'await sharp(s,{density:96}).avif({quality:58}).toFile(%r);'
-        'await sharp(s,{density:96}).webp({quality:74,alphaQuality:90}).toFile(%r);'
+        'const sharp=require("sharp");const s=%r;const w=%d;const g=()=>sharp(s,{density:96}).resize({width:w});(async()=>{'
+        'await g().png({compressionLevel:9}).toFile(%r);'
+        'await g().avif({quality:50}).toFile(%r);'
+        'await g().webp({quality:66,alphaQuality:88}).toFile(%r);'
         '})();'
-    ) % (tmp, base + ".png", base + ".avif", base + ".webp")
+    ) % (tmp, OUT_W, base + ".png", base + ".avif", base + ".webp")
     subprocess.run(["node", "-e", script], check=True)
 
     for ext in ("png", "avif", "webp"):
