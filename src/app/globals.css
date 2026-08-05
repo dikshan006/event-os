@@ -1569,7 +1569,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   to{opacity:1;transform:none}}
 @keyframes mb-drift{
   from{transform:scale(1)}
-  to{transform:scale(1.06)}}
+  to{transform:scale(1.14)}}
 
 .site[data-template="MIDNIGHT_BLOOM"] .s-masthead .reveal{
   animation:mb-settle 1400ms var(--ease) both}
@@ -2014,36 +2014,79 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   background-size:cover;background-position:center;
   /* The same house treatment every photograph on the site gets, pushed
      further: this one is furniture, not a picture. */
-  filter:brightness(var(--ground-bright,.9)) saturate(var(--ground-sat,.86))
-         sepia(.05) blur(var(--ground-blur,2px));
+  filter:brightness(var(--ground-bright,1.34)) saturate(var(--ground-sat,.62))
+         sepia(.05) blur(var(--ground-blur,14px));
   /* Blur samples from outside the element and leaves a soft edge at the
      viewport border; scaling past the edges puts that seam off-screen. */
-  transform:scale(1.06)}
+  transform:scale(1.14)}
 
-/* The scrim is what makes the type legible, and it is doing real work: every
-   template's contrast was measured against a flat colour, and a photograph is
-   not flat. It is a wash of the page's own background, so a pale template
-   stays pale and a dark one stays dark, with a little more weight at the top
-   and bottom where the nav and the footer sit.
-
-   The weights are not chosen by eye. Each one is the lowest that keeps every
-   string on the page at or above its AA threshold, measured by hiding the type
-   and reading the actual rendered pixels behind each text box. Pale templates
-   need the most: near-black ink on cream has far less headroom against a
-   photograph than cream ink on near-black, so they sit at 95% while the dark
-   pair can afford 82% and show noticeably more of the picture. */
+/* A light hand now, not a curtain.
+   This used to be a 95% wash of the page colour, which kept every measurement
+   safe and hid the photograph almost entirely — the thing it was there to
+   show. The readability job has moved to the glass over the content column
+   below, which is where the text actually is; out here the scrim only has to
+   settle the top and bottom edges under the navigation and the footer. */
 .site .s-ground-scrim{
   position:absolute;inset:0;
-  background:
-    linear-gradient(to bottom,
-      var(--sb) 0%,
-      color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent) 18%,
-      color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent) 82%,
-      var(--sb) 100%),
-    color-mix(in srgb, var(--sb) var(--ground-veil,95%), transparent)}
+  background:linear-gradient(to bottom,
+    var(--sb) 0%,
+    color-mix(in srgb, var(--sb) var(--ground-veil,45%), transparent) 14%,
+    color-mix(in srgb, var(--sb) var(--ground-veil,45%), transparent) 86%,
+    var(--sb) 100%)}
 
 /* Everything that is not the ground sits above it. */
-.site .s-above{position:relative;z-index:1}
+/* One pane, the whole height of the page.
+   The photograph reads at full strength in the margins either side of the
+   1120px column, and through a blurred, tinted glass behind the type. One
+   continuous surface rather than a panel per section: sections keep their own
+   rhythm and there is no seam between them, so it stays one canvas.
+
+   This is also what carries readability now. Text on a photograph is a
+   contrast problem with no fixed answer, because the photograph changes with
+   every wedding; text on a translucent pane over a blurred photograph is a
+   contrast problem with a floor, and the floor is what the pane is set to.
+
+   `isolation` keeps the pane's blur from reaching past its own box. */
+.site .s-above{
+  position:relative;z-index:1;isolation:isolate;
+  background:color-mix(in srgb, var(--sb) var(--pane,86%), transparent);
+  -webkit-backdrop-filter:blur(var(--pane-blur,18px)) saturate(1.05);
+  backdrop-filter:blur(var(--pane-blur,18px)) saturate(1.05)}
+
+/* The pane's edges. A hard vertical line either side would read as a card;
+   a hairline of the page's own ink reads as the edge of a sheet. */
+.site .s-above{
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--si) 6%, transparent),
+    0 24px 70px -40px color-mix(in srgb, var(--s-shade) 34%, transparent)}
+
+/* Dark templates hold their contrast against a photograph far better than pale
+   ones, so they run a thinner pane and show more of the picture.
+
+   The asymmetry is not taste, it is measured. A pale template's accent carries
+   small text — event times, links, the table number — and its ink is dark, so
+   anything the photograph darkens the backdrop by comes straight off the
+   contrast ratio. At a 74% pane the accent measured 3.6:1 where it needs 4.5.
+   A dark template is the opposite case: its ink is near-white and the ground is
+   already brightness-halved, so even a blown-out sky in the photograph leaves
+   it around 9:1. So the pale ones pay for the effect in the pane and keep the
+   photograph strong in the margins, where nothing has to be read over it. */
+.site[data-template="MIDNIGHT_BLOOM"],
+.site[data-template="VELVET_BOTANICAL"]{--pane:70%}
+
+/* Pacific Linen's paper is the surface; the photograph sits under it. */
+.site[data-template="PACIFIC_LINEN"]{--pane:84%}
+
+@media (max-width:1180px){
+  /* Below the column width there are no margins left for the photograph to
+     show in, so the pane carries all of it: a little thinner, and the ground
+     behind it a little less veiled, which keeps the same impression rather
+     than the same numbers. */
+  .site{--pane:86%;--ground-veil:38%}
+  .site[data-template="MIDNIGHT_BLOOM"],
+  .site[data-template="VELVET_BOTANICAL"]{--pane:78%}
+  .site .s-above{box-shadow:none}
+}
 
 /* The nav and the footer are outside `.s-wrap`, so they need saying too. */
 .site .s-nav{z-index:5}
@@ -2053,8 +2096,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
    its contrast against a darkened photograph far better than near-black ink on
    cream does, so they can afford to show more of it. */
 .site[data-template="MIDNIGHT_BLOOM"],
-.site[data-template="VELVET_BOTANICAL"]{
-  --ground-veil:82%;--ground-bright:.62;--ground-sat:.72}
+.site[data-template="VELVET_BOTANICAL"]{--ground-bright:.5;--ground-sat:.72}
 
 /* Pacific Linen already has a printed ground of its own. The photograph sits
    under the paper rather than instead of it, so it needs the most veil of the
@@ -2072,9 +2114,9 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 }
 
 @media (max-width:720px){
-  /* Cheaper on a phone: less blur to composite, and a touch more veil, since a
-     small screen puts type over more of the frame at once. */
-  .site .s-ground{--ground-blur:1px;--ground-veil:92%}
-  .site[data-template="MIDNIGHT_BLOOM"],
-  .site[data-template="VELVET_BOTANICAL"]{--ground-veil:88%}
+  /* Cheaper on a phone: a blurred backdrop filter over a blurred image is two
+     expensive passes for one effect, so the pane drops its own blur and leans
+     on the image's. */
+  .site{--pane-blur:0px}
+  .site .s-ground{--ground-blur:10px}
 }

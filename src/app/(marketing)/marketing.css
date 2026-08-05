@@ -1205,3 +1205,10 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
 
 /* A row of actions, centred. The two hero blocks each had this inline. */
 .m-actions-center { justify-content: center; }
+
+/* A column of explanation.
+   Prose has an optimal measure and it is not the width of the page: past
+   roughly 70 characters the eye loses the start of the next line. The
+   paragraphs on the Weddings page carry the whole explanation of the product,
+   so they get the measure rather than the full grid. */
+.m-col-prose { max-width: 44rem; }

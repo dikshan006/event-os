@@ -33,11 +33,20 @@ export const metadata: Metadata = {
  * planner needs, and it is now the whole top of the page. The films that follow
  * are meant to carry the explanation; the copy exists to get someone to them.
  *
+ * The copy is prose first and lists second, which is the opposite of where it
+ * started. A tick list is only legible to someone who already knows what the
+ * product is — it names things without saying what they are for, so a planner
+ * seeing EventOS for the first time reads seven nouns and learns nothing. The
+ * paragraphs now do the explaining in the plainest language available (the
+ * problem, then what happens instead, then what changes when plans move), and
+ * the lists sit underneath as a reference for someone checking a specific
+ * thing is covered.
+ *
  * One visual key from top to bottom — deep warm charcoal, the photograph as the
  * only thing that changes.
  */
 
-/** What a planner does. Verbs, not features. */
+/** What a planner does. Verbs, not features, and all of it once. */
 const PLANNER = [
   "Create the wedding website",
   "Import and group the guest list",
@@ -144,18 +153,22 @@ export default async function WeddingsPage() {
             <Reveal className="m-col">
               <span className="m-eyebrow">What it is</span>
               <h2 className="m-title m-serif" style={{ marginBlock: "1.25rem 1rem" }}>
-                An operating system for a wedding.
+                One website each, not one for everyone.
               </h2>
               <p className="m-lead">
-                One place to run everything a wedding needs — the website, the
-                guest list, the invitations, the replies, the day itself — and
-                one place it all comes from.
+                A normal wedding website is a single page that everybody shares.
+                Every guest sees every event, every address and every
+                instruction, and has to work out which parts are theirs.
               </p>
               <p className="m-body" style={{ marginTop: "1.25rem" }}>
-                Tag a guest as evening-only and their invitation, their schedule
-                and their seat all change with them. Move the ceremony an hour
-                and every guest&rsquo;s copy moves with it. There is nothing to
-                re-send, because nothing was sent as a copy in the first place.
+                EventOS makes a separate one for each guest. You build the
+                wedding once. Everyone gets their own link.
+              </p>
+              <p className="m-body" style={{ marginTop: "1.25rem" }}>
+                When they open it they see their invitation with their name on
+                it, only the events they are actually invited to, how to get
+                there, and where they are sitting. Nothing that isn&rsquo;t
+                theirs, and nothing to scroll past.
               </p>
             </Reveal>
 
@@ -166,26 +179,47 @@ export default async function WeddingsPage() {
         </div>
       </section>
 
-      {/* ================================================ planners / guests */}
-      <section id="both" className="m-wed-raise">
+      {/* ====================================================== the payoff */}
+      <section id="minutes" className="m-wed-raise">
         <div className="m-wrap m-chapter">
-          <div className="m-two">
+          <Reveal className="m-col-prose">
+            <span className="m-eyebrow">Why it saves you the afternoon</span>
+            <h2 className="m-title m-serif" style={{ maxWidth: "20ch", marginBlock: "1.25rem 1rem" }}>
+              Built once. Personal for everyone.
+            </h2>
+            <p className="m-lead">
+              Import the guest list, mark who is invited to what, and publish.
+              That is the whole job. Two hundred personal websites take about as
+              long as one.
+            </p>
+            <p className="m-body" style={{ marginTop: "1.25rem" }}>
+              Then things change, because they always do. The ceremony moves an
+              hour. A family is now evening-only. The seating plan is redone the
+              week before. You change it in one place and every guest&rsquo;s
+              website updates at the same moment.
+            </p>
+            <p className="m-body" style={{ marginTop: "1.25rem" }}>
+              There is nothing to re-send and no second version to keep track
+              of, because nothing was ever sent as a copy. The link a guest was
+              given in March is still correct in September.
+            </p>
+          </Reveal>
+
+          {/* The lists stay, but as a reference under the explanation rather
+              than as the explanation itself. Someone who has read the
+              paragraphs already knows what this is; they are here for the
+              person who wants to check a specific thing is covered. */}
+          <div className="m-two" style={{ marginTop: "var(--m-block)" }}>
             <Reveal className="m-col">
-              <span className="m-eyebrow">For planners</span>
-              <h3 className="m-head" style={{ marginBlock: "0.9rem 1.25rem" }}>
-                One dashboard.
-              </h3>
-              <ul className="m-ticks">
+              <span className="m-eyebrow">You do this once</span>
+              <ul className="m-ticks" style={{ marginTop: "1rem" }}>
                 {PLANNER.map(x => <li key={x}>{x}</li>)}
               </ul>
             </Reveal>
 
             <Reveal className="m-col" delay={80}>
-              <span className="m-eyebrow">For guests</span>
-              <h3 className="m-head" style={{ marginBlock: "0.9rem 1.25rem" }}>
-                One link.
-              </h3>
-              <ul className="m-ticks">
+              <span className="m-eyebrow">Every guest gets this</span>
+              <ul className="m-ticks" style={{ marginTop: "1rem" }}>
                 {GUEST.map(x => <li key={x}>{x}</li>)}
               </ul>
             </Reveal>

@@ -87,12 +87,16 @@ export type Theme = {
 
 export const THEMES: Record<TemplateKey, Theme> = {
   // The accent carries the event times, the links and the script conjunction —
-  // small text, all of it. At #9B5B63 it measured 4.53:1 on this background:
-  // over AA by three hundredths, which is not a margin, it is a coincidence.
-  // The photographic ground darkens the page a shade and took it to 4.49.
-  // Two points darker reads identically and measures 5.09:1.
+  // small text, all of it, and it has now been darkened twice for the same
+  // reason. It began at #9B5B63, which measured 4.53:1 here: over AA by three
+  // hundredths, which is not a margin, it is a coincidence. #94555D took it to
+  // 5.09:1 against a flat page. The photographic ground is not flat — the
+  // darkest place the couple's own photograph can put behind this text
+  // measured 4.33:1, and the whole point of the ground is that we do not get
+  // to choose the photograph. #8F5158 is indistinguishable by eye and holds
+  // 4.63:1 at that worst pixel, 5.29:1 on plain background.
   BLUSH_ROMANCE: {
-    bg: "#F6EFEA", ink: "#211E1B", accent: "#94555D", deep: "#211E1B",
+    bg: "#F6EFEA", ink: "#211E1B", accent: "#8F5158", deep: "#211E1B",
     names: "caps", nameInk: "ink", face: "serif", body: "serif", art: "none", ornament: "none",
     script: "formal", surface: "plain", navMark: false,
   },
