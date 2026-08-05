@@ -7,17 +7,323 @@
  * at the size this is used, a photograph of flowers would have to be either
  * large enough to matter (heavy) or small enough to be free (mush).
  *
- * The geometry is generated, not eyeballed. Each bloom is a set of overlapping
- * cupped petals placed on a golden-angle spiral, drawn outermost-first and
- * lightening toward the centre, which is roughly how a garden rose assembles.
- * An earlier version used concentric lobed rings — mathematically tidier, and
- * it looked like a pinwheel.
+ * The geometry is generated, not eyeballed:
  *
- * Every fill is a theme variable. Nothing here is rose-coloured by nature: a
- * template that opts into the ornament gets it mixed from its own accent, so
- * this same spray is dusty rose on Midnight Bloom and would be sage or wine
- * elsewhere without a line changing.
+ *   Each bloom is thirty overlapping cupped petals on a golden-angle spiral,
+ *   drawn outermost-first and lightening toward the centre — roughly how a
+ *   garden rose assembles. Every petal is jittered in size, width, curl and
+ *   angle from a seed derived from the flower's own position, because a bloom
+ *   built from one shape rotated thirty times reads instantly as stamped. The
+ *   seed is fixed, so the committed file never churns between runs.
  *
+ *   Each petal carries a rim one step darker than its fill. Flat fills alone
+ *   gave no separation where petals overlapped, and the whole flower collapsed
+ *   into a rosette.
+ *
+ *   Leaves cycle three greens and carry a midrib and four side veins. One flat
+ *   green reads as a silhouette; the veins are most of what says "leaf".
+ *
+ * Colour comes from exactly two theme variables — `--bot-bloom` and
+ * `--bot-foliage` — which the template mixes into nine bloom steps, nine rims
+ * and three foliage tones. Nothing here is rose-coloured by nature.
+ *
+ * The spray deliberately bleeds off both edges of its box, the way a printed
+ * corner does. Contained inside it, it read as a bouquet placed near a corner
+ * rather than as a frame.
+ *
+ * There is no blur filter. An earlier version softened the whole group by half
+ * a pixel, and the filter region — which is a finite box — left a faintly
+ * lighter rectangle around each spray on a near-black page. The per-petal
+ * jitter now does what the blur was there for, and nothing is clipped.
+ *
+ * ── Why the geometry lives in <defs> ──────────────────────────────────────
+ * There are four sprays on a page: two in the masthead, two in the footer.
+ * Inlining the paths into each was 18 KB of path data four times over, in the
+ * HTML, on every request. It is declared once here and referenced by <use>,
+ * which is what <defs> is for.
+ */
+
+/** Renders the geometry once per document. Everything else points at it. */
+export function BotanicalDefs() {
+  return (
+    <svg className="bot-defs" aria-hidden="true" focusable="false">
+      <defs>
+        <g id="bot-spray">
+        <path d="M-40 -26C90 42 210 34 400 -4" fill="none" stroke="var(--bot-stem)" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M-26 -40C42 90 34 210 -4 400" fill="none" stroke="var(--bot-stem)" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M4 4C120 92 176 178 206 300" fill="none" stroke="var(--bot-stem)" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M-14 74C84 140 158 214 182 352" fill="none" stroke="var(--bot-stem)" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M74 -14C140 84 214 158 352 182" fill="none" stroke="var(--bot-stem)" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M45.2 8.3C77.6 7.2 91.2 40.6 87.7 69C52.6 63.1 31.1 34.7 45.2 8.3Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M108.3 21.1C105.6 -7.3 134 -20.3 159 -18C155.5 12.9 131.9 32.7 108.3 21.1Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M174.4 24.9C207.4 13.8 230.9 43.7 235.3 73.9C197.6 78.6 167.5 56.2 174.4 24.9Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M245.7 20.9C237.5 -3.8 259.9 -21.1 282.5 -24.1C285.9 4 269.1 26.4 245.7 20.9Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M324.1 10.1C342.5 0 358.9 15.3 364.1 32.9C342.4 39.5 322.7 29.3 324.1 10.1Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M8.3 45.2C37.1 30.1 63.8 54.3 73 81.4C38.8 91.3 7 75.1 8.3 45.2Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M21.1 108.3C33.5 134 11.4 156.1 -12.8 162.6C-20.3 132.4 -5.1 105.6 21.1 108.3Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M24.9 174.4C58.9 167.1 78.8 199.5 79.7 230.1C41.8 230.4 14.4 204.7 24.9 174.4Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M20.9 245.7C26.6 271.1 2.6 286.1 -20.2 286.8C-20.8 258.5 -1.8 238 20.9 245.7Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M10.1 324.1C31 322.8 39.4 343.6 36.7 361.6C14.3 358.5 0.7 341 10.1 324.1Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M93.1 83.7C115.9 96.2 111.2 124.1 96.7 141.7C75.1 123.3 72.2 95.5 93.1 83.7Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M141.1 145C161 124.6 189.3 137.8 203.7 158.3C177.9 175.7 147.5 170.5 141.1 145Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M176.7 211.5C191.6 228.1 179.9 249.5 163.2 259.7C150.9 238.6 156.5 215.2 176.7 211.5Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M196.2 264.4C211.1 255.7 225.1 268 229.8 282.3C212.1 288.3 195.5 280.4 196.2 264.4Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M94.9 165.5C108.5 146.4 132.8 153.8 146.8 168.8C128.1 186.1 103.1 185.6 94.9 165.5Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M144.5 237.3C162.3 254.7 150.8 279.5 133.1 292.2C117.8 269.8 122.3 243.2 144.5 237.3Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M173.3 312.5C189.5 303.7 203.7 317.1 208 332.6C189 338.3 171.9 329.4 173.3 312.5Z" fill="var(--bot-l1)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M165.5 94.9C187.2 103.9 185.5 129.2 174 146.2C152.9 131.9 147.8 107.3 165.5 94.9Z" fill="var(--bot-l3)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M237.3 144.5C243.8 120.4 271.1 118.3 290.8 127.7C278.6 151.9 253.2 161 237.3 144.5Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M312.5 173.3C330.8 171.9 338.3 190 335.9 205.8C316.2 203.3 304.2 188.2 312.5 173.3Z" fill="var(--bot-l2)" stroke="var(--bot-vein)" strokeWidth=".7" strokeOpacity=".5" />
+        <path d="M45.2 8.3Q64.6 36.4 85.7 65.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M57.4 26.9Q53.2 38.3 49 49.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M63.9 36.8Q75.5 38.3 87 39.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M69.6 45.5Q65.2 56.9 60.8 68.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M75.3 54.1Q86.7 55.7 98.1 57.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M108.3 21.1Q131.7 3.3 156.3 -16.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M123.8 9.8Q133.9 13.1 144 16.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M132.1 3.8Q132.8 -6.4 133.5 -16.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M139.3 -1.4Q149.5 2 159.7 5.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M146.6 -6.7Q147.4 -16.8 148.2 -26.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M174.4 24.9Q202.3 47.6 232.3 71.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M192.2 40.1Q191.2 53 190.1 65.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M201.7 48.3Q214 46.2 226.3 44.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M210 55.4Q208.8 68.4 207.6 81.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M218.3 62.5Q230.4 60.6 242.6 58.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M245.7 20.9Q262.8 0.3 280.6 -21.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M257.2 7.7Q266.8 8.6 276.4 9.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M263.3 0.7Q261.7 -8.5 260.2 -17.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M268.6 -5.4Q278.3 -4.4 288.1 -3.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M273.9 -11.5Q272.5 -20.6 271.1 -29.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M324.1 10.1Q342.4 20.7 362.2 31.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M335.9 17.3Q336.4 25 336.9 32.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M342.2 21.1Q349.2 18.6 356.3 16.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M347.7 24.4Q348.1 32.3 348.5 40.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M353.2 27.8Q360.1 25.4 367.1 23" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M8.3 45.2Q37.9 62.1 69.8 79.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M27.4 56.6Q28.5 68.7 29.7 80.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M37.5 62.7Q48.6 59 59.6 55.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M46.4 68.1Q47.5 80.3 48.5 92.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M55.3 73.4Q66.2 69.9 77.2 66.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M21.1 108.3Q5.4 133.2 -11 160" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M10.5 124.2Q-0.1 124.7 -10.7 125.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M4.8 132.8Q7.7 142.6 10.6 152.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M-0.2 140.2Q-10.9 140.5 -21.7 140.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M-5.1 147.7Q-2.4 157.4 0.4 167.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M24.9 174.4Q50 200.2 77.2 227.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M40.8 191.6Q38.3 204.3 35.8 217" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M49.3 200.7Q61.8 200.1 74.2 199.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M56.8 208.8Q54.1 221.6 51.4 234.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M64.2 216.8Q76.5 216.3 88.8 215.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M20.9 245.7Q1.9 264.5 -18 284.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M8.2 257.7Q-1.3 255.8 -10.8 254" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M1.4 264Q2 273.3 2.6 282.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M-4.5 269.6Q-14.1 267.6 -23.7 265.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M-10.4 275.2Q-9.9 284.4 -9.4 293.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M10.1 324.1Q22.2 341.4 35.5 359.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M17.7 335.6Q14.9 342.8 12.1 350.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M21.8 341.7Q29.3 342.4 36.7 343.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M25.4 347.1Q22.5 354.4 19.5 361.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M28.9 352.4Q36.3 353.2 43.6 354" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M93.1 83.7Q94.6 110.4 96.6 138.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M93.7 101.1Q86 107 78.3 112.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M93.9 110.4Q101.3 116.1 108.7 121.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M94.2 118.5Q86.4 124.4 78.5 130.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M94.5 126.6Q101.6 132.3 108.8 138" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M141.1 145Q169.9 151.3 200.7 157.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M159.7 149.6Q163.7 159.4 167.7 169.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M169.7 152Q177.9 145.9 186.1 139.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M178.4 154.1Q182.3 164.1 186.3 174.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M187.1 156.2Q195.3 150.3 203.5 144.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M176.7 211.5Q170.3 233.6 164 257.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M172.2 225.8Q164.4 228.4 156.5 231" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M169.8 233.4Q174.2 240.2 178.5 246.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M167.7 240.1Q159.7 242.7 151.7 245.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M165.6 246.8Q169.8 253.5 174 260.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M196.2 264.4Q211.6 272.8 228.2 281.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M206.1 270.1Q206.7 276.5 207.3 282.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M211.4 273.1Q217.1 270.9 222.9 268.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M216 275.7Q216.6 282.2 217.1 288.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M220.6 278.4Q226.3 276.2 232 274.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M94.9 165.5Q118.7 167.2 144.2 168.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M110.4 167Q114.8 174.5 119.2 182" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M118.7 167.7Q124.6 161.8 130.5 155.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M125.9 168.4Q130.3 176.1 134.7 183.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M133.2 169.1Q139.1 163.3 145 157.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M144.5 237.3Q139.1 262.6 133.8 289.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M140.6 253.7Q132 257.3 123.5 260.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M138.5 262.4Q143.8 269.6 149.1 276.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M136.6 270Q127.9 273.6 119.2 277.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M134.8 277.7Q140 284.8 145.1 291.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M173.3 312.5Q189.2 321.8 206.3 331.5" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M183.5 318.8Q183.9 325.6 184.2 332.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M189 322.2Q195.2 320 201.4 317.8" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M193.7 325.1Q194 332 194.3 338.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M198.5 328.1Q204.6 326 210.7 323.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M165.5 94.9Q169.3 118.5 173.7 143.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M167.6 110.3Q161.2 116.3 154.9 122.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M168.7 118.6Q175.8 123 183 127.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M169.7 125.8Q163.1 131.8 156.6 137.7" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M170.6 133Q177.6 137.4 184.6 141.9" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M237.3 144.5Q262 136.9 288.1 128.4" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M253.5 139.9Q260.8 145.6 268.1 151.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M262.1 137.5Q265.8 129.3 269.5 121.2" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M269.7 135.3Q277 141.2 284.3 147.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M277.2 133.2Q281 125.2 284.7 117.3" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M312.5 173.3Q323.2 188.3 334.8 204.1" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M319.2 183.3Q316.7 189.6 314.3 196" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M322.8 188.6Q329.3 189.1 335.9 189.6" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M325.9 193.2Q323.4 199.6 320.8 206" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M329.1 197.8Q335.5 198.4 342 199" fill="none" stroke="var(--bot-vein)" strokeWidth=".9" strokeLinecap="round" opacity=".7" />
+        <path d="M79.9 71.8C124.4 48.1 142.3 88.2 131.4 111.2C87.7 142.8 55.1 110.4 79.9 71.8Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M51.9 -2.3C-1.3 -13.8 12.6 -56.7 32.2 -67.1C95.8 -62.1 99.4 -15.4 51.9 -2.3Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M31.4 69.1C61.6 103.4 29.6 128.2 12 127.2C-29.9 91.7 -7.9 55.6 31.4 69.1Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M87.6 34.4C91.7 -13 134.5 -7.3 147.3 9.6C150.6 63.5 106.4 73.4 87.6 34.4Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M20.7 11.7C-24.4 44.7 -45.5 6.2 -33.9 -21.7C8.3 -60.8 44.3 -33.1 20.7 11.7Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M56.8 76.2C113.3 80 104.2 122.8 81.6 135.8C18.6 139.1 9.1 95.1 56.8 76.2Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M68.2 9.3C29.1 -22.5 57.5 -48.4 79.8 -46.5C128 -16 112.5 20.3 68.2 9.3Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M20 47.4C20.4 88.5 -14 85.6 -26 69.2C-32.1 25.3 2.2 14.7 20 47.4Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M84.5 54.3C110.4 21.8 142.2 47.4 145.6 63.4C121.3 106.8 80.9 92 84.5 54.3Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M40.1 17.1C-4.9 29.4 -10.8 -8.1 2.2 -24.7C50.7 -44.9 71.5 -11.4 40.1 17.1Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M44.3 63.7C84.1 87.4 61.2 119.7 36.2 121.2C-7.6 102.2 2.3 62.1 44.3 63.7Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M72.9 24.7C57.1 -12.1 89.7 -23.3 105.9 -14.7C129.1 23.7 101.6 47 72.9 24.7Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M29.2 33.8C12.4 64 -15 47.5 -18 29.9C-4.9 -4.2 28 2.4 29.2 33.8Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M63.4 60.1C92.8 51.6 98.9 78.3 89.8 90.8C60 104.1 44.1 80.1 63.4 60.1Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M53.1 17.9C21.3 7.5 31.4 -24.5 47.3 -31.6C82.1 -25.9 82.5 9.5 53.1 17.9Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M34.8 50.2C42.9 77.7 16.8 84.7 5.5 78C-8.1 48.8 15.3 32.7 34.8 50.2Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M71.4 42.4C80.9 15.9 102.5 25.9 106.4 39.8C100 69 75.2 67.7 71.4 42.4Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M42.7 28.9C13.5 43.2 1.2 15.8 8.5 0.5C36.7 -18.7 58.6 4 42.7 28.9Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M52.8 54.5C82.3 60.7 76.2 89.5 63.6 97.1C30.8 95.5 27.1 64.6 52.8 54.5Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M62.4 28.4C49.6 8.8 68.8 -3.5 79.6 -0.9C96.9 18.3 82 37.1 62.4 28.4Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M40 42.3C37.8 63.8 14.9 62.5 8.1 55.4C6.2 31.1 29.9 25.2 40 42.3Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M60.5 45.8C76.8 31.6 90.3 47.5 89.3 57.5C73.9 75.9 55 64.7 60.5 45.8Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M49.6 31.9C27.9 32.2 27 9.8 36.2 1.5C57.5 -2.1 65.6 20.2 49.6 31.9Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M47.8 49.2C62.2 61.2 50.3 75.4 39.9 75.3C23.6 65.4 30.7 47.2 47.8 49.2Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M59.9 36.8C58 19 76.5 16.3 84.1 23.3C88.7 40.4 70.8 48.9 59.9 36.8Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M45.6 37.6C36.7 48.8 22.9 39.7 21.4 32.7C28.6 19.1 45.4 24.5 45.6 37.6Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M53.8 43.4C70.2 39.8 74.1 56.2 69.2 63.3C52.6 69.8 43.3 54.6 53.8 43.4Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M53.3 37.1C41.9 27.2 51.9 14.7 61.1 14.8C73.3 22.4 67.1 38.3 53.3 37.1Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M50.7 40.5C51.1 50.7 39.2 52.5 35 49.4C32.5 39 44.2 33.8 50.7 40.5Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M52 40C58.5 28.8 70.4 35.2 71.8 42.7C67.2 54.5 53.1 51.8 52 40Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M200.6 88.7C232.3 107 214.7 130.2 196.8 131.4C160.4 115.9 167.5 86.6 200.6 88.7Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M237.4 52.5C231.2 19.6 261.8 15 274.1 24.7C286.3 59.7 257.7 75.2 237.4 52.5Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M179.5 59.4C166.1 87.2 143.4 73.8 140.2 60.9C151.1 27.2 178.2 31.5 179.5 59.4Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M221.4 89.5C249.6 80.9 254.7 105.3 245.3 117.3C217 130.1 202.5 108.5 221.4 89.5Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M212.5 44.3C176.5 28.5 192.5 1.5 209.5 -2.3C252.3 10.3 248.2 42.5 212.5 44.3Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M189.1 79.6C200.2 106.4 176.2 114.5 163.2 106.5C147.9 80.3 168.3 63.3 189.1 79.6Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M228.7 63.3C232.2 31.3 260.8 36 269.2 48.6C270.4 84.2 240.6 90.1 228.7 63.3Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M192.9 54.3C168.9 74.3 154.3 52.8 157.8 38.7C181.4 13.2 203.8 28.1 192.9 54.3Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M207.7 87.3C233.7 94.7 226.4 120.3 213.7 126.3C185.4 122.8 184.1 94.7 207.7 87.3Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M219.4 53.8C204 30.3 226.2 17.1 239.9 21.7C259.4 44.1 242.4 65 219.4 53.8Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M188.7 66.5C183.2 92 160.5 85.9 154.8 75.6C156.7 46.4 181.2 44 188.7 66.5Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M222.1 74.2C240.4 55.7 257.6 73.4 257.8 84.4C240.2 109 217 97.3 222.1 74.2Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M202.1 51.2C179.5 53.7 176.8 31.3 185 22.3C207.6 16.1 217.8 37.7 202.1 51.2Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M198.3 80.5C210.8 94.8 196.7 107.3 187.2 106.3C171.6 93.3 181.6 76 198.3 80.5Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M224.5 62.1C224 39.6 242 41.3 248.5 50.6C252 74.3 234.1 80.1 224.5 62.1Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M195.8 59.6C179.9 77.7 164.3 62.6 164.8 50.7C179.1 28.9 199.9 38 195.8 59.6Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M214.2 77.4C232.2 72.8 236.1 90 230.9 97.5C212.4 105.2 202.5 89.6 214.2 77.4Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M211.1 56.4C196.5 46.7 206 31.8 214.1 30C231.9 38 227.2 56.2 211.1 56.4Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M197.3 70.9C199.5 86.3 183 89.5 176.4 84.6C171.4 69 187.2 60.7 197.3 70.9Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M219.1 68.4C225.8 55.8 239.2 62.4 241.4 68.6C236.3 83.9 220.7 81.4 219.1 68.4Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M201.4 58.6C187.7 65.2 180.4 51.2 183.1 43.8C196.4 34.5 208.2 46.4 201.4 58.6Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M208.1 73.9C219.2 77.2 216.4 89.6 211.7 92.7C199 91.3 198.2 77.8 208.1 73.9Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M213.4 60.8C207 48.9 219.1 41.8 225.7 43.8C234.5 55.2 224.4 66.2 213.4 60.8Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M202.7 66.4C200.1 81.4 185.6 78.7 181.5 70.6C182 56 197.3 53.7 202.7 66.4Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M211.9 69.3C222.4 62.3 230.3 73.2 229.2 79.4C219.3 88.7 207.9 80.1 211.9 69.3Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M207.9 62.4C197.3 59.6 199.9 48.5 205.6 45.7C216.5 46.9 217.4 58.9 207.9 62.4Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M206.3 68.4C211.6 75.4 204.4 81.6 199.9 81.2C193.1 74.9 198.5 66.3 206.3 68.4Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M209.8 65.6C210.6 55.8 221.5 55.8 225.2 60.5C226 69.9 214.8 73.1 209.8 65.6Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M207.2 65.4C200 70.7 194.4 63.5 195.6 58.4C201.8 52.1 209.8 57.6 207.2 65.4Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M208 66C215.7 66.4 216 75.1 212.8 78.1C205.1 79.1 202.2 70.2 208 66Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M71.8 253.8C109 246 111.1 275.6 100.1 287.7C58.9 301.9 44.5 274.8 71.8 253.8Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M68.8 198.4C32.9 172.6 56.4 148.8 73.6 148.2C119.7 173.5 108.1 205.8 68.8 198.4Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M31.7 232C35.2 260.8 8.9 262.8 -1.5 252.5C-9.6 222.6 15.6 211.1 31.7 232Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M78.4 232.8C100.7 208 123.2 229.5 122.9 245.4C102.9 275.8 73 262.5 78.4 232.8Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M46.2 201.8C17 210.4 10.4 183.5 19.4 170.8C48.9 157.4 65.2 181.5 46.2 201.8Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M49.1 241.4C79.7 264.6 58 288.1 37.9 287C3.1 267 14.7 235.8 49.1 241.4Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M82.6 209C73.8 177.3 100.6 172.8 112.8 182.7C126.8 216 103 231 82.6 209Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M37.9 214.9C23 238 3.4 223.6 2.2 209.8C14.5 183.3 39.1 190.1 37.9 214.9Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M73.7 237.7C102.5 219.2 114.8 244.1 107.6 260.3C80 283.4 58.1 264.6 73.7 237.7Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M59.4 204C32.8 195.2 41.9 171.3 55.6 166.4C84.7 171.7 84.3 198.5 59.4 204Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M38.8 234.4C47 259 23.8 266.1 13.4 260.5C0.1 234.6 20.6 219.3 38.8 234.4Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M78.8 219.8C82.8 194.1 108.3 198 115.5 208.4C115.5 236.7 88.7 241.3 78.8 219.8Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M45.5 213.1C23.2 232.4 7.2 211.5 10.1 196.9C30.8 173.2 54.3 187.7 45.5 213.1Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M61.1 237.6C83.1 239 81.5 260.4 72.8 267.3C49.2 269.3 43.5 247.4 61.1 237.6Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M70.2 209.5C57.5 189.1 76.5 178.4 87.4 182C104.5 202.2 89.6 219.5 70.2 209.5Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M46.5 225.4C47.8 250.8 25.4 250.5 16.6 239.2C12 214.1 34 205.9 46.5 225.4Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M70.5 231.1C88.5 215.4 100.4 231.8 97.9 243.1C80.8 262.6 62.9 251.4 70.5 231.1Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M54.5 209.2C35.5 209.5 35.7 191.9 43.5 185.5C63.1 182.3 69.1 199.9 54.5 209.2Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M52.4 234.1C65.6 244.6 55.5 256.2 46.5 256.1C31.5 247.2 37.3 232.1 52.4 234.1Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M67.7 218.6C66.2 201.8 82.1 200.7 88.4 207.5C92.4 224.2 77 230.8 67.7 218.6Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M49.3 216.6C37.7 227.6 26.9 216.1 27.7 207.8C38 194.6 52.6 202.5 49.3 216.6Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M61.4 230.5C76.9 228.3 78.2 242.5 72.6 248.3C56.7 252.8 50.3 239.4 61.4 230.5Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M59.6 215.5C48.5 208.9 55 196.3 61.3 194.4C74.2 199.3 71.4 214.2 59.6 215.5Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M52.9 224.9C56.7 239.2 42.7 242.7 35.9 237.3C30.3 223.9 42.9 215.7 52.9 224.9Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M63.4 223.7C70.3 213.4 81.7 220.2 82.7 227.3C77.6 238.4 64 235 63.4 223.7Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M55.4 219.1C44.8 224.4 39.9 214.2 42.3 208.6C52.6 201.4 61 209.8 55.4 219.1Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M57.9 224.8C69.2 228.8 65.5 241.1 58.9 243.8C47.4 241.7 47.3 228.1 57.9 224.8Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M59.4 220.5C55.8 213.3 63.8 208 68.5 209.3C73.2 215.6 66.4 223.3 59.4 220.5Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M57.1 221.9C53.6 229.1 45.3 225.8 43.9 221.4C46.2 213.7 55.6 214.6 57.1 221.9Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M58 222C66.6 217.9 71 226.7 68.8 231.6C60.9 236.9 53.7 229.6 58 222Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M168.6 204.8C175.6 230.9 154.4 233.7 145.6 227C133.6 197.9 152.4 186.4 168.6 204.8Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M202.2 202.5C215.7 182.5 230.8 195.3 231.8 205C219 230.5 199.5 224.3 202.2 202.5Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M176.9 185.1C156.3 195.8 149.4 178.1 154.1 168.5C175.3 153.7 189.1 167.9 176.9 185.1Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M180.9 210.4C197.8 220.7 188 232.7 177.4 232.7C158.8 224.2 163 208.7 180.9 210.4Z" fill="var(--bot-b1)" stroke="var(--bot-e1)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M196.7 188C189.2 171.9 202.6 167.6 209.3 171.1C220.2 188.3 209.2 197.9 196.7 188Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M172 192.3C162.6 211 148.6 201.8 146.8 193.5C154.8 170.4 171.9 173.4 172 192.3Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M193.9 206C211.8 198 218.6 214.8 214.7 223.2C196.4 234.9 183.7 220.7 193.9 206Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M184.4 181.9C166 179.3 168.7 161.7 176.3 156.7C196.4 156.4 199.8 174.9 184.4 181.9Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M179 205.4C188.3 216.7 177.6 224.8 171.8 224.4C158.9 212.9 166.5 201 179 205.4Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M198.3 193.4C198.9 177.5 213.6 178.6 218.2 183.8C220.2 202 205.3 206.2 198.3 193.4Z" fill="var(--bot-b3)" stroke="var(--bot-e3)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M178.2 190.2C166.7 200 158.7 189.2 160.5 181.6C171 169.9 182.9 177.4 178.2 190.2Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M188.1 204.9C203.1 204.9 202.3 217.9 195.8 222.6C180.4 224.7 176.3 211.7 188.1 204.9Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M190.1 188.3C181.1 179.9 189.3 171 195 170.8C206.4 178.4 201.1 190.1 190.1 188.3Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M175.4 197.6C174.3 210.8 162.8 209.1 159.2 203.4C158.4 189.3 170.3 186.7 175.4 197.6Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M192.6 199.9C203.1 188.8 211.6 198.4 210.3 206.5C201.1 219.2 189.1 213.3 192.6 199.9Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M184.2 186.6C171.6 185.4 172.4 172.2 177.5 168.1C190.9 167.2 194.3 180.8 184.2 186.6Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M182.3 202.6C192.1 211.7 183.5 220.1 176.7 219.5C165.1 211.5 170.5 200 182.3 202.6Z" fill="var(--bot-b5)" stroke="var(--bot-e5)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M192.5 192.3C189.7 181.3 200.7 178.4 205.8 181.9C210.4 192.7 200.2 199.2 192.5 192.3Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M178.9 194.7C174.8 204.2 166.7 200 165.5 194.9C168.5 184.3 178 185.4 178.9 194.7Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M187.8 200.9C197.8 199.9 198.7 209.6 194.5 213.6C184.8 216 180.6 206.6 187.8 200.9Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M187.8 190.4C178.6 184.7 184.2 176 189.9 175.3C200.1 179.7 197.5 190.3 187.8 190.4Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M182.4 199.3C186.4 207.7 177.6 212.5 173 210.9C167.3 202.9 174.8 195.3 182.4 199.3Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M190.4 197.3C195.3 189.5 203.3 194.3 204.2 199.1C200.4 208 190.7 205.8 190.4 197.3Z" fill="var(--bot-b7)" stroke="var(--bot-e7)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M183.3 192.9C176.9 196.1 173.8 189.9 175.5 186.1C181.3 182.1 186.6 187.3 183.3 192.9Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M185.6 198.8C192.3 202.2 189.1 210.3 185 211.7C177.9 209.6 178.8 200.4 185.6 198.8Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M188 194C184 187.4 190.3 183.8 194.1 185.2C199.3 191.6 194.2 197.3 188 194Z" fill="var(--bot-b8)" stroke="var(--bot-e8)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M184.4 196C182.4 201.6 175.6 199.9 174 197C174.9 191.1 182.4 190.9 184.4 196Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M186.9 197C192.1 194.6 195.1 200.1 194 203.1C189.3 206.4 184.5 201.7 186.9 197Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M185.8 195.3C180 195 180.2 189.1 182.8 187C188.6 186.4 190.4 192.5 185.8 195.3Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M186 196C188.5 199.2 185.1 202.7 182.6 202.5C179.7 199.9 182.3 195.4 186 196Z" fill="var(--bot-b9)" stroke="var(--bot-e9)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M132 118C149.9 113.2 152.1 128 143.8 136C127.5 142.4 119.4 129.2 132 118Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M132 118C143.3 127.1 134.9 135.2 126.1 133.7C114.5 126.3 119.2 115.2 132 118Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M132 118C131.5 128.2 123.4 126.8 120.6 121.1C120 111.5 128.3 109.5 132 118Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M258 148C265.8 161.2 254.5 166.1 246.3 161.4C237.6 149.8 246.3 140.5 258 148Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M258 148C253.2 158.9 245 154.1 244.2 146.8C247.5 136 257.4 137.2 258 148Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M258 148C249.8 149.8 249.1 143.1 253 139.6C260.5 137 263.9 143.2 258 148Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M104 300C113.4 286.6 123.2 295.3 122.2 305.4C114.8 319 101.9 314.7 104 300Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M104 300C116.8 299.8 115.8 310 108.9 314C97 315.6 93.8 305.4 104 300Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M104 300C109.4 307.2 103.2 310.8 98.1 308.6C92.2 302.4 96.7 296.4 104 300Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M300 44C313.4 48.7 308.4 59 299.7 60.5C286.6 57.5 287.2 45.6 300 44Z" fill="var(--bot-b2)" stroke="var(--bot-e2)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M300 44C303.2 54.6 294.4 56.1 289.5 51.4C285.4 41.7 293.1 36.7 300 44Z" fill="var(--bot-b4)" stroke="var(--bot-e4)" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M300 44C295.3 50.2 290.8 45.8 291.4 41C295.2 34.7 301.3 37 300 44Z" fill="var(--bot-b6)" stroke="var(--bot-e6)" strokeWidth=".9" strokeLinejoin="round" />
+        </g>
+      </defs>
+    </svg>
+  );
+}
+
+/** Reflected rather than rotated: a rotated spray reads as the same object
+ *  turned around, and the repetition becomes obvious. */
+const MIRROR: Record<Corner, string | undefined> = {
+  tl: undefined,
+  tr: "translate(460,0) scale(-1,1)",
+  bl: "translate(0,460) scale(1,-1)",
+  br: "translate(460,460) scale(-1,-1)",
+};
+
+export type Corner = "tl" | "tr" | "bl" | "br";
+
+/**
  * One element per corner, each pinned by CSS to the corner it belongs to.
  * Drawing several corners inside a single box seemed tidier and put both
  * sprays in the same quarter of the page, where they read as one shapeless
@@ -26,206 +332,15 @@
  * Decorative, so `aria-hidden` and no title — a guest using a screen reader
  * gains nothing from being told there are flowers in the corner.
  */
-const SPRAY = (
-  <>
-      <path d="M-34 -20C74 34 178 26 340 4" fill="none" stroke="var(--bot-stem)" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M-20 -34C34 74 26 178 4 340" fill="none" stroke="var(--bot-stem)" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M6 6C104 74 150 150 172 262" fill="none" stroke="var(--bot-stem)" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M-10 60C70 120 130 190 150 300" fill="none" stroke="var(--bot-stem)" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M50.5 10.4C77.2 10.9 87.4 36.1 85.2 57C57.6 54.3 40.9 33.3 50.5 10.4Z" fill="var(--bot-leaf)" />
-      <path d="M104.6 18.8C102.8 -4.1 123.6 -15 141.6 -14.9C141.5 8.9 125 25 104.6 18.8Z" fill="var(--bot-leaf)" />
-      <path d="M162 20.8C189.2 14.6 205.5 37.5 208.2 59.2C179.7 63.3 157.7 46.3 162 20.8Z" fill="var(--bot-leaf)" />
-      <path d="M224.3 17.5C219.2 -2.2 235.5 -14.8 251.3 -17.4C254.9 3.4 243.1 19.9 224.3 17.5Z" fill="var(--bot-leaf)" />
-      <path d="M284.1 11.2C299.4 5.7 309.9 17.7 312.4 30.1C296.3 34.5 282.9 26.3 284.1 11.2Z" fill="var(--bot-leaf)" />
-      <path d="M10.4 50.5C35.1 40.3 54.5 59.3 60.8 79.4C34.5 87.9 10.8 75.4 10.4 50.5Z" fill="var(--bot-leaf)" />
-      <path d="M18.8 104.6C25.3 126.5 7.4 141.6 -10.3 145.4C-15.2 122.1 -2.5 102.8 18.8 104.6Z" fill="var(--bot-leaf)" />
-      <path d="M20.8 162C48.3 157.5 63.2 181.4 64.4 203.3C35.7 205.6 14.9 187.2 20.8 162Z" fill="var(--bot-leaf)" />
-      <path d="M17.5 224.3C19.9 244.5 2.1 254.8 -13.9 255.3C-14.8 234.2 -0.8 219.5 17.5 224.3Z" fill="var(--bot-leaf)" />
-      <path d="M11.2 284.1C27.5 282.9 34.3 297.3 33.4 310C16.7 309.8 6 298.3 11.2 284.1Z" fill="var(--bot-leaf)" />
-      <path d="M85 74.7C102.4 87.3 97.3 108.3 85.9 120.7C69.1 106.2 67.9 85 85 74.7Z" fill="var(--bot-leaf)" />
-      <path d="M123.7 127.6C141.3 112.8 162.2 123.3 172.7 138C153.3 151.8 130.5 147.8 123.7 127.6Z" fill="var(--bot-leaf)" />
-      <path d="M149.5 181.4C159.9 197.2 149.2 212.6 136 219.2C126.6 202.1 132.2 184.5 149.5 181.4Z" fill="var(--bot-leaf)" />
-      <path d="M164.7 229.5C177.3 223.7 187.7 233.3 191.2 243.6C177.6 248.5 165.1 242.4 164.7 229.5Z" fill="var(--bot-leaf)" />
-      <path d="M75.1 138.7C87.1 124.2 105 129.9 115.1 140.6C101.6 154.5 83.1 154.4 75.1 138.7Z" fill="var(--bot-leaf)" />
-      <path d="M116.5 200.5C129.4 216.2 119.8 234.5 106.5 243.4C94.6 226.1 98.5 206.2 116.5 200.5Z" fill="var(--bot-leaf)" />
-      <path d="M141.1 262.1C154.6 255.3 165.9 265.2 169.8 276.3C155.4 282.2 141.9 276.1 141.1 262.1Z" fill="var(--bot-leaf)" />
-      <path d="M50.5 10.4Q66.3 31.3 83.3 54.1" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M104.6 18.8Q121.1 3.5 139.3 -13" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M162 20.8Q182.9 37.9 205.6 56.7" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M224.3 17.5Q236.4 1.7 249.6 -15.4" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M284.1 11.2Q296.9 19.7 310.8 28.9" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M10.4 50.5Q33.2 63.4 57.9 77.5" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M18.8 104.6Q5.8 123 -8.4 143" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M20.8 162Q40.5 180.4 62 200.6" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M17.5 224.3Q3.4 238.3 -11.9 253.5" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M11.2 284.1Q21.3 295.7 32.2 308.3" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M85 74.7Q85.6 95.4 86 118" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M123.7 127.6Q145.8 132.1 169.8 137.2" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M149.5 181.4Q143.5 198.5 136.9 217" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M164.7 229.5Q176.6 235.7 189.6 242.7" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M75.1 138.7Q93.1 139.4 112.8 140.4" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M116.5 200.5Q112.2 219.9 107.3 240.9" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M141.1 262.1Q154.1 268.4 168.2 275.4" fill="none" stroke="var(--bot-rib)" strokeWidth=".9" strokeLinecap="round" />
-      <path d="M39.6 63.8C41.7 99.2 11.4 98.9 1.6 88.3C-6.6 48 21.1 37.1 39.6 63.8Z" fill="var(--bot-1)" />
-      <path d="M86.2 66.3C107.8 39.9 129.4 59.9 129.4 73.9C109.1 107.6 82.1 97.2 86.2 66.3Z" fill="var(--bot-1)" />
-      <path d="M55 34.5C22.6 39.1 20.2 10.7 29.3 0.6C65.4 -10 77.9 15.2 55 34.5Z" fill="var(--bot-1)" />
-      <path d="M56.5 76.8C82.3 94.6 65.5 116.6 52.4 117.8C20.2 102 27.8 75.8 56.5 76.8Z" fill="var(--bot-1)" />
-      <path d="M82.6 46.3C76 17 102.3 12.2 112.4 19.9C124.8 51.7 102.2 65.5 82.6 46.3Z" fill="var(--bot-2)" />
-      <path d="M44.9 50.9C30.6 75.8 8.6 62.1 6.4 50C18.3 19.8 43.3 24.7 44.9 50.9Z" fill="var(--bot-2)" />
-      <path d="M74.1 71.7C100.1 63.5 106.9 87.5 100.7 97.5C72.9 111 58.3 91.2 74.1 71.7Z" fill="var(--bot-2)" />
-      <path d="M67 38.8C43.5 27.7 54.2 6.2 65.1 3.1C93.1 11.5 90.6 35.1 67 38.8Z" fill="var(--bot-3)" />
-      <path d="M51.1 66C60.4 88.9 38.9 97.2 29.1 92.3C15 68.5 32.2 53.5 51.1 66Z" fill="var(--bot-3)" />
-      <path d="M79.1 57.3C87.4 35.3 108 43.3 111.7 53.1C106.3 78.6 84.4 78.1 79.1 57.3Z" fill="var(--bot-3)" />
-      <path d="M54.5 45.7C34.7 55.7 25.2 36.8 29 27.5C48.9 13.2 64.1 27.7 54.5 45.7Z" fill="var(--bot-4)" />
-      <path d="M64 68.8C84.2 74.6 78.7 94 70.1 98.1C47.2 95.3 46 75.3 64 68.8Z" fill="var(--bot-4)" />
-      <path d="M71.8 47.4C61.6 30.6 77.9 20.4 86.6 23C100.5 39.5 88.6 54.3 71.8 47.4Z" fill="var(--bot-4)" />
-      <path d="M53.6 57C49.9 75 32 71.8 27.6 64.4C28.4 44.3 46.3 41.6 53.6 57Z" fill="var(--bot-5)" />
-      <path d="M71.4 61.6C85.4 51.5 95.8 65.2 94.2 73.1C81 86.4 66.8 76.8 71.4 61.6Z" fill="var(--bot-5)" />
-      <path d="M62.5 48C46.6 46.1 48 30 54.2 25.5C71.5 24.7 75.2 40.4 62.5 48Z" fill="var(--bot-5)" />
-      <path d="M60.3 61.9C69.9 73.2 58.8 83.5 51.7 82.7C39.5 72.4 46.9 59.2 60.3 61.9Z" fill="var(--bot-6)" />
-      <path d="M69.6 54.5C70.2 40.8 84.3 40.7 88.6 45.7C90.4 60.2 77.1 64.6 69.6 54.5Z" fill="var(--bot-6)" />
-      <path d="M59.9 53.9C51 62.7 41.3 54 41.4 47.9C49.1 37 61 42.4 59.9 53.9Z" fill="var(--bot-6)" />
-      <path d="M65.2 59.3C76.6 58.8 77.8 70.8 73.9 74.8C62.1 77.3 57.4 66.3 65.2 59.3Z" fill="var(--bot-7)" />
-      <path d="M64.9 53.8C57.1 47.2 63.5 38.4 68.7 38.1C78 43.6 74.4 53.9 64.9 53.8Z" fill="var(--bot-7)" />
-      <path d="M62.9 56.5C64 65.6 54.4 67.5 50.8 64.6C48 55.5 56.7 50.8 62.9 56.5Z" fill="var(--bot-7)" />
-      <path d="M64 56C68.7 49.5 76.2 54 76.9 58.1C73.2 65.6 64.7 63.4 64 56Z" fill="var(--bot-7)" />
-      <path d="M174.8 52.6C155.6 63.8 147.2 46.9 150.3 38.4C170.4 22.4 184.4 34.7 174.8 52.6Z" fill="var(--bot-1)" />
-      <path d="M186.6 79.3C207.4 83.8 202.4 101.5 194.6 105.5C170.1 103.8 168.2 85.8 186.6 79.3Z" fill="var(--bot-1)" />
-      <path d="M195.4 52.9C183.7 36.2 198.8 26.7 207 29C223.2 46.1 212.7 60.2 195.4 52.9Z" fill="var(--bot-1)" />
-      <path d="M172.3 65.7C169.7 85.1 152.7 82 148.3 75.1C148 52.7 164.7 49.4 172.3 65.7Z" fill="var(--bot-1)" />
-      <path d="M196.7 71.6C211.1 59.6 221.2 72.9 219.9 80.7C205.6 96.6 191.6 88 196.7 71.6Z" fill="var(--bot-2)" />
-      <path d="M183.4 51.9C165.5 51 166.9 34.9 173 30.2C193.2 28.3 197.6 43.6 183.4 51.9Z" fill="var(--bot-2)" />
-      <path d="M180.1 74C192.1 86.3 180.6 96.8 173.3 96.2C157.9 84.6 164.8 70.8 180.1 74Z" fill="var(--bot-2)" />
-      <path d="M196.4 60.8C196 44.5 210.9 44.4 215.8 49.6C219 67.6 205.2 72.9 196.4 60.8Z" fill="var(--bot-3)" />
-      <path d="M176.8 59.6C166.7 71.3 155.9 61.7 155.9 54.9C165.1 40.3 178.4 45.5 176.8 59.6Z" fill="var(--bot-3)" />
-      <path d="M189.6 72.8C204.1 71.2 205.6 84.9 201.1 89.7C185.4 94 179.5 81.6 189.6 72.8Z" fill="var(--bot-3)" />
-      <path d="M189 55.8C177.9 47.6 185.7 37 191.9 36.4C205.6 43.5 201.8 56 189 55.8Z" fill="var(--bot-4)" />
-      <path d="M178.9 67.7C181.4 80.5 169 83 164.3 79.3C159.4 65.8 170.1 59.4 178.9 67.7Z" fill="var(--bot-4)" />
-      <path d="M193 65.9C199.5 55.5 209.8 61.6 210.8 67.2C205.6 79.7 193.9 77.2 193 65.9Z" fill="var(--bot-4)" />
-      <path d="M182.5 58.5C171.4 61.5 168.1 50.7 171 46.1C182.4 40.9 189 50.1 182.5 58.5Z" fill="var(--bot-5)" />
-      <path d="M185 69.7C194.5 74.7 189.9 84.3 185 85.7C173.9 82.1 175.2 71.5 185 69.7Z" fill="var(--bot-5)" />
-      <path d="M190.1 60.9C186.6 51.5 196 47.7 200.2 49.9C205.5 59.3 197.9 65.8 190.1 60.9Z" fill="var(--bot-5)" />
-      <path d="M181.7 63.6C178.1 72.2 169.2 68.9 167.6 64.7C169.9 55 179.4 55.4 181.7 63.6Z" fill="var(--bot-6)" />
-      <path d="M188.4 66.7C196.2 63.1 200.3 70.9 198.7 74.8C191.2 79.9 184.9 73.7 188.4 66.7Z" fill="var(--bot-6)" />
-      <path d="M186 61.1C178.6 58.7 180.6 50.8 184.1 49.1C192.4 50.4 192.8 58.5 186 61.1Z" fill="var(--bot-6)" />
-      <path d="M184.5 65.6C188 71.8 181.7 75.9 178.3 74.9C173.6 69 178.4 63.2 184.5 65.6Z" fill="var(--bot-7)" />
-      <path d="M187.4 63.9C188.9 57.6 195.7 58.8 197.3 61.5C196.9 68.3 190.1 69.2 187.4 63.9Z" fill="var(--bot-7)" />
-      <path d="M185.4 63.6C180.7 66.7 176.9 61.9 177.5 59.1C181.8 55 186.8 58.5 185.4 63.6Z" fill="var(--bot-7)" />
-      <path d="M186 64C191 64.8 190.6 70.2 188.5 71.8C183.3 71.8 182.1 66.5 186 64Z" fill="var(--bot-7)" />
-      <path d="M38.4 192.6C27.8 215 9.3 204.7 6.8 194.9C15.3 167.4 36 170 38.4 192.6Z" fill="var(--bot-1)" />
-      <path d="M66.2 209.8C88.3 200.8 94.9 220.3 90.2 228.9C66.4 242.8 53.3 227.4 66.2 209.8Z" fill="var(--bot-1)" />
-      <path d="M57.7 179.8C36.3 171.7 44.3 153.4 53.3 150.3C79 155.9 78.2 175.6 57.7 179.8Z" fill="var(--bot-1)" />
-      <path d="M44.4 206.3C54.3 225.9 36.6 233.7 28.1 230.1C13.7 209.6 27.1 196 44.4 206.3Z" fill="var(--bot-1)" />
-      <path d="M70.7 196.3C76.4 176.1 94.2 181.9 97.9 190.1C94.8 213.8 76.3 214.6 70.7 196.3Z" fill="var(--bot-2)" />
-      <path d="M46 186.5C28.8 196.9 19.9 181.2 22.6 173C40.1 158.4 53.8 169.8 46 186.5Z" fill="var(--bot-2)" />
-      <path d="M56.9 209C75.7 212.7 71.8 229.8 64.6 233.8C43 232.8 40.7 215.7 56.9 209Z" fill="var(--bot-2)" />
-      <path d="M63.6 186.4C52.9 171.7 66.7 162.1 74.4 163.9C88.8 178.5 79.3 192.1 63.6 186.4Z" fill="var(--bot-3)" />
-      <path d="M44.7 197.8C42.7 215 26.7 212.9 22.4 206.6C21.7 187.2 37.3 183.8 44.7 197.8Z" fill="var(--bot-3)" />
-      <path d="M64.8 201.8C77.3 191.1 87.3 202.9 86.3 210.2C74.4 224.1 61.1 216.4 64.8 201.8Z" fill="var(--bot-3)" />
-      <path d="M53.6 186.5C38.1 186 38.6 171.2 44 166.7C61.1 164.7 65.5 178.7 53.6 186.5Z" fill="var(--bot-4)" />
-      <path d="M51.7 203.9C62.1 214.2 52.3 224.3 45.6 223.9C32.5 214.5 38.4 201.8 51.7 203.9Z" fill="var(--bot-4)" />
-      <path d="M63.7 193.3C63.1 179.6 76.5 178.8 80.9 183.3C84 198.1 71.7 203.2 63.7 193.3Z" fill="var(--bot-4)" />
-      <path d="M49.3 193.1C40.9 203 31 195 30.8 189C38.1 176.9 50 181.2 49.3 193.1Z" fill="var(--bot-5)" />
-      <path d="M58.7 201.9C70.6 200.4 72.5 212.3 68.8 216.7C56.2 220.4 50.7 209.7 58.7 201.9Z" fill="var(--bot-5)" />
-      <path d="M57.8 190.6C48.7 184.1 54.9 174.6 60.2 174C71.1 179.3 68.1 190.2 57.8 190.6Z" fill="var(--bot-5)" />
-      <path d="M51.7 198.4C53.9 208.6 43.6 211.2 39.5 208.3C35.5 197.9 44.4 192.2 51.7 198.4Z" fill="var(--bot-6)" />
-      <path d="M60 196.9C64.9 188.7 73.6 193.4 74.6 197.9C70.8 207.5 61.2 205.7 60 196.9Z" fill="var(--bot-6)" />
-      <path d="M54.2 193.3C45.7 195.8 42.7 187.2 44.9 183.4C53.2 179.4 58.8 186.6 54.2 193.3Z" fill="var(--bot-6)" />
-      <path d="M55.6 198.4C62.8 202 59.5 209.7 55.8 210.9C47.7 208.5 48.5 200.1 55.6 198.4Z" fill="var(--bot-7)" />
-      <path d="M57.3 195C54.7 188.3 61.6 185 64.9 186.6C68.7 193.1 63.1 198.2 57.3 195Z" fill="var(--bot-7)" />
-      <path d="M55.2 196C52.8 201.9 46.2 199.8 45 196.8C46.4 190.3 53.3 190.3 55.2 196Z" fill="var(--bot-7)" />
-      <path d="M56 196C61.1 193.6 64.2 198.9 63.2 201.6C58.4 205 53.9 200.8 56 196Z" fill="var(--bot-7)" />
-      <path d="M150.2 167.8C136.5 164 140.6 152.5 145.8 150.2C162.2 152.3 162.7 164.2 150.2 167.8Z" fill="var(--bot-1)" />
-      <path d="M143.2 185.1C150.4 196.6 140.1 202.2 134.8 200.5C124.6 188.4 132.1 179.5 143.2 185.1Z" fill="var(--bot-1)" />
-      <path d="M159.3 177.4C161.7 164.5 172.8 167.3 175.5 172C174.8 187.1 163.7 188.5 159.3 177.4Z" fill="var(--bot-1)" />
-      <path d="M143.1 172.5C133 179.9 126.9 170.7 128.1 165.6C138.3 155.5 147.2 161.7 143.1 172.5Z" fill="var(--bot-1)" />
-      <path d="M151.3 186.3C163.2 187.6 161.6 198.2 157.4 201C143.8 201.5 141.5 191.2 151.3 186.3Z" fill="var(--bot-2)" />
-      <path d="M154.4 171.4C146.8 162.8 154.9 156.2 159.7 157C169.6 165.4 164.5 174.2 154.4 171.4Z" fill="var(--bot-2)" />
-      <path d="M142.8 179.8C142.5 190.7 132.5 190.2 129.5 186.5C128 174.3 137.4 171.3 142.8 179.8Z" fill="var(--bot-2)" />
-      <path d="M156.1 181.3C163.4 173.9 170.1 180.7 169.9 185.3C163.1 194.8 154.5 190.8 156.1 181.3Z" fill="var(--bot-3)" />
-      <path d="M147.9 171.8C138 172.4 137.6 163.2 140.8 160.1C151.6 157.8 155.1 166.3 147.9 171.8Z" fill="var(--bot-3)" />
-      <path d="M147.6 183.5C154.8 189.5 149.1 196.3 144.9 196.4C136 191.1 139 182.9 147.6 183.5Z" fill="var(--bot-3)" />
-      <path d="M155.1 175.7C153.9 167 162.3 165.8 165.3 168.4C168.1 177.8 160.7 181.7 155.1 175.7Z" fill="var(--bot-4)" />
-      <path d="M145.1 176.4C140.4 183.2 133.7 178.7 133.3 174.9C137.3 166.6 145 168.7 145.1 176.4Z" fill="var(--bot-4)" />
-      <path d="M152.2 182.1C159.9 180.4 161.7 187.9 159.6 190.8C151.5 194 147.5 187.5 152.2 182.1Z" fill="var(--bot-4)" />
-      <path d="M151 173.9C144.6 170.2 148.2 163.8 151.5 163.1C159 166 157.7 173.2 151 173.9Z" fill="var(--bot-5)" />
-      <path d="M146.9 180.1C148.9 186.7 142.4 188.9 139.6 187.2C136.3 180.5 141.8 176.4 146.9 180.1Z" fill="var(--bot-5)" />
-      <path d="M153.2 178.5C156 172.7 161.9 175.3 162.8 178.2C160.9 184.9 154.5 184.3 153.2 178.5Z" fill="var(--bot-5)" />
-      <path d="M148.2 175.8C142.7 178 140.3 172.5 141.5 169.9C147 166.6 151 171.1 148.2 175.8Z" fill="var(--bot-6)" />
-      <path d="M149.9 180.3C155 182.3 153.2 187.7 150.7 188.7C145 187.5 145 181.8 149.9 180.3Z" fill="var(--bot-6)" />
-      <path d="M151.3 176.7C149.1 172.2 153.7 169.6 156 170.5C159.1 174.8 155.5 178.6 151.3 176.7Z" fill="var(--bot-6)" />
-      <path d="M148.6 178C147.3 182.4 142.6 181.3 141.6 179.3C142.2 174.5 147 174.2 148.6 178Z" fill="var(--bot-7)" />
-      <path d="M150.7 178.6C154.2 176.5 156.7 180.1 156.2 182.1C152.9 184.9 149.5 182.2 150.7 178.6Z" fill="var(--bot-7)" />
-      <path d="M149.9 177.5C146.4 176.8 146.9 172.9 148.5 171.9C152.3 172 152.9 175.9 149.9 177.5Z" fill="var(--bot-7)" />
-      <path d="M150 178C151.9 180.6 149.2 182.9 147.5 182.6C145.2 180.2 147.1 177.3 150 178Z" fill="var(--bot-7)" />
-      <path d="M118.6 115C114.1 104.3 123.4 101.1 127.6 103.3C134.5 114.8 127.2 121.1 118.6 115Z" fill="var(--bot-1)" />
-      <path d="M104.1 119.3C100.4 129.7 91.6 125.9 90 121.7C92.6 109.1 102 109.3 104.1 119.3Z" fill="var(--bot-1)" />
-      <path d="M117.1 125.6C126.5 120.7 130.4 129.1 128.7 133.2C118.8 140.4 112.2 134 117.1 125.6Z" fill="var(--bot-1)" />
-      <path d="M112 112.8C102.2 110.2 104.9 101.6 108.8 99.8C120.4 101.2 120.9 110 112 112.8Z" fill="var(--bot-1)" />
-      <path d="M107.4 125C112.6 133.2 105 137.6 101.1 136.3C93.9 127.9 99.3 121.3 107.4 125Z" fill="var(--bot-2)" />
-      <path d="M118.4 119.5C120.1 110.3 128.3 112.1 130.3 115.6C129.9 126.1 121.7 127.3 118.4 119.5Z" fill="var(--bot-2)" />
-      <path d="M107.2 116.3C100.1 121.6 95.4 115 96.3 111.3C103.3 104.1 109.9 108.6 107.2 116.3Z" fill="var(--bot-2)" />
-      <path d="M113 125.6C121.4 126.4 120.4 134.2 117.4 136.3C107.9 136.8 106.1 129.3 113 125.6Z" fill="var(--bot-3)" />
-      <path d="M114.9 115.5C109.5 109.5 115.2 104.6 118.7 105.1C125.6 110.8 122 117.3 114.9 115.5Z" fill="var(--bot-3)" />
-      <path d="M107.2 121.3C107.1 128.9 99.9 128.7 97.7 126.1C96.6 117.7 103.3 115.5 107.2 121.3Z" fill="var(--bot-3)" />
-      <path d="M116 122.1C121 116.9 126 121.7 125.8 124.9C121.3 131.5 115.1 128.7 116 122.1Z" fill="var(--bot-4)" />
-      <path d="M110.6 116.1C103.8 116.5 103.4 110 105.5 107.8C112.9 106.1 115.4 112.1 110.6 116.1Z" fill="var(--bot-4)" />
-      <path d="M110.5 123.5C115.5 127.5 111.6 132.4 108.7 132.6C102.6 129 104.7 123.2 110.5 123.5Z" fill="var(--bot-4)" />
-      <path d="M115.1 118.6C114.2 112.6 120.1 111.7 122.2 113.5C124.2 119.7 119 122.5 115.1 118.6Z" fill="var(--bot-5)" />
-      <path d="M109.1 119.1C105.9 123.7 101.3 120.7 100.9 118C103.5 112.5 108.9 113.9 109.1 119.1Z" fill="var(--bot-5)" />
-      <path d="M113.3 122.3C118.4 121.2 119.7 126.2 118.3 128.3C113.1 130.4 110.3 126 113.3 122.3Z" fill="var(--bot-5)" />
-      <path d="M112.5 117.8C108.3 115.4 110.6 111 112.9 110.5C117.7 112.3 116.9 117.2 112.5 117.8Z" fill="var(--bot-6)" />
-      <path d="M110.4 121.1C111.8 125.3 107.5 126.9 105.6 125.8C103.4 121.6 107 118.8 110.4 121.1Z" fill="var(--bot-6)" />
-      <path d="M113.5 120.2C115.2 116.5 119.2 118.1 119.8 120C118.6 124.2 114.4 123.9 113.5 120.2Z" fill="var(--bot-6)" />
-      <path d="M111.3 119.1C107.8 120.5 106.2 117 106.9 115.3C110.3 113.3 112.9 116.1 111.3 119.1Z" fill="var(--bot-7)" />
-      <path d="M112 120.8C115.1 121.9 114.1 125.3 112.5 126C109.1 125.3 109.1 121.8 112 120.8Z" fill="var(--bot-7)" />
-      <path d="M112.3 119.7C110.9 117.1 113.7 115.4 115.1 115.9C116.9 118.4 114.8 120.8 112.3 119.7Z" fill="var(--bot-7)" />
-      <path d="M112 120C111.3 122.5 108.5 121.9 107.8 120.8C108.1 118.1 111 117.8 112 120Z" fill="var(--bot-7)" />
-  </>
-);
-
-/** Reflected rather than rotated: a rotated spray reads as the same object
- *  turned around, and the repetition becomes obvious. */
-const MIRROR: Record<Corner, string | undefined> = {
-  tl: undefined,
-  tr: "translate(420,0) scale(-1,1)",
-  bl: "translate(0,420) scale(1,-1)",
-  br: "translate(420,420) scale(-1,-1)",
-};
-
-export type Corner = "tl" | "tr" | "bl" | "br";
-
-export function Botanical({
-  variant,
-  corners = ["tl", "br"],
-}: {
-  /** Keeps the blur filter's id unique when more than one spray is on a page. */
-  variant: string;
-  corners?: Corner[];
-}) {
+export function Botanical({ corners = ["tl", "br"] }: { corners?: Corner[] }) {
   return (
     <>
-      {corners.map(c => {
-        const fid = `bot-${variant}-${c}`;
-        return (
-          <svg
-            key={c}
-            className={`bot bot-${c}`}
-            viewBox="0 0 420 420"
-            aria-hidden="true"
-            focusable="false"
-          >
-            {/* A little over half a pixel: enough to take the mechanical edge
-                off a vector, never enough to read as a blur. */}
-            <filter id={fid} x="-12%" y="-12%" width="124%" height="124%">
-              <feGaussianBlur stdDeviation="0.7" />
-            </filter>
-            <g filter={`url(#${fid})`} transform={MIRROR[c]}>
-              {SPRAY}
-            </g>
-          </svg>
-        );
-      })}
+      {corners.map(c => (
+        <svg key={c} className={`bot bot-${c}`} viewBox="0 0 460 460"
+             aria-hidden="true" focusable="false">
+          <use href="#bot-spray" transform={MIRROR[c]} />
+        </svg>
+      ))}
     </>
   );
 }

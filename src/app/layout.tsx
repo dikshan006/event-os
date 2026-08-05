@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter, Italiana, Pinyon_Script, Sacramento } from "next/font/google";
+import { Cormorant_Garamond, Inter, Italiana, Pinyon_Script, Playfair_Display, Sacramento } from "next/font/google";
 
 /**
  * Fonts are loaded through next/font rather than an @import inside globals.css.
@@ -55,6 +55,21 @@ const display = Italiana({
  * Like the display face, declared globally and fetched only when a glyph
  * actually renders in it, so templates that never ask pay nothing.
  */
+/**
+ * The high-contrast transitional serif.
+ *
+ * Where Italiana is a hairline that needs size to exist, this has weight, and
+ * a template whose names sit over a painting needs weight — a hairline face
+ * disappears into a bouquet. Two display serifs is not redundancy; they solve
+ * opposite problems.
+ */
+const didone = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-didone",
+  display: "swap",
+});
+
 const scriptMono = Sacramento({
   subsets: ["latin"],
   weight: "400",
@@ -76,7 +91,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${sans.variable} ${script.variable} ${display.variable} ${scriptMono.variable}`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${script.variable} ${display.variable} ${scriptMono.variable} ${didone.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -66,4 +66,5 @@ export const DEMO_BY_TEMPLATE: Record<string, { hero: PhotoView | null; story: P
   CLASSIC_ELEGANCE: { hero: HERO_9EDA8650, story: STORY_D8B62E61 },
   MIDNIGHT_BLOOM: { hero: HERO_9EDA8650, story: STORY_D8B62E61 },
   PACIFIC_LINEN: { hero: HERO_9EDA8650, story: STORY_D8B62E61 },
+  VELVET_BOTANICAL: { hero: HERO_9EDA8650, story: STORY_D8B62E61 },
 };

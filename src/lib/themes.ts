@@ -26,7 +26,25 @@ export type Theme = {
    * A token rather than a raw font stack, so a template never has to know the
    * font's actual name.
    */
-  face: "serif" | "display";
+  face: "serif" | "display" | "didone";
+  /**
+   * What body copy is set in.
+   *
+   * The house answer is the serif. A template built on weight and contrast
+   * rather than on fine strokes wants a sans underneath it — a high-contrast
+   * display serif over a matching body serif is one voice at two sizes, and
+   * the display loses.
+   */
+  body: "serif" | "sans";
+  /**
+   * Full-bleed artwork behind the masthead.
+   *
+   * A raster, unlike the drawn ornament, and deliberately so: at hero scale a
+   * generated vector reads as illustration rather than as paint. Kept as a
+   * standalone asset (public/art) precisely so it can be swapped for licensed
+   * artwork without touching a line of this file.
+   */
+  art: "none" | "floral";
   /**
    * Which script the template writes in.
    *
@@ -66,7 +84,7 @@ export type Theme = {
 export const THEMES: Record<TemplateKey, Theme> = {
   BLUSH_ROMANCE: {
     bg: "#F6EFEA", ink: "#211E1B", accent: "#9B5B63", deep: "#211E1B",
-    names: "caps", nameInk: "ink", face: "serif", ornament: "none",
+    names: "caps", nameInk: "ink", face: "serif", body: "serif", art: "none", ornament: "none",
     script: "formal", surface: "plain", navMark: false,
   },
   // Sage was #87A07A on white: 2.86:1, which fails WCAG AA even for large
@@ -74,12 +92,12 @@ export const THEMES: Record<TemplateKey, Theme> = {
   // the text-on-background and white-on-button directions pass.
   MODERN_SAGE: {
     bg: "#FFFFFF", ink: "#414B3C", accent: "#5E7052", deep: "#54654A",
-    names: "caps", nameInk: "deep", face: "serif", ornament: "none",
+    names: "caps", nameInk: "deep", face: "serif", body: "serif", art: "none", ornament: "none",
     script: "formal", surface: "plain", navMark: false,
   },
   CLASSIC_ELEGANCE: {
     bg: "#F7F2E4", ink: "#5a4038", accent: "#A93A42", deep: "#A93A42",
-    names: "script", nameInk: "ink", face: "serif", ornament: "none",
+    names: "script", nameInk: "ink", face: "serif", body: "serif", art: "none", ornament: "none",
     script: "formal", surface: "plain", navMark: false,
   },
   /**
@@ -98,8 +116,8 @@ export const THEMES: Record<TemplateKey, Theme> = {
    */
   MIDNIGHT_BLOOM: {
     bg: "#100F0E", ink: "#EFE9DF", accent: "#C8A99E", deep: "#F3EEE6",
-    names: "caps", nameInk: "ink", face: "display", ornament: "botanical",
-    script: "formal", surface: "plain", navMark: false,
+    names: "caps", nameInk: "ink", face: "display", body: "serif", art: "none", ornament: "botanical",
+    script: "formal", surface: "plain", navMark: true,
   },
   /**
    * Pacific Linen — bright, textured, almost monochrome.
@@ -116,8 +134,26 @@ export const THEMES: Record<TemplateKey, Theme> = {
    */
   PACIFIC_LINEN: {
     bg: "#F3F0E9", ink: "#2A2825", accent: "#26313A", deep: "#26313A",
-    names: "script", nameInk: "ink", face: "serif", ornament: "none",
+    names: "script", nameInk: "ink", face: "serif", body: "serif", art: "none", ornament: "none",
     script: "monoline", surface: "paper", navMark: true,
+  },
+  /**
+   * Velvet Botanical — a painted still life brought onto the web.
+   *
+   * The artwork carries the page, so everything else gets out of its way: one
+   * high-contrast serif for the names and headings, a sans for everything that
+   * has to be read over paint, and no ornament at all. An ornament on top of a
+   * full-bleed bouquet is decoration on decoration.
+   *
+   * The accent is a warm blush lifted straight out of the painting rather than
+   * one of its reds. Every red in that palette is too dark to carry text on
+   * near-black — the deepest measures 3.0:1, which fails AA — while this
+   * measures 10.2:1 and still belongs to the arrangement.
+   */
+  VELVET_BOTANICAL: {
+    bg: "#14100F", ink: "#F0E7DA", accent: "#DDB9AD", deep: "#F7F1E6",
+    names: "caps", nameInk: "deep", face: "didone", body: "sans", art: "floral",
+    ornament: "none", script: "formal", surface: "plain", navMark: true,
   },
 };
 
@@ -171,7 +207,8 @@ export function themeVars(t: Theme): Record<string, string> {
     "--sa": t.accent,
     "--sd": t.deep,
     "--s-name-ink": t.nameInk === "deep" ? t.deep : t.ink,
-    "--s-face": t.face === "display" ? "var(--display)" : "var(--serif)",
+    "--s-face": { display: "var(--display)", didone: "var(--didone)", serif: "var(--serif)" }[t.face],
+    "--s-body": t.body === "sans" ? "var(--sans)" : "var(--serif)",
     "--s-script": t.script === "monoline" ? "var(--script-mono)" : "var(--script)",
     "--s-shade": dark ? "#000000" : t.ink,
     "--s-edge-k": dark ? "1.6" : "1",

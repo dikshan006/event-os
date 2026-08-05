@@ -6,7 +6,7 @@ import { InvitationHero } from "./InvitationHero";
 import { SmoothScroll } from "./SmoothScroll";
 import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
-import { Botanical } from "./Botanical";
+import { Botanical, BotanicalDefs } from "./Botanical";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
 import { THEMES, themeVars } from "@/lib/themes";
@@ -119,6 +119,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
       data-template={wedding.template}
       data-surface={theme.surface}
       data-navmark={theme.navMark ? "1" : undefined}
+      data-art={theme.art === "none" ? undefined : theme.art}
       style={vars}
     >
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
@@ -147,7 +148,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         <main id="main">
           {/* --- Masthead: type first, generous air, no ornament. --------- */}
           <header className="s-masthead" id="home">
-            {ornament && <Botanical variant="masthead" corners={["tl", "br"]} />}
+            {ornament && <><BotanicalDefs /><Botanical corners={["tl", "br"]} /></>}
             <Reveal>
               <p className="s-kicker">The wedding of</p>
               {Names}
@@ -398,7 +399,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         {/* Understated: names in the page's own display face rather than a
             script flourish, and the studio credit kept quiet. */}
         <footer className="s-foot">
-          {ornament && <Botanical variant="foot" corners={["bl", "br"]} />}
+          {ornament && <Botanical corners={["bl", "br"]} />}
           <p className="s-foot-names">{wedding.partnerOne} &amp; {wedding.partnerTwo}</p>
           <p className="s-foot-date">{dateLine}</p>
           <p className="by">Designed by {studio.name}</p>
