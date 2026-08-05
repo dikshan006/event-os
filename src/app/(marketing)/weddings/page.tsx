@@ -154,7 +154,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ========================================================= the idea */}
-      <section id="what" className="m-glass">
+      <section id="what">
         <div className="m-wrap m-chapter">
           <div className="m-two-wide m-two" style={{ alignItems: "center" }}>
             <Reveal className="m-col">
@@ -187,7 +187,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ====================================================== the payoff */}
-      <section id="minutes" className="m-glass">
+      <section id="minutes">
         <div className="m-wrap m-chapter">
           <Reveal className="m-col-prose">
             <span className="m-eyebrow">Why it saves you the afternoon</span>
@@ -235,7 +235,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* =========================================================== films */}
-      <section id="films" className="m-glass">
+      <section id="films">
         <div className="m-wrap m-chapter">
           <Reveal>
             <span className="m-eyebrow">Watch</span>
@@ -268,7 +268,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ========================================================= example */}
-      <section id="example" className="m-glass">
+      <section id="example">
         <div className="m-wrap m-chapter">
           <Reveal>
             <span className="m-eyebrow">Live example</span>
@@ -315,7 +315,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ============================================================= cta */}
-      <section className="m-glass">
+      <section>
         <div className="m-wrap m-chapter">
           <Reveal className="m-quote">
             <h2 className="m-serif" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", maxWidth: "14ch", marginInline: "auto" }}>
