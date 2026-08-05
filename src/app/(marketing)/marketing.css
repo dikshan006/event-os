@@ -1240,34 +1240,40 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
 .m-col-prose { max-width: 44rem; }
 
 /* ══════════════════════════════════════════ the weddings page ground ═══════
-   The hero photograph, held behind the whole page instead of only behind the
-   hero.
+   One photograph, fixed, behind the entire page: behind the navigation bar,
+   behind every section, behind the footer. Nothing else on the page paints an
+   opaque background, so it is never covered and never ends.
 
-   This is a change to scroll behaviour and nothing else. The image is the same
-   file, at the same crop, with no filter on it — the first version blurred it
-   34px, dimmed it to 0.84 and scaled it 1.18, which is a different-looking
-   photograph, not a different-behaving one. What was wanted was for the picture
-   that was already there to keep going.
-
-   A fixed *element*, not `background-attachment: fixed`. The two look identical
-   and cost very differently: the CSS property repaints the background against a
-   moving scroll offset on the main thread every frame, while a fixed element
-   promoted to its own layer is pinned by the compositor for nothing.
-   `translateZ(0)` is the promotion.
-
-   This belongs to the marketing page and to nothing else. The wedding sites
-   themselves are stationery and stay flat — a guest opening their invitation
-   should get the couple's design, not ours.
+   Same file, same crop, no filter, no transform. The picture is not the thing
+   being changed here — only whether it scrolls.
    ───────────────────────────────────────────────────────────────────────── */
-.m-wed { position: relative; }
 
-/* The page's own floor.
-   `.m` paints warm paper by default, and the ground is a child of `.m-wed`
-   inside `<main>` — so anything outside `main` (the footer, and the whole page
-   under `prefers-reduced-motion`, where the ground becomes absolute and ends
-   with its parent) fell back to paper and produced a white band under a
-   near-black page. */
-.m:has(.m-ground) { background: #14110d; color: #f5f1e8; }
+/* No opaque floor anywhere on this page.
+ *
+ * `.m` paints warm paper by default and `.m-ink` paints near-black; either one
+ * over the photograph is the solid band that keeps appearing. On this page the
+ * page-level surfaces stand down and the photograph is the background.
+ *
+ * Scoped to exactly those surfaces — the page root, main, the footer, the
+ * weddings wrapper and its own sections. The first version said `.m-paper`,
+ * `.m-ink` and `section` outright, which also stripped the cream from the
+ * invitation specimen and the fill from every solid button: dark type on a dark
+ * photograph at 1.03:1. A rule that removes backgrounds needs to name the ones
+ * it means, not the ones it can reach. */
+.m:has(.m-ground),
+.m:has(.m-ground) > main,
+.m:has(.m-ground) > footer.m-ink,
+.m:has(.m-ground) .m-wed,
+.m:has(.m-ground) .m-wed > section { background: none; }
+.m:has(.m-ground) {
+  color: #f5f1e8;
+  /* The quiet inks are tuned against flat chapter colour. Over a photograph the
+     faintest of them measured 3.8:1 on the footer tagline, so the whole ink
+     palette comes up a step on this page. Raising the token rather than the one
+     failing rule means the next thing set in `--faint` here is already right. */
+  --ink-soft: #d8d2c6;
+  --ink-faint: #cac3b5;
+}
 
 .m-ground {
   position: fixed;
@@ -1275,29 +1281,42 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  background: #3d3a2c;
+  background: #14110d;
 }
-.m-ground picture, .m-ground img { display: block; width: 100%; height: 100%; }
+
+/* The image is absolutely positioned inside the fixed frame rather than sized
+   with percentages.
+ *
+ * A percentage height resolves against a parent whose own height is definite —
+ * and if for any reason the frame is not laid out as expected, `height: 100%`
+ * falls back to `auto` and a 1600x3466 portrait renders at its intrinsic
+ * aspect: a two-screen-tall photograph at the top of the document with every
+ * section pushed below it and flat colour behind them. That is precisely the
+ * failure that kept coming back. Positioned absolutely, the image cannot
+ * contribute height to anything, so the worst case is an invisible ground
+ * rather than a broken page. */
+.m-ground picture { display: contents; }
 .m-ground img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   /* The couple sit low in the frame; this keeps them under the type rather
-     than behind it. The same value the hero always used. */
+     than behind it. The value the hero has always used. */
   object-position: 50% 42%;
 }
 
-/* One wash over the whole picture, and the only thing between it and the type.
+/* One wash over the picture, and the only thing between it and the type.
  *
  * The hero used to carry this on its own wrapper, measured: the photograph
  * peaks at 225 luminance and white type needs the brightest region pushed to
- * about 118 to clear 4.5:1, which is a 52% wash. The same arithmetic holds now
- * that the picture runs the length of the page, so the same wash does — minus
- * its closing fade, which existed to hand the hero over to a solid page that no
- * longer exists.
+ * about 118 to clear 4.5:1, which is a 52% wash. The arithmetic did not change
+ * when the picture got longer, so neither did the value — only its closing
+ * fade to solid is gone, because there is no longer a solid page to fade to.
  *
- * Constant rather than per-section, because a wash that changes strength from
- * one section to the next is exactly the banding this was meant to remove. */
+ * Constant rather than per-section: a wash that changes strength between
+ * sections is exactly the banding this exists to remove. */
 .m-ground::after {
   content: "";
   position: absolute;
@@ -1313,47 +1332,52 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
       rgba(14, 11, 8, 0.44) 100%);
 }
 
-/* Content floats. No panels, no cards, no per-section background — a section is
-   just its type sitting on the photograph. Lifting everything out of the
-   ground's way in one rule means a section added later cannot be the one that
-   ends up behind it. */
-.m-wed > * { position: relative; z-index: 1; }
+/* Everything else floats above it.
+ *
+ * This has to name the sections, not just `main`. A static block paints in the
+ * block phase, which comes before any positioned element regardless of DOM
+ * order — so with only `main` positioned, `main` established a stacking context
+ * containing the ground at z-index 0 and its sections at static, and the
+ * photograph painted straight over every word on the page. The sections were
+ * present, opaque and `visibility: visible` throughout; they simply were not on
+ * top. This is the third time this exact paint-order rule has bitten, after the
+ * homepage footer under `.m-plate-field` and the wedding-site footer.
+ *
+ * `> *` rather than a list of section classes, so a block added later cannot be
+ * the one left underneath. */
+.m:has(.m-ground) main,
+.m:has(.m-ground) .m-wed > *:not(.m-ground),
+.m:has(.m-ground) footer.m-ink { position: relative; z-index: 1; }
 
-/* The hero keeps its proportions and loses its private image: the page-wide
-   ground is the same photograph at the same crop, so the hero is simply the top
-   of it. */
-.m-cine { background: none; }
+/* The hero fills the first screen and starts at the top of it. No separate hero
+   background — the hero is simply the top of the one photograph. */
+.m:has(.m-ground) .m-cine {
+  min-height: 100svh;
+  background: none;
+}
 
-/* The footer is rendered by the marketing layout, outside `.m-wed`. `:has()`
-   lets the layout stay ignorant of which page it is wrapping — the alternative
-   was a request header through middleware to tell a layout what route it is on.
-   `position: relative` matters: a static block paints before any positioned
-   element, which is how a fixed gradient buried the homepage footer. */
-.m:has(.m-ground) footer.m-ink { position: relative; z-index: 1; background: none; }
-
-/* The navigation joins the scene rather than capping it. It still goes solid
-   once stuck — a transparent bar over arbitrary content is a legibility problem
-   that changes as you scroll — but on this page even that state is glass. */
+/* The navigation is frosted rather than solid, so the photograph starts at the
+   very top of the window instead of below a lid. */
+.m:has(.m-ground) .m-nav,
 .m:has(.m-ground) .m-nav.is-stuck,
 .m:has(.m-ground) .m-nav-warm.is-stuck {
-  background: color-mix(in srgb, #14110d 58%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(1.08);
-  backdrop-filter: blur(20px) saturate(1.08);
-  border-bottom-color: rgba(245, 241, 232, 0.1);
+  background: color-mix(in srgb, #14110d 46%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.06);
+  backdrop-filter: blur(18px) saturate(1.06);
+  border-bottom-color: rgba(245, 241, 232, 0.08);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* A pinned background against scrolling content is parallax, and parallax is
-     motion whatever it is built from, so under the preference the photograph
-     scrolls with the page.
-
-     Which means it has to be as tall as the page, and `height: 100%` resolves
-     against the nearest positioned ancestor. That was `.m-wed`, which stops at
-     the end of `<main>` — so the photograph stopped there too and the footer
-     sat on flat colour with a visible seam above it, which is the one thing
-     this design must never do. Handing the containing block to `.m` makes
-     "the page" mean the page, footer included. */
-  .m-wed { position: static; }
-  .m:has(.m-ground) { position: relative; }
-  .m-ground { position: absolute; inset: 0; height: 100%; }
-}
+/* Deliberately no `prefers-reduced-motion` override.
+ *
+ * The earlier version switched the ground to `position: absolute` under the
+ * preference, on the reasoning that a pinned background against scrolling
+ * content is parallax. In practice that is the single change that produced the
+ * reported bug every time: absolute means it has to be given a height, a
+ * percentage height needs a definite parent, and when that resolved to `auto`
+ * the photograph became one screen tall at the top of the document with flat
+ * colour under everything below.
+ *
+ * A fixed backdrop is also not what the preference is for. Nothing animates,
+ * nothing moves at a different rate on a timer, and there is no vestibular
+ * trigger in a still image that stays still. The content scrolls; the picture
+ * does not. */
