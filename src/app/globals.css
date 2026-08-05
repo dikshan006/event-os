@@ -198,8 +198,9 @@ textarea.inp{resize:vertical;min-height:92px}
 .tbl .actions .row{justify-content:flex-end;flex-wrap:nowrap;gap:6px}
 
 @media (max-width:1180px){
-  .work{grid-template-columns:1fr}
-  .work-panel{position:static}
+  /* Little margin left beside the column, so the seams carry the effect on
+     their own and get a touch more room. */
+  .site{--panel-gap:34px;--panel-r:12px}
 }
 
 /* ------------------------------------------------------------- dialogs ----
@@ -247,7 +248,7 @@ body:has(dialog[open]){overflow:hidden}
 .site{min-height:100vh;background:var(--sb);color:var(--si);font-family:var(--s-body);font-size:16px;
   --s-shade:var(--si);--s-edge-k:1;--s-depth-k:1;--s-line:8%;
   --s-name-ink:var(--si);--s-face:var(--serif);--s-script:var(--script);--s-body:var(--serif)}
-.s-wrap{max-width:1120px;margin:0 auto}
+.s-wrap{max-width:1080px;margin:0 auto}
 .s-nav{--nav-h:60px;display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(20px,4vw,40px);
   min-height:var(--nav-h);align-items:center;padding:var(--sp-4) var(--gutter);
   letter-spacing:.24em;font-size:var(--t-eyebrow);font-family:var(--sans);font-weight:500;
@@ -1569,7 +1570,7 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   to{opacity:1;transform:none}}
 @keyframes mb-drift{
   from{transform:scale(1)}
-  to{transform:scale(1.14)}}
+  to{transform:scale(1.24)}}
 
 .site[data-template="MIDNIGHT_BLOOM"] .s-masthead .reveal{
   animation:mb-settle 1400ms var(--ease) both}
@@ -2014,109 +2015,1821 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   background-size:cover;background-position:center;
   /* The same house treatment every photograph on the site gets, pushed
      further: this one is furniture, not a picture. */
-  filter:brightness(var(--ground-bright,1.34)) saturate(var(--ground-sat,.62))
-         sepia(.05) blur(var(--ground-blur,14px));
+  filter:brightness(var(--ground-bright,1.3)) saturate(var(--ground-sat,.72))
+         sepia(.05) blur(var(--ground-blur,26px));
   /* Blur samples from outside the element and leaves a soft edge at the
      viewport border; scaling past the edges puts that seam off-screen. */
-  transform:scale(1.14)}
+  transform:scale(1.24)}
 
-/* A light hand now, not a curtain.
-   This used to be a 95% wash of the page colour, which kept every measurement
-   safe and hid the photograph almost entirely — the thing it was there to
-   show. The readability job has moved to the glass over the content column
-   below, which is where the text actually is; out here the scrim only has to
-   settle the top and bottom edges under the navigation and the footer. */
+/* The photograph is the page.
+   Blurred enough to be atmosphere rather than a competing picture, and only
+   lightly veiled — the veil exists to seat the navigation and the footer
+   against the top and bottom edges, not to hide the image. Readability is
+   handled by the panels below, which is where the text actually is. */
 .site .s-ground-scrim{
   position:absolute;inset:0;
   background:linear-gradient(to bottom,
     var(--sb) 0%,
-    color-mix(in srgb, var(--sb) var(--ground-veil,45%), transparent) 14%,
-    color-mix(in srgb, var(--sb) var(--ground-veil,45%), transparent) 86%,
+    color-mix(in srgb, var(--sb) var(--ground-veil,22%), transparent) 10%,
+    color-mix(in srgb, var(--sb) var(--ground-veil,22%), transparent) 90%,
     var(--sb) 100%)}
 
-/* Everything that is not the ground sits above it. */
-/* One pane, the whole height of the page.
-   The photograph reads at full strength in the margins either side of the
-   1120px column, and through a blurred, tinted glass behind the type. One
-   continuous surface rather than a panel per section: sections keep their own
-   rhythm and there is no seam between them, so it stays one canvas.
+/* Sections float on it.
+ *
+ * One uniform sheet over the whole column could not work: to keep dark text on
+ * a pale template above 4.5:1 it had to be so opaque that the photograph
+ * disappeared, which is the thing the feature exists to show. A sheet is
+ * either readable or transparent, never both.
+ *
+ * Panels solve it by separating the two jobs. Each section gets its own
+ * translucent panel — opaque enough for type, blurred behind so the picture
+ * still reads through it as colour and shape — and the photograph appears at
+ * full strength in the seams between panels and in the margins either side.
+ * The background is continuous and never disappears; the text always has a
+ * surface. Scrolling moves the panels over a picture that stays put. */
+.site .s-above{position:relative;z-index:1;background:none}
 
-   This is also what carries readability now. Text on a photograph is a
-   contrast problem with no fixed answer, because the photograph changes with
-   every wedding; text on a translucent pane over a blurred photograph is a
-   contrast problem with a floor, and the floor is what the pane is set to.
-
-   `isolation` keeps the pane's blur from reaching past its own box. */
-.site .s-above{
-  position:relative;z-index:1;isolation:isolate;
-  background:color-mix(in srgb, var(--sb) var(--pane,86%), transparent);
-  -webkit-backdrop-filter:blur(var(--pane-blur,18px)) saturate(1.05);
-  backdrop-filter:blur(var(--pane-blur,18px)) saturate(1.05)}
-
-/* The pane's edges. A hard vertical line either side would read as a card;
-   a hairline of the page's own ink reads as the edge of a sheet. */
-.site .s-above{
+/* Every block in the page gets a panel, stated as "everything except the hero
+   plate" rather than as a list of the classes that happen to exist today. The
+   first version named `.s-masthead` and `.s-sec` and silently missed `.s-story`
+   and `.s-invite`, which then sat with their text directly on the photograph at
+   1.1:1. A rule that has to be updated whenever a section is added is a rule
+   that will be wrong. */
+.site .s-above > #main > *:not(.s-plate){
+  position:relative;
+  background:color-mix(in srgb, var(--sb) var(--pane,88%), transparent);
+  -webkit-backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
+  backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
+  border-radius:var(--panel-r,14px);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--si) 6%, transparent),
-    0 24px 70px -40px color-mix(in srgb, var(--s-shade) 34%, transparent)}
+    0 0 0 1px color-mix(in srgb, var(--si) 7%, transparent),
+    0 22px 60px -38px color-mix(in srgb, var(--s-shade) 42%, transparent)}
 
-/* Dark templates hold their contrast against a photograph far better than pale
-   ones, so they run a thinner pane and show more of the picture.
+/* The seam. Small — a hairline of photograph between panels reads as depth;
+   a wide one reads as a gap someone forgot to fill. */
+.site .s-above > #main > * + *{margin-top:var(--panel-gap,30px)}
+/* A seam above the first panel too, so the photograph starts at the top of the
+   page rather than at the second section. */
+.site .s-above > #main{padding-top:var(--panel-gap,30px)}
+.site .s-above{padding-bottom:var(--panel-gap,30px)}
+/* The hero photograph is a picture on a photograph: it needs the seam
+   around it, not a panel under it. */
+.site .s-above > #main > .s-plate{background:none;backdrop-filter:none;
+  -webkit-backdrop-filter:none;box-shadow:none}
 
-   The asymmetry is not taste, it is measured. A pale template's accent carries
-   small text — event times, links, the table number — and its ink is dark, so
-   anything the photograph darkens the backdrop by comes straight off the
-   contrast ratio. At a 74% pane the accent measured 3.6:1 where it needs 4.5.
-   A dark template is the opposite case: its ink is near-white and the ground is
-   already brightness-halved, so even a blown-out sky in the photograph leaves
-   it around 9:1. So the pale ones pay for the effect in the pane and keep the
-   photograph strong in the margins, where nothing has to be read over it. */
+/* The navigation and the footer sit outside `.s-wrap`, so they have to be
+   lifted out of the ground's way explicitly. The nav is opaque — a translucent
+   bar over a moving photograph is a legibility problem that changes with every
+   wedding — and the footer takes the same panel treatment as a section. */
+.site .s-nav{position:relative;z-index:5;background:var(--sb)}
+.site .s-foot{
+  position:relative;z-index:1;
+  /* The footer sits outside `#main`, so the sibling seam rule does not reach
+     it and it has to say the gap itself, or it welds onto the RSVP panel. */
+  max-width:1080px;margin:var(--panel-gap,30px) auto 0;
+  background:color-mix(in srgb, var(--sb) var(--pane,88%), transparent);
+  -webkit-backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
+  backdrop-filter:blur(var(--pane-blur,22px)) saturate(1.06);
+  border-radius:var(--panel-r,14px);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--si) 7%, transparent)}
+
+/* Pacific Linen paints its paper grain on `.site`, which is below the ground in
+   the stack. It moves onto the scrim so the texture stays over the photograph
+   rather than under it. */
+.site[data-surface="paper"] .s-ground-scrim{background-blend-mode:normal}
+
+/* The two polarities are not symmetrical, and the split is measured.
+ *
+ * A pale template sets small accent text — event times, table numbers, the
+ * registry vendor lines — in a mid-tone rose or sage that starts at about 5:1
+ * on flat background. That leaves roughly a tenth of the ratio in hand, so a
+ * photograph showing through the panel eats the margin immediately: at a 72%
+ * panel it measured 1.1:1, at 80% it was 4.0:1, and 4.5 is the floor. Pale
+ * templates therefore run a heavy panel and a high-key ground, and spend the
+ * effect in the seams and the margins, where nothing has to be read.
+ *
+ * A dark template is the opposite case — near-white ink over a ground already
+ * darkened to 0.8 brightness — and holds 9:1 or better at a 64% panel. It can
+ * show far more of the picture through the type, and does. */
 .site[data-template="MIDNIGHT_BLOOM"],
-.site[data-template="VELVET_BOTANICAL"]{--pane:70%}
+.site[data-template="VELVET_BOTANICAL"]{--pane:64%}
+.site[data-template="PACIFIC_LINEN"]{--pane:82%}
 
-/* Pacific Linen's paper is the surface; the photograph sits under it. */
-.site[data-template="PACIFIC_LINEN"]{--pane:84%}
-
-@media (max-width:1180px){
-  /* Below the column width there are no margins left for the photograph to
-     show in, so the pane carries all of it: a little thinner, and the ground
-     behind it a little less veiled, which keeps the same impression rather
-     than the same numbers. */
-  .site{--pane:86%;--ground-veil:38%}
-  .site[data-template="MIDNIGHT_BLOOM"],
-  .site[data-template="VELVET_BOTANICAL"]{--pane:78%}
-  .site .s-above{box-shadow:none}
+@media (prefers-reduced-motion:reduce){
+  .reveal.armed{opacity:1;transform:none;transition:none}
+  /* Blanket rule: anything still animating is decorative, and the preference
+     is a request to stop, not to slow down. Lenis is separately not mounted at
+     all under this preference (see SmoothScroll.tsx). */
+  .site *,.gal *{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 
-/* The nav and the footer are outside `.s-wrap`, so they need saying too. */
-.site .s-nav{z-index:5}
-.site .s-foot{position:relative;z-index:1}
+/* Section anchors sit under the sticky bar without this. */
+.site [id]{scroll-margin-top:calc(60px + var(--sp-6))}
+.s-names{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);
+  font-weight:400;margin:0}
+.s-name{font-size:clamp(28px,6vw,50px);letter-spacing:.16em;font-weight:500;line-height:1.15}
+.s-name.script{font-family:var(--s-script);font-size:clamp(44px,10vw,84px);letter-spacing:0;
+  color:var(--sa);line-height:1.16;padding-bottom:.06em}
+.s-and{font-family:var(--s-script);font-size:var(--t-script);color:var(--sa);opacity:.85;line-height:1.2}
 
-/* Dark templates need less veil to stay readable — cream on near-black keeps
-   its contrast against a darkened photograph far better than near-black ink on
-   cream does, so they can afford to show more of it. */
-.site[data-template="MIDNIGHT_BLOOM"],
-.site[data-template="VELVET_BOTANICAL"]{--ground-bright:.5;--ground-sat:.72}
+/* -------------------------------------------------------------- masthead --
+   Type first, and a great deal of air around it. Nothing competes with the
+   names: no rules, no ornament, no photograph until after the eye has read
+   them. The vertical space is the luxury signal. */
+.s-masthead{padding:var(--sp-9) var(--gutter) var(--sp-8);text-align:center}
+.s-kicker{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.42em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
+  text-indent:.42em;margin-bottom:var(--sp-6)}
+.s-meta{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.18em;
+  margin-top:var(--sp-6);line-height:1.9}
+/* Separator between meta items. At .5 it measured 2.41:1.
+   Full opacity, not `--muted` again: the parent `.s-meta` is already dimmed,
+   and opacity multiplies down the tree — .8 inside .8 is .64, which put this
+   at 3.36:1 on Classic Elegance. Dimming a child of a dimmed parent is almost
+   always this bug. */
+.s-dot{margin:0 .7em;opacity:1}
 
-/* Pacific Linen already has a printed ground of its own. The photograph sits
-   under the paper rather than instead of it, so it needs the most veil of the
-   six or the grain and the washes stop reading. */
-.site[data-template="PACIFIC_LINEN"]{--ground-veil:93%;--ground-bright:1;--ground-blur:3px}
-/* The paper surface is painted on `.site` itself, which is below the ground in
-   the stack; it moves onto the scrim so the texture stays on top of the photo. */
-.site[data-surface="paper"] .s-ground-scrim{background-blend-mode:normal}
+/* ----------------------------------------------------------- hero plate --
+   Inset rather than full-bleed, so the page frames the photograph instead of
+   the photograph swallowing the page. A square-ish 2px radius reads as printed
+   stock; anything larger reads as a UI card. */
+.s-plate{margin:0 var(--gutter);max-width:1080px;margin-inline:auto;padding:0 var(--gutter)}
+
+/* ------------------------------------------------------------- our story --
+   An editorial spread: one portrait, text beside it, aligned on a shared
+   baseline. Replaces the grid of story thumbnails above a full-width colour
+   band, which read as a template. */
+.s-story{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);
+  gap:clamp(28px,5vw,72px);align-items:center;
+  max-width:1000px;margin-inline:auto;padding:var(--sp-9) var(--gutter)}
+/* No portrait: one centred column of prose, set to a reading measure. Keeping
+   the two-track grid left a 380px void beside the text — the exact "image
+   failed to load" impression a site without photography must never give. */
+.s-story-solo{grid-template-columns:minmax(0,1fr);max-width:760px;text-align:center}
+.s-story-solo .s-story-text{text-align:center}
+.s-story-solo .s-story-text .s-h{text-align:center;text-indent:.2em}
+.s-story-solo .s-story-text p{margin-inline:auto}
+.s-portrait{margin:0}
+.s-story-text{text-align:left}
+.s-story-text .s-h{text-align:left;text-indent:0;margin-bottom:var(--sp-6)}
+.s-story-text p{font-family:var(--s-body);font-size:var(--t-lead);line-height:1.85;
+  color:var(--si);opacity:1;max-width:52ch}
+.s-story-text p + p{margin-top:var(--sp-5)}
+
+@media (max-width:760px){
+  .s-story{grid-template-columns:1fr;gap:var(--sp-7);padding-block:var(--sp-8)}
+  .s-portrait{max-width:78%;margin-inline:auto}
+  .s-story-text{text-align:center}
+  .s-story-text .s-h{text-align:center}
+  .s-story-text p{margin-inline:auto}
+}
+
+/* ---------------------------------------------------------------- photos --
+   Every rendition is generated at upload time (src/lib/images.ts), so these
+   are plain <picture> elements. The wrapper reserves the aspect ratio and
+   paints the blur placeholder underneath, so nothing ever shifts on load. */
+.s-ph{position:relative;overflow:hidden;margin:0;background-size:cover;background-position:center;
+  /* The colour behind the blur placeholder. Mixed off the page rather than a
+     fixed black wash, which on a dark template is a black square on black. */
+  background-color:color-mix(in srgb, var(--si) 5%, var(--sb))}
+
+/* ------------------------------------------------ photograph treatment ---
+   Every value here comes from the photograph itself. src/lib/images.ts
+   measures each upload once — luminance, saturation, tonal spread and a detail
+   centroid — and src/lib/photo-tone.ts converts those into the custom
+   properties below.
+
+   Two classes, one look:
+     `.framed`  the print itself — exposure, colour, hairline, contact shadow
+     `.toned`   all of that plus the gradients that settle it into a page
+
+   Every photograph on the site is at least `.framed`, so the hero, the couple
+   portrait, the story images and the gallery all carry the same edge and the
+   same colour. Only the gradients differ, because a photograph inside the
+   full-screen viewer has no type to sit under and a vignette there would read
+   as a filter rather than as art direction. */
+.s-ph.toned img,
+.s-ph.framed img{
+  /* Order matters. Exposure first, then colour, then the warmth that ties a
+     cool phone frame and a warm film scan into one family, then contrast last
+     so it acts on the corrected image rather than the original.
+
+     Individually none of these is visible. Together they are the difference
+     between photographs that sit on the page and photographs that belong to
+     it. Fallbacks keep the rule valid for uploads made before measurement
+     existed. */
+  filter:
+    brightness(var(--ph-bright,.85))
+    saturate(var(--ph-saturate,.93))
+    sepia(var(--ph-warm,.04))
+    contrast(var(--ph-contrast,.98));
+  /* Intelligent crop: the detail centroid rather than the geometric middle. */
+  object-position:var(--ph-focus-x,50%) var(--ph-focus-y,50%)}
+
+/* Scrim + vignette, scaled per image. Only where there is a page to blend
+   into — see the note above. */
+.s-ph.toned::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.06) * 130%), transparent),
+      transparent 36%, transparent 64%,
+      color-mix(in srgb, var(--sb) calc(var(--ph-scrim,.06) * 165%), transparent)),
+    radial-gradient(125% 95% at 50% 50%, transparent 55%,
+      color-mix(in srgb, var(--sb) calc(var(--ph-vignette,.11) * 165%), transparent))}
+
+/* ------------------------------------------------------- frame and depth --
+   A printed-album edge: one hairline and a shadow held tight against it.
+
+   The hairline is never black or white. It is mixed from the template's own
+   typography colour with a little of its accent stirred in, so Classic
+   Elegance gets a warm wine-tinged edge, Modern Sage a sage-grey one, and
+   Blush Romance a rose-tinged charcoal — each recognisably of its own
+   template, and any future template inherits the behaviour for free because
+   both inputs are theme variables rather than constants.
+
+   It is drawn with an inset box-shadow rather than `border` so it costs no
+   layout and cannot shift the image by a pixel.
+
+   The shadow is deliberately short and close: a 1px contact edge plus a 10px
+   diffusion pulled back by a negative spread, with no vertical offset worth
+   the name. Offset and blur are what make a shadow read as a card floating
+   above the page; a print resting on paper has neither.
+
+   Corners stay square. At this weight a radius is invisible, and square is the
+   more editorial choice. */
+.s-ph.toned,
+.s-ph.framed{
+  --ph-edge-color: color-mix(in srgb, var(--sa) 26%, var(--si));
+  /* The rule sits *outside* the photograph, not inset.
+     
+     Inset, it was invisible on exactly the images that needed it most: a dark
+     reception photo with a dark ink hairline drawn on top of it has no edge at
+     all, and the strength was inverted against luminance, so those images got
+     the faintest line of the lot. Drawn on the page instead, it always meets
+     cream and always reads — which is also how a print sits in an album, with
+     a rule around it rather than a line inked onto the photograph.
+
+     2px, because 1px of a low-opacity mix disappears on a retina screen:
+     present in the stylesheet, absent on the page. */
+  --ph-edge-w: 2px;
+  box-shadow:
+    /* `--s-edge-k` is the template's contribution: cream separates a print on
+       its own, a near-black page barely does, so on a dark template the rule
+       carries proportionally more of the separation. */
+    0 0 0 var(--ph-edge-w)
+      color-mix(in srgb, var(--ph-edge-color) calc(var(--ph-edge,.32) * var(--s-edge-k,1) * 100%), transparent),
+    /* Contact shadow: tight, barely offset, pulled back by a negative spread.
+       Offset and blur are what make a shadow read as a card floating above the
+       page; a print resting on paper has neither.
+       Cast in `--s-shade`, not in the ink. On a dark template the ink is nearly
+       white, and a shadow made of it is a glow — the exact opposite effect. */
+    0 1px 2px color-mix(in srgb, var(--s-shade) calc(var(--ph-depth,.07) * var(--s-depth-k,1) * 55%), transparent),
+    0 3px 11px -7px color-mix(in srgb, var(--s-shade) calc(var(--ph-depth,.07) * var(--s-depth-k,1) * 100%), transparent)}
+
+/* The same treatment for any other photograph on the site — a registry gift
+   image, or anything added later — without needing the SitePhoto wrapper. */
+.site .s-framed{
+  --ph-edge-color: color-mix(in srgb, var(--sa) 26%, var(--si));
+  border-radius:2px;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ph-edge-color) calc(32% * var(--s-edge-k,1)), transparent),
+    0 1px 1px color-mix(in srgb, var(--s-shade) calc(4% * var(--s-depth-k,1)), transparent),
+    0 3px 10px -7px color-mix(in srgb, var(--s-shade) calc(7% * var(--s-depth-k,1)), transparent)}
+.site .s-framed img{filter:brightness(.85) saturate(.93) sepia(.04) contrast(.98)}
+
+
+/* Dark photographs are lifted very slightly instead of scrimmed, so low-key
+   frames read as intentional rather than underexposed. */
+.s-ph.toned::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:color-mix(in srgb, var(--sb) calc(var(--ph-lift,0) * 100%), transparent)}
+.s-ph picture,.s-ph img{display:block;width:100%;height:100%}
+.s-ph img{object-fit:cover;animation:ph-in .5s ease-out}
+.s-ph figcaption{position:absolute;left:0;right:0;bottom:0;padding:26px 16px 12px;
+  font:400 12px/1.5 var(--sans);letter-spacing:.04em;color:#fff;text-align:left;
+  background:linear-gradient(to top,rgba(0,0,0,.55),transparent)}
+@keyframes ph-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.s-ph img{animation:none}}
+
+
+/* ------------------------------------------------------------ invitation --
+   A single centred column. No pill, no inline-flex, no absolute positioning —
+   each line is a block sibling, so the guest name and the group list can never
+   overlap. Type scales fluidly with clamp() instead of breakpoint overrides. */
+.s-invite{padding:var(--sp-8) var(--gutter) 0}
+.inv{max-width:640px;margin:0 auto;text-align:center;
+  display:flex;flex-direction:column;align-items:center}
+.inv-personal{display:flex;flex-direction:column;align-items:center;width:100%}
+.inv-eyebrow{font:500 clamp(9px,1.6vw,11px)/1.6 var(--sans);
+  letter-spacing:.38em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
+  /* the trailing letter-space would otherwise push the line off-centre */
+  text-indent:.38em;margin:0}
+.inv-guest{font-family:var(--s-script);font-weight:400;
+  font-size:clamp(46px,10vw,86px);line-height:1.18;color:var(--sa);
+  /* script descenders and swashes need room below the baseline */
+  margin:clamp(14px,2.4vw,22px) 0 0;padding-bottom:.08em;
+  word-break:break-word;hyphens:none}
+.inv-groups{font:400 clamp(11px,1.9vw,13px)/1.7 var(--sans);
+  letter-spacing:.16em;color:var(--si);opacity:var(--muted);text-indent:.16em;
+  margin:clamp(10px,1.8vw,16px) 0 0;max-width:34ch}
+.inv-divider{display:flex;align-items:center;justify-content:center;gap:14px;
+  width:min(240px,60%);margin:clamp(28px,5vw,44px) 0}
+.inv-divider-line{flex:1;height:1px;background:currentColor;color:var(--sa);opacity:.35}
+/* The parent carries `role="presentation"`, so this is decorative and outside
+   the contrast requirement — but it was measuring 2.92:1 and simply looked
+   weak. Full strength; the accent is quiet enough on its own. */
+.inv-divider-mark{font-size:11px;color:var(--sa);opacity:1;line-height:1}
+.inv-line{font-family:var(--s-script);
+  font-size:clamp(25px,5.2vw,38px);line-height:1.55;color:var(--sa);
+  max-width:22ch;margin:0 auto;padding-bottom:.06em}
+.inv-date{font-size:clamp(21px,4.6vw,34px);line-height:1.35;letter-spacing:.22em;
+  color:var(--sd);text-indent:.22em;margin:clamp(22px,4vw,34px) 0 0}
+
+/* The public site has no guest, so the invitation line carries the section on
+   its own and wants a little more breathing room above the date. */
+.inv:not(:has(.inv-personal)) .inv-line{max-width:26ch}
+/* --------------------------------------------------------------- sections --
+   Previously every section was `padding:56px 40px` with a 32px uppercase
+   heading over a script subtitle, so the FAQ carried exactly the same visual
+   weight as the invitation. Rhythm now comes from the spacing scale, headings
+   are quieter and smaller, and the script line is reserved rather than
+   automatic — see `.s-hs` below. */
+.s-sec{padding:var(--sp-8) var(--gutter);text-align:center}
+.s-sec > * + *{margin-top:var(--sp-5)}
+
+.s-h{font-family:var(--serif);font-size:var(--t-h2);font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--sd);
+  line-height:1.25;text-indent:.2em;margin:0}
+
+/* The script subtitle was appearing under all seven section headings. At that
+   frequency it stops reading as a flourish. It is now a smaller, quieter
+   line — the display script is spent on the names and the invitation only. */
+.s-hs{font-family:var(--sans);font-size:var(--t-micro);font-weight:400;
+  letter-spacing:.2em;text-transform:lowercase;color:var(--si);opacity:var(--muted);
+  text-indent:.2em;margin-top:var(--sp-3)!important}
+
+/* Content inside a section gets a larger gap than the heading pair. */
+.s-sec > .s-hs + *{margin-top:var(--sp-7)}
+.s-count{display:flex;justify-content:center;gap:18px}
+/* A pane lifted a little off the page, whichever direction 'off the page'
+   happens to be: the ink is mixed into the background, so on cream it settles
+   a shade lighter and on near-black a shade lighter still. */
+.s-count .t{background:color-mix(in srgb, var(--si) 4%, var(--sb));
+  border:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent);
+  border-radius:8px;padding:18px 22px;min-width:96px}
+.s-count .n{font-size:40px;color:var(--sd)}
+/* Was a hard-coded .7, which is below the measured floor: 4.01:1 on Modern
+   Sage and 3.88:1 on Classic Elegance at 10px, where AA wants 4.5. These are
+   labels, not decoration — a guest has to read which number is which. */
+.s-count .u{font:500 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;opacity:var(--muted)}
+/* ------------------------------------------------------------- programme --
+   Set like a printed wedding programme rather than a timeline: no rules, no
+   connectors, no icons. Each entry is time, event, place, dress — descending
+   in weight — and the space between entries is what separates them. */
+.s-prog-day + .s-prog-day{margin-top:var(--sp-9)}
+.s-prog-date{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.4em;text-transform:uppercase;color:var(--si);opacity:var(--muted);
+  text-indent:.4em;margin-bottom:var(--sp-8)}
+
+.s-prog-item + .s-prog-item{margin-top:var(--sp-8)}
+.s-prog-time{font-family:var(--sans);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--sa);text-indent:.3em;
+  margin-bottom:var(--sp-4)}
+.s-prog-title{font-family:var(--serif);font-size:clamp(24px,3.6vw,36px);font-weight:500;
+  line-height:1.2;color:var(--sd);letter-spacing:.01em;margin:0}
+.s-prog-where{font-family:var(--s-body);font-size:var(--t-lead);line-height:1.5;
+  color:var(--si);opacity:1;margin-top:var(--sp-3)}
+.s-prog-dress{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--si);opacity:var(--muted);text-indent:.2em;
+  margin-top:var(--sp-3)}
+.s-prog-note{font-family:var(--s-body);font-size:var(--t-body);line-height:1.8;
+  color:var(--si);opacity:var(--muted);max-width:44ch;margin:var(--sp-4) auto 0}
+
+/* The guest's table, shown only once a planner has seated them. Set apart from
+   the programme by space and a hairline, since it is the one line a guest
+   looks for on the day rather than while browsing. */
+.s-seat{margin-top:var(--sp-5);padding-top:var(--sp-4);display:inline-block;
+  border-top:1px solid color-mix(in srgb, var(--sa) 30%, transparent)}
+.s-seat-label{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--sa);text-indent:.3em}
+.s-seat-table{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  line-height:1.3;color:var(--sd);margin-top:var(--sp-2)}
+
+/* ---------------------------------------------------------- gallery link --
+   The gallery is entered deliberately, so the invitation carries one quiet
+   line rather than a grid of thumbnails. */
+.s-sec-quiet{padding-block:var(--sp-8)}
+.s-gallery-link{display:inline-flex;align-items:baseline;gap:var(--sp-3);
+  background:none;border:0;cursor:pointer;padding:var(--sp-3) 0;
+  font-family:var(--sans);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--sa);text-indent:.3em;
+  border-bottom:1px solid color-mix(in srgb, var(--sa) 35%, transparent);
+  transition:border-color var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.s-gallery-link:hover,.s-gallery-link:focus-visible{border-color:var(--sa);outline:none}
+/* Sits on the accent, which is lighter than the ink; --muted is the floor
+   for ink, not for accent, so this needed its own. */
+.s-gallery-count{font-size:var(--t-eyebrow);letter-spacing:.1em;opacity:1;
+  color:color-mix(in srgb, var(--sa) 76%, var(--si));text-indent:0}
+
+/* --------------------------------------------------------------- gallery --
+   A scrolling editorial column, one photograph at a time. No thumbnail grid,
+   no next/previous chrome: scrolling is the only interaction, and it behaves
+   the same on a phone as on a desktop. */
+.gal{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;padding:0;
+  border:none;background:var(--sb);color:var(--si);overflow:hidden}
+.gal::backdrop{background:rgba(20,18,16,.7)}
+.gal-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;
+  justify-content:space-between;gap:var(--sp-4);
+  padding:var(--sp-4) var(--gutter);
+  background:color-mix(in srgb, var(--sb) 90%, transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-bottom:1px solid color-mix(in srgb, var(--si) var(--s-line), transparent)}
+.gal-title{font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.36em;text-transform:uppercase;opacity:var(--muted);text-indent:.36em}
+.gal-close{background:none;border:0;cursor:pointer;padding:6px 2px;
+  font-family:var(--sans);font-size:var(--t-eyebrow);font-weight:500;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--sa);text-indent:.28em;
+  border-bottom:1px solid transparent;transition:border-color var(--dur) var(--ease)}
+.gal-close:hover,.gal-close:focus-visible{border-color:var(--sa);outline:none}
+.gal-scroll{height:calc(100dvh - 56px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:var(--sp-8) var(--gutter) var(--sp-9);
+  display:flex;flex-direction:column;align-items:center;gap:var(--sp-8)}
+.gal-item{width:min(860px,100%);margin:0}
+.gal-item figcaption{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7;
+  letter-spacing:.04em;opacity:.6;margin-top:var(--sp-4);text-align:center}
+
+/* ------------------------------------------------------------ travel notes --
+   Prose the planner wrote, set as an editorial column rather than boxed cards.
+   Cards implied equal, interchangeable facts; these are paragraphs. */
+.s-notes{display:grid;gap:var(--sp-7);max-width:56ch;margin-inline:auto;text-align:center}
+.s-note h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  color:var(--sd);letter-spacing:.02em;margin-bottom:var(--sp-3)}
+.s-note p{font-family:var(--s-body);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:1;white-space:pre-line}
+
+.s-empty{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7;
+  color:var(--si);opacity:var(--muted);max-width:46ch;margin-inline:auto}
+/* --------------------------------------------------------- quiet inline link
+   One link treatment for the whole guest site: a letterspaced label over a
+   hairline that firms up on hover and focus. Replaces the filled and ghost
+   buttons, which read as application chrome inside an invitation. */
+.s-quiet-link{display:inline-block;font-family:var(--sans);font-size:var(--t-micro);
+  font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--sa);
+  text-indent:.24em;padding:var(--sp-2) 0;
+  border-bottom:1px solid color-mix(in srgb, var(--sa) 32%, transparent);
+  transition:border-color var(--dur) var(--ease)}
+.s-quiet-link:hover,.s-quiet-link:focus-visible{border-color:var(--sa)}
+
+/* ------------------------------------------------- registry & cash gifts --
+   A printed gift list, not a grid of boxes: title, quiet detail line, link.
+   Separation comes from space, with one hairline to mark the row. */
+.s-list{list-style:none;max-width:640px;margin-inline:auto;text-align:center}
+.s-list-item{padding-block:var(--sp-7)}
+.s-list-item + .s-list-item{border-top:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-list-item h3{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  color:var(--sd);line-height:1.3}
+.s-list-detail{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.14em;
+  color:var(--si);opacity:var(--muted);margin-top:var(--sp-3);line-height:1.7}
+.s-pay{display:flex;flex-wrap:wrap;gap:var(--sp-6);justify-content:center;margin-top:var(--sp-4)}
+
+/* -------------------------------------------------------------- questions --
+   Native <details>: keyboard operable, findable with in-page search, and works
+   without JavaScript. No plugin, no state, no icon set. */
+.s-qa{max-width:640px;margin-inline:auto;text-align:left}
+.s-q{border-top:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-q:last-child{border-bottom:1px solid color-mix(in srgb, var(--si) 9%, transparent)}
+.s-q summary{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-5);
+  padding:var(--sp-6) 0;cursor:pointer;list-style:none;
+  font-family:var(--serif);font-size:var(--t-h3);font-weight:500;color:var(--sd);line-height:1.35}
+.s-q summary::-webkit-details-marker{display:none}
+/* A hairline cross that becomes a minus when open — quieter than a chevron. */
+.s-q summary::after{content:"";flex:0 0 11px;height:11px;position:relative;top:-1px;
+  background:
+    linear-gradient(var(--sa),var(--sa)) center/11px 1px no-repeat,
+    linear-gradient(var(--sa),var(--sa)) center/1px 11px no-repeat;
+  opacity:.7;transition:transform var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.s-q[open] summary::after{transform:rotate(90deg);
+  background:linear-gradient(var(--sa),var(--sa)) center/11px 1px no-repeat}
+.s-q summary:focus-visible{outline:2px solid var(--sa);outline-offset:4px;border-radius:2px}
+.s-q p{font-family:var(--s-body);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:1;padding-bottom:var(--sp-6);max-width:58ch}
+
+/* ------------------------------------------------------------------ rsvp --
+   The only interactive surface on the page, so the controls are sized for a
+   thumb and the states are unambiguous. */
+.s-form{max-width:480px;margin-inline:auto;display:grid;gap:var(--sp-6);text-align:left}
+.s-choice{border:0}
+.s-choice legend,.s-field label{display:block;font-family:var(--sans);
+  font-size:var(--t-eyebrow);font-weight:500;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--si);opacity:var(--muted);text-indent:.24em;margin-bottom:var(--sp-4)}
+.s-field{display:grid}
+.s-opts{display:grid;gap:var(--sp-3)}
+.s-opt{position:relative;display:flex;align-items:center;gap:var(--sp-4);
+  padding:var(--sp-5);cursor:pointer;background:transparent;
+  border:1px solid color-mix(in srgb, var(--si) 14%, transparent);border-radius:2px;
+  font-family:var(--serif);font-size:var(--t-lead);color:var(--si);
+  transition:border-color var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+/* The native control stays in the accessibility tree and keeps arrow-key
+   behaviour; only its rendering is replaced. */
+.s-opt input{position:absolute;opacity:0;width:1px;height:1px}
+.s-opt::before{content:"";flex:0 0 9px;height:9px;border-radius:50%;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--si) 34%, transparent);
+  transition:box-shadow var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+.s-opt:hover{border-color:color-mix(in srgb, var(--sa) 45%, transparent)}
+.s-opt.on{border-color:var(--sa);background:color-mix(in srgb, var(--sa) 6%, transparent)}
+.s-opt.on::before{background:var(--sa);box-shadow:inset 0 0 0 1px var(--sa)}
+.s-opt:has(input:focus-visible){outline:2px solid var(--sa);outline-offset:3px}
+
+.s-inp{width:100%;background:color-mix(in srgb, var(--sb) 60%, transparent);
+  border:1px solid color-mix(in srgb, var(--si) 16%, transparent);border-radius:2px;
+  padding:var(--sp-4);font-family:var(--s-body);font-size:var(--t-body);color:var(--si);
+  /* 16px minimum on iOS, or focusing the field zooms the page. */
+  transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.s-inp:focus{outline:none;border-color:var(--sa);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--sa) 14%, transparent)}
+textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
+@media (max-width:520px){ .s-inp{font-size:16px} }
+
+.s-btn{display:inline-flex;align-items:center;justify-content:center;
+  min-height:52px;padding:0 var(--sp-7);cursor:pointer;
+  /* The label takes the page colour, not a fixed white: on a dark template
+     the accent is pale and white on it cannot be read. */
+  background:var(--sa);color:var(--sb);border:1px solid var(--sa);border-radius:2px;
+  font-family:var(--sans);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.24em;text-transform:uppercase;text-indent:.24em;
+  transition:opacity var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
+.s-btn:hover:not(:disabled){opacity:.88}
+.s-btn:active:not(:disabled){transform:scale(.99)}
+.s-btn:focus-visible{outline:2px solid var(--sa);outline-offset:3px}
+.s-btn:disabled{opacity:.4;cursor:not-allowed}
+.s-btn[aria-busy="true"]{cursor:progress}
+
+.s-rsvp-hint,.s-rsvp-error{font-family:var(--sans);font-size:var(--t-micro);line-height:1.7}
+.s-rsvp-hint{opacity:var(--muted);text-align:center}
+.s-rsvp-error{color:var(--sd);padding:var(--sp-4);border-radius:2px;
+  border:1px solid color-mix(in srgb, var(--sd) 30%, transparent);
+  background:color-mix(in srgb, var(--sd) 6%, transparent)}
+
+.s-rsvp-done{max-width:480px;margin-inline:auto}
+.s-rsvp-done:focus{outline:none}
+.s-rsvp-thanks{font-family:var(--serif);font-size:var(--t-h2);font-weight:500;color:var(--sd)}
+.s-rsvp-note{font-family:var(--serif);font-size:var(--t-body);line-height:1.85;
+  color:var(--si);opacity:1;margin-top:var(--sp-4)}
+.s-rsvp-change{margin-top:var(--sp-6);background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:var(--t-micro);font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sa);text-indent:.24em;padding:var(--sp-2) 0;
+  border-bottom:1px solid color-mix(in srgb, var(--sa) 32%, transparent);
+  transition:border-color var(--dur) var(--ease)}
+.s-rsvp-change:hover,.s-rsvp-change:focus-visible{border-color:var(--sa);outline:none}
+
+/* The wedding site stops here. The top padding keeps the closing names clear of
+   the last section; the bottom is a fixed, modest tail so no template ends with
+   a screen of nothing under it. */
+.s-foot{padding:var(--sp-9) var(--gutter) 5rem;text-align:center}
+.s-foot-names{font-family:var(--serif);font-size:var(--t-h3);font-weight:500;
+  letter-spacing:.14em;color:var(--sd)}
+/* --muted-lg is the floor documented for *large* text, where AA allows 3:1.
+   At 11px this needs 4.5 and measured 4.49. */
+.s-foot-date{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
+  text-transform:uppercase;opacity:var(--muted);text-indent:.2em;margin-top:var(--sp-3)}
+.s-foot .by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--muted);margin-top:8px}
+
+/* --------------------------------------------------- planner photo manager */
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:20px}
+.ph-item{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg)}
+.ph-thumb{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background-size:cover;background-position:center}
+.ph-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.ph-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin:8px 2px 10px}
+.ph-text{display:grid;gap:8px;margin-bottom:10px}
+.ph-text .inp{font-size:12px;padding:8px 11px}
+.ph-text button{justify-self:start}
+.ph-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ph-actions form{display:contents}
+.ph-replace{display:inline-flex!important;gap:6px}
+.ph-replace label{position:relative;overflow:hidden}
+.ph-upload{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:10px;align-items:center;
+  border-top:1px solid var(--line);padding-top:18px}
+.ph-upload .inp[type=file]{padding:8px 11px;font-size:12px}
+
+/* ---------------------------------------------------------------- seating --
+   Cards a planner can scan at arm's length rather than a dense grid. Each
+   table states its own occupancy; the eye goes to the fill bar first. */
+/* --------------------------------------------------------- back control --
+   One treatment, used by PageHead on every page that has a parent. Sits above
+   the eyebrow so the eye reads Back → context → title. */
+.backlink{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;
+  background:none;border:0;cursor:pointer;padding:2px 0;
+  font:500 12px var(--sans);letter-spacing:.06em;color:var(--soft);
+  transition:color var(--dur-fast) var(--ease)}
+.backlink-arrow{display:inline-block;transition:transform var(--dur-fast) var(--ease)}
+.backlink:hover{color:var(--ink)}
+.backlink:hover .backlink-arrow{transform:translateX(-2px)}
+.backlink:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ------------------------------------------------------ template chooser --
+   Each template is a card with its own preview action, so choosing is a
+   decision made after looking rather than from a name and one line of copy. */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.tpl-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow-sm);padding:18px;display:flex;flex-direction:column;gap:14px}
+.tpl-choice{display:flex;gap:10px;align-items:flex-start;cursor:pointer;flex:1}
+.tpl-choice > span{display:grid;gap:4px}
+.tpl-choice b{font-size:18px}
+.tpl-preview{align-self:flex-start}
+
+/* -------------------------------------------------------------- preview --
+   A full-bleed render of the real guest site with one quiet bar above it.
+
+   The bar is chrome around something that is meant to look beautiful, so it is
+   built to be ignored: no card, no shadow, no filled buttons, one hairline. It
+   holds three zones — out, what, how — and the middle one is centred
+   independently of the other two so the template's name sits on the page's
+   axis rather than wherever the back link happens to end.
+
+   The previous version put four controls in a single flex row with `gap:16px`
+   and let them wrap; at narrow widths the toggle landed under the title beside
+   a status note, and the whole thing read as a dashboard toolbar. */
+.preview{min-height:100vh;background:var(--bg)}
+.preview-frame{position:relative}
+
+.pv-bar{
+  position:sticky;top:0;z-index:20;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:24px;padding:14px clamp(16px,3vw,28px);
+  background:color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);
+  border-bottom:1px solid var(--line)}
+
+.pv-back{display:inline-flex;align-items:center;gap:6px;justify-self:start;
+  font:500 13px var(--sans);letter-spacing:.01em;color:var(--soft);
+  padding:7px 10px;margin-left:-10px;border-radius:8px;
+  transition:color var(--dur-fast) var(--ease),background-color var(--dur-fast) var(--ease)}
+.pv-back:hover{color:var(--ink);background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.pv-back svg{opacity:.7}
+
+.pv-id{display:inline-flex;align-items:center;gap:10px;justify-self:center;min-width:0}
+.pv-title{font-family:var(--serif);font-size:17px;font-weight:500;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Deliberately quiet. It marks a state, it is not a warning — and the planner
+   is supposed to be looking at the wedding, not at the badge. */
+.pv-badge{flex:none;font:600 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;color:var(--soft);
+  background:color-mix(in srgb, var(--ink) 6%, transparent);
+  border:1px solid color-mix(in srgb, var(--ink) 8%, transparent)}
+
+.pv-tools{display:inline-flex;align-items:center;gap:10px;justify-self:end}
+
+/* The segmented control. One track, one moving state, a label inside rather
+   than floating above it — stacking a caption over the control is what made
+   the old header feel like two rows of chrome. */
+.pv-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;
+  background:color-mix(in srgb, var(--ink) 5%, transparent);
+  border:1px solid color-mix(in srgb, var(--ink) 7%, transparent);border-radius:999px}
+.pv-seg-label{padding:0 10px 0 8px;font:500 11px var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint)}
+.pv-opt{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;
+  font:500 12.5px var(--sans);color:var(--soft);white-space:nowrap;
+  transition:color var(--dur-fast) var(--ease),background-color var(--dur-fast) var(--ease),
+             box-shadow var(--dur-fast) var(--ease)}
+.pv-opt:hover{color:var(--ink)}
+.pv-opt.is-on{color:var(--ink);background:var(--surface);
+  box-shadow:0 1px 2px rgba(33,30,27,.07),0 1px 1px rgba(33,30,27,.04)}
+/* Drawn, not a ● character: a glyph would shift with whichever font loads. */
+.pv-dot{width:9px;height:9px;border-radius:50%;flex:none;
+  border:1.5px solid color-mix(in srgb, var(--ink) 26%, transparent);
+  transition:border-color var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+.pv-opt.is-on .pv-dot{border-color:var(--accent);
+  box-shadow:inset 0 0 0 2.5px var(--accent)}
+.pv-opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* The guest menu, as a native disclosure so it needs no JavaScript. */
+.pv-menu{position:relative}
+.pv-menu > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 13px;border-radius:999px;font:500 12.5px var(--sans);color:var(--soft);
+  border:1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  transition:color var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease)}
+.pv-menu > summary::-webkit-details-marker{display:none}
+.pv-menu > summary:hover{color:var(--ink);border-color:var(--line-strong)}
+.pv-menu[open] > summary{color:var(--ink);border-color:var(--line-strong)}
+.pv-menu > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pv-menu-list{position:absolute;right:0;top:calc(100% + 8px);z-index:30;
+  min-width:264px;max-width:340px;max-height:min(56vh,420px);overflow:auto;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 10px 34px -12px rgba(33,30,27,.22),0 2px 8px -4px rgba(33,30,27,.12)}
+.pv-menu-list a{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 11px;border-radius:9px;font:400 13px var(--sans);color:var(--ink);
+  /* The name holds one line and the group list gives way. Left to wrap, a
+     two-word name and a two-group list turned every row into three lines. */
+  white-space:nowrap}
+.pv-menu-list a:hover{background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.pv-menu-list a.is-on{color:var(--accent)}
+.pv-menu-list a small{color:var(--faint);font-size:11px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis}
+.pv-menu-head{padding:8px 11px 6px;font:500 10px var(--sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint)}
+
+/* A single way back out at the foot of a very long page. */
+.preview-tail{padding:28px 20px 44px;text-align:center;background:var(--bg);
+  border-top:1px solid var(--line)}
+.preview-tail a{font:500 12.5px var(--sans);color:var(--soft)}
+.preview-tail a:hover{color:var(--ink)}
+
+@media (max-width:800px){
+  .pv-bar{grid-template-columns:auto 1fr;gap:12px;row-gap:10px}
+  .pv-id{justify-self:end}
+  .pv-tools{grid-column:1 / -1;justify-self:center}
+  .pv-seg-label{display:none}
+}
+
+.seat-event + .seat-event{padding-top:34px;border-top:1px solid var(--line)}
+.seat-event-head{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.seat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.seat-table{display:flex;flex-direction:column}
+.seat-list{list-style:none;display:grid;gap:2px}
+.seat-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.seat-list li:last-child{border-bottom:none}
+.seat-name{font-size:13px;display:flex;align-items:baseline;gap:8px;min-width:0}
+.seat-flag{font-size:11px;color:var(--wine);white-space:nowrap}
+.seat-flag.quiet{color:var(--faint)}
+
+.seat-unassigned{list-style:none;display:grid;gap:1px;max-height:420px;overflow-y:auto;
+  overscroll-behavior:contain}
+.seat-unassigned li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.seat-unassigned li:last-child{border-bottom:none}
+
+/* Guest picker inside the dialog. Its own scroller, so a long guest list does
+   not push the dialog past the viewport. */
+.seat-picker{max-height:46vh;overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid var(--line);border-radius:12px}
+.seat-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+  padding:10px 14px;background:none;border:0;border-bottom:1px solid var(--line);
+  cursor:pointer;text-align:left;font:inherit;
+  transition:background-color var(--dur-fast) var(--ease)}
+.seat-pick:hover,.seat-pick:focus-visible{background:var(--bg);outline:none}
+.seat-picker form:last-child .seat-pick{border-bottom:none}
+.seat-pick-name{font-size:13px;font-weight:500}
+.seat-pick-groups{font-size:11px;color:var(--faint)}
+
+@media (max-width:700px){
+  .seat-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr!important}
+}
+
+/* Dashboard-only breakpoint. The guest site scales fluidly via clamp() and no
+   longer needs size overrides here. */
+@media (max-width:1000px){
+  .main{padding:28px 20px}.stats{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}
+  .side{display:none}
+  .frm.two{grid-template-columns:1fr}
+  .ph-upload{grid-template-columns:1fr}
+}
+
+/* Phones: the invitation is the one thing that must stay perfect at 320px. */
+@media (max-width:520px){
+  .s-invite{padding:44px 20px 4px}
+  .inv-divider{width:min(190px,72%)}
+  .inv-line{max-width:16ch}
+  .inv-groups{max-width:26ch}
+    .ph-grid{grid-template-columns:1fr}
+}
+
+/* ============================================ calendar & directions ======
+   Two tiers under each event.
+
+   Directions are a quiet inline pair, because a guest glances at them once and
+   five full-weight blocks down a schedule were louder than the events they
+   belonged to. The calendar row keeps a label, because choosing where to save
+   something is a decision rather than a glance.
+
+   Scoped to `.site`, so none of it reaches the dashboards. */
+.site .s-detail {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid color-mix(in srgb, var(--si) 12%, transparent);
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: center;
+}
+
+.site .s-detail-address {
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  letter-spacing: .04em;
+  color: color-mix(in srgb, var(--si) 72%, transparent);
+  max-width: 38ch;
+  text-align: center;
+}
+
+/* A row of links separated by space rather than by punctuation, so each one
+   keeps a full tap target instead of sharing an edge with a middot. */
+.site .s-inline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 2px clamp(18px, 4vw, 30px);
+}
+.site .s-inline a {
+  /* 40px of height from padding alone at the smaller size, 44 at the larger. */
+  padding: 10px 0;
+  font-size: var(--t-body);
+  line-height: 1.2;
+  color: var(--si);
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.site .s-inline a:hover,
+.site .s-inline a:focus-visible { color: var(--sa); border-bottom-color: color-mix(in srgb, var(--sa) 45%, transparent); }
+
+/* The secondary tier: smaller, tracked, and set in the muted ink so it reads
+   as a utility beneath the venue rather than as a second heading. */
+.site .s-inline-quiet a {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  padding: 8px 0;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+.site .s-inline-quiet a:hover,
+.site .s-inline-quiet a:focus-visible { color: var(--sa); }
+
+/* A little more air above the calendar row than inside it, so the quiet map
+   links and the labelled calendar read as two tiers rather than one list. */
+.site .s-detail-group { display: grid; gap: 2px; justify-items: center; margin-top: var(--sp-2); }
+
+.site .s-detail-label {
+  font: 500 var(--t-eyebrow)/1 var(--sans);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 66%, transparent);
+}
+
+/* The whole-schedule block, once at the foot of the programme. */
+.site .s-detail-all {
+  margin-top: clamp(32px, 6vw, 56px);
+  padding-top: var(--sp-5);
+  gap: var(--sp-2);
+}
+
+/* In the Travel section the links stand alone with the prose around them, and
+   they centre with it.
+
+   These three rules used to force the block left — `justify-items: start`,
+   `justify-content: flex-start`, `text-align: left` — inside a `.s-notes`
+   column that is centred, and with a `max-width` of 40ch against the 38ch used
+   everywhere else. So the venue name and address sat on the page's axis while
+   the map links and the supporting address hung off to one side, on all six
+   templates.
+
+   `VenueDirections` has exactly one caller, so the overrides were not serving
+   some other context: they were simply wrong. Removed rather than re-pointed,
+   which lets the centred base rules apply and gives every template the same
+   alignment and the same measure from one place. */
+.site .s-detail-venue {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin-block: var(--sp-4);
+}
+
+/* ------------------------------------------------------------- gift list --
+   A wishlist reads like a hotel's recommendation list, not a product grid.
+
+   The image frames are gone. The registry is link-based, so each frame was a
+   large empty rectangle whose only job was to be the right shape; twenty of
+   them made the page roughly four times taller than its content. What is left
+   is what a guest reads: name, store, price, one action.
+
+   Every value below is an existing token. No new colour, no new size. */
+.site .s-gifts {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16.5rem, 100%), 1fr));
+  gap: 0 clamp(26px, 4vw, 52px);
+  max-width: 1080px;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.site .s-gift {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding-block: clamp(20px, 2.6vw, 28px);
+  border-top: 1px solid color-mix(in srgb, var(--si) 11%, transparent);
+}
+
+/* Purchased: present, legible, and plainly already taken. Faded rather than
+   hidden, so the length of the list still tells the truth. */
+.site .s-gift.is-claimed { opacity: .66; }
+
+.site .s-gift-title {
+  font-family: var(--serif);
+  font-size: var(--t-lead);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--sd);
+}
+.site .s-gift-detail {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+.site .s-gift-acts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 clamp(18px, 3vw, 28px); margin-top: 2px; }
+
+.site .s-gift-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--si) 78%, transparent);
+}
+/* The tick inherits the label's colour rather than carrying the accent.
+   A signal green would be the one colour on this page belonging to a different
+   product — and the accent, measured at the row's 66% fade, came out at
+   2.53:1. As typographic punctuation in the label's own ink it reads as part
+   of the phrase and stays legible. */
+.site .s-gift-tick { color: inherit; font-size: .95em; }
+
+/* ================================================================ wishlist ==
+   Page furniture, deliberately without any. The request, the reminder and the
+   confirmation are all set as editorial content — a small serif heading, a
+   short paragraph, actions underneath — separated by whitespace rather than by
+   borders. A bordered card here reads as an interface dropped onto a wedding
+   invitation, which is exactly what it is not. */
+.site .s-callout,
+.site .s-recall,
+.site .s-claim,
+.site .s-thanks {
+  max-width: 56ch;
+  margin-inline: auto;
+  text-align: center;
+}
+.site .s-callout { margin-block: 0 var(--sp-9); }
+.site .s-recall  { margin-block: 0 var(--sp-8); }
+.site .s-claim   { margin-block: var(--sp-6) var(--sp-8); display: grid; gap: var(--sp-4); text-align: left; }
+.site .s-thanks  { margin-block: var(--sp-7) var(--sp-9); display: grid; gap: var(--sp-3); justify-items: center; }
+
+.site .s-callout-title,
+.site .s-recall-title,
+.site .s-claim-title,
+.site .s-thanks-title {
+  font-family: var(--serif);
+  font-size: var(--t-h3);
+  font-weight: 500;
+  color: var(--sd);
+  line-height: 1.25;
+}
+.site .s-thanks-title { font-size: var(--t-h2); }
+
+.site .s-callout-body,
+.site .s-recall-body,
+.site .s-thanks-body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: 1.9;
+  color: var(--si);
+  opacity: var(--muted);
+  max-width: 52ch;
+  margin: var(--sp-3) auto 0;
+}
+.site .s-recall-body em, .site .s-thanks-body em { font-style: italic; }
+
+.site .s-recall-acts,
+.site .s-claim-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(20px, 4vw, 34px);
+  justify-content: center;
+  margin-top: var(--sp-4);
+}
+.site .s-claim-acts { justify-content: flex-start; }
+
+.site .s-claim-eyebrow,
+.site .s-thanks-eyebrow {
+  font: 500 var(--t-eyebrow)/1 var(--sans);
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 70%, transparent);
+}
+.site .s-claim-note {
+  font-family: var(--serif);
+  font-size: var(--t-micro);
+  line-height: 1.8;
+  color: var(--si);
+  opacity: var(--muted);
+  max-width: 46ch;
+}
+.site .s-claim-err { font-family: var(--sans); font-size: var(--t-micro); line-height: 1.6; color: var(--sd); }
+
+.site .s-thanks-sign {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  font-style: italic;
+  color: var(--si);
+  opacity: var(--muted);
+  margin-top: var(--sp-2);
+}
+.site .s-thanks-heart { color: var(--sa); font-style: normal; margin-inline-end: .5em; }
+.site .s-thanks .s-gbtn { margin-top: var(--sp-4); }
+
+/* Count on the left, filter on the right, one hairline under both. */
+.site .s-wish-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-6);
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto var(--sp-2);
+  padding-bottom: var(--sp-3);
+}
+.site .s-wish-count {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 74%, transparent);
+}
+
+/* A real checkbox, visually hidden, with a drawn track — keyboard operable and
+   correctly announced without any JavaScript for the semantics. */
+.site .s-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 0; }
+.site .s-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.site .s-switch-track {
+  inline-size: 34px;
+  block-size: 18px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--si) 28%, transparent);
+  position: relative;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.site .s-switch-track span {
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-start: 3px;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--si) 46%, transparent);
+  transition: translate var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.site .s-switch input:checked + .s-switch-track { border-color: var(--sa); background: color-mix(in srgb, var(--sa) 12%, transparent); }
+.site .s-switch input:checked + .s-switch-track span { translate: 16px 0; background: var(--sa); }
+.site .s-switch input:focus-visible + .s-switch-track { outline: 2px solid var(--sa); outline-offset: 3px; }
+.site .s-switch-label {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 76%, transparent);
+}
+
+/* Two link-weight actions. Filled rectangles are what make a registry look
+   like a shop. */
+.site .s-gbtn {
+  display: inline-block;
+  padding: 11px 0;
+  font: 500 var(--t-micro)/1.2 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--sa);
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--sa) 34%, transparent);
+  background: none;
+  cursor: pointer;
+  width: fit-content;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.site .s-gbtn:hover, .site .s-gbtn:focus-visible { border-bottom-color: var(--sa); }
+.site .s-gbtn[disabled] { opacity: .5; cursor: default; }
+
+.site .s-gbtn-quiet {
+  display: inline-block;
+  padding: 11px 0;
+  font: 500 var(--t-micro)/1.2 var(--sans);
+  letter-spacing: .16em;
+  color: color-mix(in srgb, var(--si) 70%, transparent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  width: fit-content;
+  transition: color var(--dur-fast) var(--ease);
+}
+.site .s-gbtn-quiet:hover, .site .s-gbtn-quiet:focus-visible { color: var(--si); }
+
+.site .s-field { display: grid; gap: 6px; }
+.site .s-field label {
+  font: 500 var(--t-micro)/1 var(--sans);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--si) 76%, transparent);
+}
+.site .s-input {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  color: var(--si);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--si) 24%, transparent);
+  border-radius: 0;
+  padding: 8px 0;
+  width: 100%;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.site .s-input:focus { outline: 0; border-bottom-color: var(--sa); }
+.site textarea.s-input { resize: vertical; line-height: 1.6; }
+
+/* --------------------------------------------- the invitation's short teaser */
+.site .s-reg-note {
+  font-family: var(--serif);
+  font-size: var(--t-lead);
+  line-height: 1.8;
+  color: var(--si);
+  opacity: var(--muted);
+  max-width: 54ch;
+  margin: 0 auto var(--sp-7);
+  text-align: center;
+}
+.site .s-reg-preview { max-width: 860px; margin-inline: auto; }
+
+/* Touch targets for the wishlist controls.
+   Declared here, at the end, deliberately: these selectors tie on specificity
+   with the base rules above, so the later declaration is the one that wins.
+   Placed with the other coarse-pointer rules it lost silently, and the buttons
+   stayed 36px on a phone. */
+@media (pointer: coarse) {
+  .site .s-gbtn, .site .s-gbtn-quiet { padding-block: 16px; }
+  .site .s-switch { padding-block: 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════ MIDNIGHT BLOOM ═══
+   The first dark template.
+
+   Everything below is typography, colour, rhythm and ornament. No section is
+   added, removed or restructured: the markup Midnight Bloom renders is the
+   markup every other template renders, which is what makes it possible to
+   promise that changing template never changes what the site can do.
+
+   Placed at the end of the stylesheet on purpose. Several of these selectors
+   tie on specificity with the base rules they override, and a tie is settled
+   by source order — the same trap that once left the wishlist buttons at 36px
+   on a phone.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ------------------------------------------------------------- ornament -- */
+/* One square box per corner, pinned to the corner it belongs to and never in
+   the flow. Sized in vmin so the spray scales with the page rather than with
+   whichever section it happens to sit in — tied to the section, it ballooned
+   on a tall phone masthead and shrank to nothing on a short footer. */
+.bot-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.site .bot{
+  position:absolute;pointer-events:none;z-index:0;
+  width:var(--bot-size,34vmin);height:var(--bot-size,34vmin);
+  max-width:620px;max-height:620px;opacity:var(--bot-opacity,.8)}
+.site .bot-tl{top:0;left:0}
+.site .bot-tr{top:0;right:0}
+.site .bot-bl{bottom:0;left:0}
+.site .bot-br{bottom:0;right:0}
+.site .s-masthead,.site .s-foot{position:relative;isolation:isolate}
+/* `:not(.bot)` and not a bare `> *`. A universal child rule ties on specificity
+   with `.site .bot` above and, being later, would win — turning the ornament
+   from absolute to relative and dropping it into the flow, where it pushes the
+   names down the page. The same rule shaped as `> *` has already broken one
+   absolutely-positioned decoration in this codebase. */
+.site .s-masthead > :not(.bot),.site .s-foot > :not(.bot){position:relative;z-index:1}
+
+.site[data-template="MIDNIGHT_BLOOM"]{
+  /* Two source colours, and every ornament tone is mixed from them. Blooms are
+     a warm cream — the reference's roses are white garden roses, not pink ones,
+     and mixing them off the dusty-rose accent turned the whole spray brown.
+     Foliage is a cool near-black green: rose leaves are the darkest thing in
+     the composition and the only cool note in it. */
+  --bot-bloom:#F2E4CF;
+  --bot-foliage:#33512F;
+  /* Petal shadows resolve toward a warm brown, not toward the page. Mixed
+     straight into near-black the mid-steps came out a dead grey, and a
+     cream rose in shadow is never grey — it is the colour of the light
+     that reached it. */
+  --bot-deep:#2A1E17;
+
+  --bot-b1:color-mix(in srgb, var(--bot-bloom) 10%, var(--bot-deep));
+  --bot-b2:color-mix(in srgb, var(--bot-bloom) 20%, var(--bot-deep));
+  --bot-b3:color-mix(in srgb, var(--bot-bloom) 32%, var(--bot-deep));
+  --bot-b4:color-mix(in srgb, var(--bot-bloom) 45%, var(--bot-deep));
+  --bot-b5:color-mix(in srgb, var(--bot-bloom) 55%, var(--sb));
+  --bot-b6:color-mix(in srgb, var(--bot-bloom) 67%, var(--sb));
+  --bot-b7:color-mix(in srgb, var(--bot-bloom) 79%, var(--sb));
+  --bot-b8:color-mix(in srgb, var(--bot-bloom) 78%, var(--sb));
+  --bot-b9:color-mix(in srgb, var(--bot-bloom) 86%, var(--sb));
+  /* Rims: each one step darker than the fill it edges. */
+  --bot-e1:color-mix(in srgb, var(--bot-bloom) 5%, var(--bot-deep));
+  --bot-e2:color-mix(in srgb, var(--bot-bloom) 10%, var(--bot-deep));
+  --bot-e3:color-mix(in srgb, var(--bot-bloom) 20%, var(--bot-deep));
+  --bot-e4:color-mix(in srgb, var(--bot-bloom) 32%, var(--bot-deep));
+  --bot-e5:color-mix(in srgb, var(--bot-bloom) 43%, var(--sb));
+  --bot-e6:color-mix(in srgb, var(--bot-bloom) 55%, var(--sb));
+  --bot-e7:color-mix(in srgb, var(--bot-bloom) 67%, var(--sb));
+  --bot-e8:color-mix(in srgb, var(--bot-bloom) 79%, var(--sb));
+  --bot-e9:color-mix(in srgb, var(--bot-bloom) 70%, var(--sb));
+  --bot-l1:color-mix(in srgb, var(--bot-foliage) 26%, var(--sb));
+  --bot-l2:color-mix(in srgb, var(--bot-foliage) 38%, var(--sb));
+  --bot-l3:color-mix(in srgb, var(--bot-foliage) 50%, var(--sb));
+  --bot-vein:color-mix(in srgb, var(--bot-foliage) 62%, var(--sb));
+  --bot-stem:color-mix(in srgb, var(--bot-foliage) 44%, var(--sb));
+
+  /* Off-white on near-black reads brighter than the same contrast the other
+     way round — the halation is real, not imagined. Small text is therefore
+     allowed to sit quieter here without losing legibility. Both values were
+     measured against this palette: .74 gives 11px caps 8.4:1. */
+  --muted:.74;
+  --muted-lg:.58;
+}
+
+/* ---------------------------------------------------------- typography -- */
+/* The hairline face, on the names and the section headings only. It is a
+   display face in the strict sense: exquisite at 70px, a rumour at 14px. Body
+   copy stays in the house serif, which is what keeps the page readable. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-name,
+.site[data-template="MIDNIGHT_BLOOM"] .s-h,
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names,
+.site[data-template="MIDNIGHT_BLOOM"] .inv-guest{
+  font-family:var(--s-face);font-weight:400}
+
+/* Larger and more widely tracked than the house setting. A hairline face needs
+   the size to show its contrast and the air to stop the thin strokes filling
+   in — set it at the house size and it just looks like a light serif. */
+/* 58px against the house 50, not 78.
+   A hairline face does need more size than Cormorant to hold together — its
+   thin strokes fail before its counters do — but 78px was the template
+   shouting, and the reference is not shouting. It is confident and restrained,
+   and the luxury sits in the tracking and the air around the words, both of
+   which went up as the size came down. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-name{
+  font-size:clamp(29px,4.4vw,58px);letter-spacing:.20em;line-height:1.18;
+  color:var(--s-name-ink);text-indent:.20em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-names{gap:var(--sp-3)}
+
+/* Three voices, each with one job.
+
+   The hairline caps carry the names and the section titles. The serif carries
+   everything that is read. The copperplate appears exactly twice on the page —
+   the conjunction between the names, and the line that invites you — and
+   nowhere else.
+
+   An earlier version retired the script entirely, on the reasoning that a
+   copperplate beside a hairline didone is two decorative faces competing. That
+   is true when the script is used freely. Used twice, at small size, in the
+   accent, it stops competing and starts doing what a flourish on an engraved
+   invitation does: marking the two moments that are not information. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-and{
+  font-family:var(--script);font-style:normal;font-size:clamp(21px,2.4vw,29px);
+  letter-spacing:0;color:var(--sa);opacity:1;line-height:1}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-line{
+  font-family:var(--script);font-style:normal;font-size:clamp(21px,2.6vw,30px);
+  letter-spacing:.01em;line-height:1.5;color:var(--sa);opacity:1}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-date{letter-spacing:.26em}
+/* The subtitle under a section title, in the serif italic rather than tracked
+   sans. Sans lower-case under hairline caps was the one plainly generic thing
+   left in this template. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-hs{
+  font-family:var(--serif);font-style:italic;font-size:var(--t-body);
+  letter-spacing:.02em;text-transform:none}
+/* Dates and places in the serif, letterspaced. Small tracked sans reads as a
+   caption on a website; small tracked serif reads as an engraved line. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-meta,
+.site[data-template="MIDNIGHT_BLOOM"] .s-prog-day,
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-date{
+  font-family:var(--serif);font-size:var(--t-micro);letter-spacing:.24em;
+  text-indent:.24em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-kicker{
+  font-family:var(--serif);font-style:italic;font-size:var(--t-micro);
+  letter-spacing:.14em;text-transform:none;text-indent:.14em}
+
+.site[data-template="MIDNIGHT_BLOOM"] .s-h{
+  font-size:clamp(17px,1.9vw,24px);letter-spacing:.32em;text-indent:.32em}
+.site[data-template="MIDNIGHT_BLOOM"] .inv-guest{
+  font-size:clamp(26px,3.6vw,44px);letter-spacing:.10em;text-indent:.10em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot-names{
+  font-size:clamp(17px,1.9vw,24px);letter-spacing:.26em;text-indent:.26em}
+
+/* --------------------------------------------------------------- chrome -- */
+/* Solid rather than translucent. A blurred bar over near-black is nearly black
+   anyway, so the effect costs a compositor layer and buys nothing; solid also
+   gives the nav a hard top edge to hold the page together. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav{
+  background:var(--sb);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  padding-block:var(--sp-5) var(--sp-4);
+  border-bottom:1px solid color-mix(in srgb, var(--si) 10%, transparent)}
+
+/* The names, in the display face, above the links. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-mark{
+  font-family:var(--s-face);font-weight:400;
+  font-size:clamp(15px,1.5vw,21px);letter-spacing:.26em;
+  color:var(--sd);text-indent:.26em}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-mark .amp{
+  font-family:var(--script);font-style:normal;font-size:1em;
+  letter-spacing:0;color:var(--sa);opacity:1}
+
+/* Links in the serif at reading size rather than sans caps at 11px, and the
+   underline drawn as a rule under the word instead of a hover flourish. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-links{gap:clamp(18px,3.2vw,42px)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a{
+  font-family:var(--serif);font-size:clamp(13px,1.05vw,15px);font-weight:500;
+  letter-spacing:.01em;text-transform:none;opacity:var(--muted)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a:hover,
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a:focus-visible{
+  opacity:1;color:var(--sd)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-links a::after{
+  background:var(--sa);bottom:-3px}
+/* RSVP sits level with the rest here. The reference gives it no pill, and a
+   bordered capsule beside four serif words is the one thing in the bar that
+   would read as an interface. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-cta{
+  border:0;border-radius:0;padding:6px 2px!important;margin-left:0;
+  color:var(--si)!important;opacity:var(--muted)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-cta:hover,
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-cta:focus-visible{
+  background:transparent;color:var(--sd)!important;opacity:1}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-cta::after{display:block}
+
+/* ---------------------------------------------------------- composition -- */
+/* More air than the light templates. Dark pages read as heavier at the same
+   measurements, and the extra space is what keeps this one from feeling
+   closed in. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{
+  padding-block:clamp(104px,17vw,210px) clamp(80px,12vw,140px)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-sec{padding-block:var(--sp-9)}
+
+/* ---------------------------------------------------------------- motion --
+   Two movements, both slow enough to be felt rather than watched.
+
+   The masthead settles: a longer rise over a longer duration than the house
+   reveal, because the first thing a guest sees should arrive rather than
+   appear. The hero drifts: a very slow scale, the oldest trick in title
+   design, and at 1.06 over half a minute it never reads as an animation — only
+   as a page that is not quite still.
+
+   Both are compositor-only properties, and both stop entirely under
+   `prefers-reduced-motion` via the blanket rule already in this stylesheet. */
+@keyframes mb-settle{
+  from{opacity:0;transform:translate3d(0,22px,0)}
+  to{opacity:1;transform:none}}
+@keyframes mb-drift{
+  from{transform:scale(1)}
+  to{transform:scale(1.24)}}
+
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead .reveal{
+  animation:mb-settle 1400ms var(--ease) both}
+.site[data-template="MIDNIGHT_BLOOM"] .s-nav-mark{
+  animation:mb-settle 1100ms var(--ease) both}
+/* Scaling the image inside its frame, not the frame: the hairline and the
+   contact shadow must not move. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-plate .s-ph img{
+  animation:mb-drift 34s var(--ease) both;transform-origin:50% 46%}
+
+/* Top-left and bottom-right of the masthead, so the names sit inside a frame
+   rather than beside a pile. Atmosphere that overlaps a name has stopped being
+   atmosphere, which is what the size and the opacity are holding back. */
+/* Smaller and quieter than before. Once the names came down to 58px the
+   sprays were the largest thing on the page, and an ornament that outweighs
+   the couple has stopped framing and started competing. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:33vmin;--bot-opacity:.52}
+.site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:27vmin;--bot-opacity:.42}
+
+/* On a narrow column there is no room to be framed on two sides: the second
+   spray closes over the names. The remaining one also shrinks, because a
+   fixed vmin on a tall phone viewport is a much larger share of the width. */
+@media (max-width:720px){
+  .site[data-template="MIDNIGHT_BLOOM"] .s-masthead{--bot-size:40vmin;--bot-opacity:.5}
+  .site[data-template="MIDNIGHT_BLOOM"] .s-foot{--bot-size:30vmin;--bot-opacity:.36}
+  .site[data-template="MIDNIGHT_BLOOM"] .bot-br{display:none}
+}
+
+/* ------------------------------------------------------------- surfaces -- */
+/* The countdown panes and the RSVP fields are the two places the page stops
+   being pure black. Both are lifted with ink rather than with white, so they
+   warm rather than grey. */
+.site[data-template="MIDNIGHT_BLOOM"] .s-count .t{
+  background:color-mix(in srgb, var(--si) 5%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 13%, transparent)}
+.site[data-template="MIDNIGHT_BLOOM"] .s-inp{
+  background:color-mix(in srgb, var(--si) 4%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 20%, transparent)}
+
+
+/* ═════════════════════════════════════════════════════════ PACIFIC LINEN ═══
+   Bright, textured, almost monochrome.
+
+   As with Midnight Bloom, everything below is typography, colour, rhythm and
+   surface. No section is added, removed or restructured.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* --------------------------------------------------------------- surface --
+   Paper, generated rather than downloaded.
+
+   Three layers: fractal-noise grain tiled at its native 220px, then two broad
+   washes, then the flat colour underneath. The grain is an inline SVG filter
+   as a data URI — 476 bytes, no request, and it tiles at any viewport instead
+   of a JPEG that would be either visibly repeating or a megabyte.
+
+   base64 rather than a raw `;utf8,` payload: that form is a non-standard
+   media-type parameter and has bitten this codebase once already.
+
+   Everything scrolls with the page — see the note on attachment below. */
+.site[data-surface="paper"]{
+  --paper-warm:#C9BFAE;
+  --paper-cool:#8FA6B4;
+  background-image:
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMjAiIGhlaWdodD0iMjIwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjg1IiBudW1PY3RhdmVzPSI0IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjxmZUNvbXBvbmVudFRyYW5zZmVyPjxmZUZ1bmNBIHR5cGU9ImxpbmVhciIgc2xvcGU9Ii45IiBpbnRlcmNlcHQ9Ii0uMzQiLz48L2ZlQ29tcG9uZW50VHJhbnNmZXI+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjIyMCIgaGVpZ2h0PSIyMjAiIGZpbHRlcj0idXJsKCNuKSIvPjwvc3ZnPg=="),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MjAiIGhlaWdodD0iNTIwIj48ZmlsdGVyIGlkPSJtIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjAwOSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjxmZUNvbG9yTWF0cml4IHR5cGU9InNhdHVyYXRlIiB2YWx1ZXM9IjAiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHNsb3BlPSIuNSIgaW50ZXJjZXB0PSItLjIyIi8+PC9mZUNvbXBvbmVudFRyYW5zZmVyPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSI1MjAiIGhlaWdodD0iNTIwIiBmaWx0ZXI9InVybCgjbSkiLz48L3N2Zz4="),
+    radial-gradient(120% 82% at 78% 26%, color-mix(in srgb, var(--paper-cool) 34%, transparent), transparent 62%),
+    radial-gradient(96% 74% at 10% 70%, color-mix(in srgb, var(--paper-warm) 38%, transparent), transparent 60%),
+    radial-gradient(150% 90% at 46% 108%, color-mix(in srgb, var(--paper-cool) 20%, transparent), transparent 58%);
+  /* Every layer scrolls, and every layer tiles.
+
+     This was `background-attachment: fixed`, which reads beautifully — the page
+     moving over a stationary sheet — and costs a full-viewport repaint on every
+     scroll frame. Measured against the other five templates in the preview:
+     p50 25.1ms and p95 47.3ms per frame, against 16.7 and 17.5. That is 40fps
+     with visible drops, and it is the entire reason this template felt less
+     smooth than the rest. A design system where one member scrolls worse than
+     the others is not a design system.
+
+     The washes are sized in viewport heights and repeated rather than stretched
+     over the whole document, so they still vary down the page instead of
+     becoming one enormous gradient. Their edges are already transparent, so the
+     tiles meet without a seam. */
+  background-repeat:repeat, repeat, repeat-y, repeat-y, repeat-y;
+  background-size:220px 220px, 520px 520px, 100% 170vh, 100% 210vh, 100% 190vh;
+  background-attachment:scroll;
+  background-color:var(--sb)}
+
+
+/* -------------------------------------------------------------- masthead --
+   The couple's names sit above the links, so the bar carries the first
+   impression rather than the section further down. */
+.s-nav-links{display:contents}
+.site[data-navmark="1"] .s-nav{flex-direction:column;gap:var(--sp-3);padding-block:var(--sp-5)}
+.site[data-navmark="1"] .s-nav-links{display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:clamp(16px,3vw,38px)}
+/* The bar is uppercase for its links. A script set in caps is not a script,
+   it is a mistake — so the mark opts out of the inherited transform and of
+   the tracking that goes with it. */
+.s-nav-mark{margin:0;line-height:1.1;text-align:center;text-transform:none;letter-spacing:normal}
+
+.site[data-template="PACIFIC_LINEN"]{
+  /* Ink on paper is a softer contrast than ink on white, and the washes lift
+     the mid-tones — small text can therefore sit a shade quieter here without
+     losing legibility. Measured, not guessed: 11px caps land at 7.9:1. */
+  --muted:.78;
+  --muted-lg:.6}
+
+/* The bar is the paper, not a pane over it: no blur, no tint, one hairline.
+   A translucent bar over a fixed texture shows the texture sliding underneath
+   it, which is the one way to make a paper ground look like a screenshot. */
+.site[data-template="PACIFIC_LINEN"] .s-nav{
+  background:var(--sb);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  border-bottom:1px solid color-mix(in srgb, var(--si) 12%, transparent)}
+
+.site[data-template="PACIFIC_LINEN"] .s-nav-mark{
+  font-family:var(--s-script);font-size:clamp(30px,5vw,50px);color:var(--sa);
+  letter-spacing:.01em;padding-bottom:.08em}
+.site[data-template="PACIFIC_LINEN"] .s-nav-mark .amp{font-size:.78em}
+
+/* Links in the serif at reading size, not sans caps at 11px. This is the
+   single loudest difference between this template and the house chrome. */
+.site[data-template="PACIFIC_LINEN"] .s-nav-links a{
+  font-family:var(--serif);font-size:clamp(13px,1.05vw,15px);font-weight:500;
+  letter-spacing:.005em;text-transform:none;opacity:var(--muted)}
+.site[data-template="PACIFIC_LINEN"] .s-nav-links a:hover{opacity:1;color:var(--sa)}
+/* RSVP is a link among links here, not a pill. The reference sets it level
+   with the rest and lets the solid block further down carry the action. */
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta{
+  border:0;border-radius:0;padding:6px 2px!important;margin-left:0;
+  color:var(--si)!important;opacity:var(--muted)}
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta:hover,
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta:focus-visible{
+  background:transparent;color:var(--sa)!important;opacity:1}
+.site[data-template="PACIFIC_LINEN"] .s-nav-cta::after{display:block}
+
+/* ------------------------------------------------------------ typography --
+   The signature hand carries the names and every section heading; the serif
+   carries everything that has to be read. Two voices, clearly divided. */
+/* 66px against the house script's 84. A monoline hand has no thick strokes to
+   carry weight, so it reads lighter than the copperplate at the same size and
+   can afford to be smaller still — and the reference sets its names with far
+   more page around them than on them. */
+.site[data-template="PACIFIC_LINEN"] .s-name.script{
+  font-size:clamp(34px,5.2vw,66px);line-height:1.16;padding-bottom:.1em;
+  letter-spacing:.01em}
+.site[data-template="PACIFIC_LINEN"] .s-names{gap:var(--sp-3)}
+/* "and" drops to a small roman. In the script it was a third the size of the
+   names in the same hand, which read as a mistake rather than a hierarchy. */
+.site[data-template="PACIFIC_LINEN"] .s-and{
+  font-family:var(--serif);font-style:normal;font-size:clamp(13px,1.4vw,16px);
+  letter-spacing:.02em;color:var(--si);opacity:var(--muted)}
+
+.site[data-template="PACIFIC_LINEN"] .s-h,
+.site[data-template="PACIFIC_LINEN"] .s-story-text .s-h{
+  font-family:var(--s-script);font-size:clamp(26px,3.2vw,38px);font-weight:400;
+  text-transform:none;letter-spacing:.005em;text-indent:0;line-height:1.2;
+  padding-bottom:.08em;color:var(--sa)}
+.site[data-template="PACIFIC_LINEN"] .s-hs{
+  font-family:var(--serif);font-size:var(--t-body);letter-spacing:.02em;
+  text-transform:none}
+.site[data-template="PACIFIC_LINEN"] .inv-guest{
+  font-size:clamp(30px,4.4vw,52px);padding-bottom:.1em}
+.site[data-template="PACIFIC_LINEN"] .inv-line{
+  font-family:var(--s-script);font-size:clamp(19px,2.4vw,26px)}
+.site[data-template="PACIFIC_LINEN"] .s-foot-names{
+  font-family:var(--s-script);font-size:clamp(22px,2.6vw,30px);letter-spacing:.01em}
+
+/* ----------------------------------------------------------- composition --
+   Centred and airy. Everything reads down a single axis. */
+.site[data-template="PACIFIC_LINEN"] .s-masthead{
+  padding-block:clamp(64px,10vw,120px) clamp(48px,7vw,88px)}
+.site[data-template="PACIFIC_LINEN"] .s-sec{padding-block:var(--sp-9)}
+
+/* Hero edge to edge. The frame's hairline has no page to meet when an image
+   touches both margins, so it is dropped here and only here — every other
+   photograph on the template keeps the full treatment, and the exposure,
+   colour and vignette still apply to this one. */
+/* The hero keeps the house plate — inset, 1080px, framed. A full-bleed hero
+   was closer to this one reference and further from every other template in
+   the system, and a template library is worth more than a single screen. The
+   photograph is a member of the same layout everywhere. */
+/* Set in the serif, not tracked-out sans caps. */
+.site[data-template="PACIFIC_LINEN"] .s-meta{
+  font-family:var(--serif);font-size:var(--t-micro);letter-spacing:.03em;
+  text-transform:none;text-indent:0}
+.site[data-template="PACIFIC_LINEN"] .s-kicker{letter-spacing:.3em;text-indent:.3em}
+
+/* The story reads as one centred column with the photograph beneath it,
+   rather than as a two-column spread. */
+.site[data-template="PACIFIC_LINEN"] .s-story{
+  grid-template-columns:minmax(0,1fr);max-width:820px;gap:var(--sp-7);
+  text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text{order:-1;text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text .s-h{text-align:center}
+.site[data-template="PACIFIC_LINEN"] .s-story-text p{margin-inline:auto;max-width:60ch}
+/* Full column width and re-cropped to landscape. The house slot is a 4:5
+   portrait, which suits a two-column spread; this template stacks the
+   photograph under a centred column of prose, where a tall crop leaves the
+   page reading as a corridor. */
+.site[data-template="PACIFIC_LINEN"] .s-portrait{width:100%;max-width:100%;margin-inline:auto}
+.site[data-template="PACIFIC_LINEN"] .s-portrait .s-ph{--ph-ratio:1.5}
+
+/* --------------------------------------------------------------- actions --
+   One solid block of ink on a pale sheet. Square, wide, and set in the serif
+   rather than tracked-out sans — the reference's single strongest gesture. */
+.site[data-template="PACIFIC_LINEN"] .s-btn{
+  border-radius:0;min-height:54px;padding-inline:clamp(44px,7vw,92px);
+  font-family:var(--serif);font-size:clamp(13px,1.2vw,15px);font-weight:600;
+  letter-spacing:.1em;text-indent:.1em;text-transform:none}
+
+/* Panes on paper are a shade of the ink, never white — a white card on a
+   textured sheet reads as a hole cut in it. */
+.site[data-template="PACIFIC_LINEN"] .s-count .t,
+.site[data-template="PACIFIC_LINEN"] .s-inp{
+  background:color-mix(in srgb, var(--si) 3%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 14%, transparent)}
+
+/* A signature hand cannot set an acronym. "Our Story" and "Cash Gifts" are
+   phrases and read beautifully in it; "RSVP" and "FAQ" become four unrelated
+   squiggles, because a joined hand has nothing to join. Those two sections
+   take the serif instead — the only place this template mixes the rule, and
+   the reference does the same thing for the same reason. */
+.site[data-template="PACIFIC_LINEN"] #rsvp .s-h,
+.site[data-template="PACIFIC_LINEN"] #faq .s-h{
+  font-family:var(--serif);font-size:clamp(20px,2.9vw,28px);font-weight:500;
+  letter-spacing:.22em;text-transform:uppercase;text-indent:.22em;
+  color:var(--sd);padding-bottom:0}
+
+/* ═══════════════════════════════════════════════════════ VELVET BOTANICAL ═══
+   A painted still life brought onto the web.
+
+   The artwork carries the page, so everything else gets out of its way. As
+   with the other templates, nothing below adds, removes or restructures a
+   section — it is typography, colour, rhythm and one raster.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ------------------------------------------------------------- the paint --
+   Behind the masthead, bled to the viewport edges and anchored to the bottom
+   so the arrangement sits on the type rather than floating above it.
+
+   `image-set` serves AVIF to browsers that take it and WebP to the rest; the
+   PNG master in public/art is the file to replace and is deliberately not the
+   one shipped — 2.5 MB is not a hero, it is a wait.
+
+   The gradient sits *above* the image in the stack (first layer wins) and
+   fades the top of the bouquet into the page, so there is no hard edge where
+   the artwork ends and no need for the PNG to be pre-faded. */
+/* The masthead's own box is left exactly as every other template's: inside
+   `.s-wrap`, 1120px, same padding. Only the paint bleeds, on a pseudo-element
+   behind it. Setting `width:100vw` on the masthead itself made it 1440 where
+   the other five measure 1120 — the one structural difference left between
+   this template and the rest, and the reason the preview felt like a different
+   layout rather than a different design. */
+.site[data-art="floral"] .s-masthead{
+  position:relative;isolation:isolate}
+.site[data-art="floral"] .s-masthead::after{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);
+  background-image:
+    /* A flat wash of the page colour over the artwork. Layer order is front to
+       back, so this sits on top and takes about a third of the paint's weight
+       out — cheaper and far more controllable than re-exporting the PNG. */
+    linear-gradient(color-mix(in srgb, var(--sb) 34%, transparent),
+                    color-mix(in srgb, var(--sb) 34%, transparent)),
+    /* Fades top and bottom. They are why the PNG needs no pre-fading, and why
+       swapping in different artwork needs no image editing. */
+    linear-gradient(to bottom,
+      var(--sb) 0%,
+      color-mix(in srgb, var(--sb) 88%, transparent) 26%,
+      color-mix(in srgb, var(--sb) 30%, transparent) 52%,
+      transparent 70%,
+      color-mix(in srgb, var(--sb) 40%, transparent) 88%,
+      var(--sb) 99%),
+    image-set(url("/art/dark-floral.avif") type("image/avif"),
+              url("/art/dark-floral.webp") type("image/webp"));
+  background-repeat:no-repeat;
+  background-position:center, center, center bottom;
+  /* `100% auto` keeps the arrangement's proportions: a fixed band height
+     stretched a 2400x1500 painting to fit and the flowers came out squat. */
+  background-size:100% 100%, 100% 100%, 100% auto}
+
+/* Type sits on the paint, and needs its own ground to be legible over the lit
+   petals. A scrim behind the words rather than a wash over the whole image:
+   dimming the artwork to make text readable wastes the artwork. */
+.site[data-art="floral"] .s-masthead > .reveal{
+  position:relative;z-index:1}
+.site[data-art="floral"] .s-masthead > .reveal::before{
+  content:"";position:absolute;z-index:-1;
+  inset:-14% -8%;
+  background:radial-gradient(58% 50% at 50% 48%,
+    color-mix(in srgb, var(--sb) 72%, transparent),
+    color-mix(in srgb, var(--sb) 34%, transparent) 62%,
+    transparent 82%)}
+
+.site[data-template="VELVET_BOTANICAL"]{
+  /* Cream on near-black halates the same way Midnight Bloom's does, so small
+     text can sit a shade quieter. Measured on this palette: 11px caps at .76
+     land at 9.1:1, well past the 4.5:1 floor. */
+  --muted:.76;
+  --muted-lg:.6}
+
+/* ------------------------------------------------------------ typography --
+   One serif, used only at display size, and a sans for everything else. */
+.site[data-template="VELVET_BOTANICAL"] .s-name,
+.site[data-template="VELVET_BOTANICAL"] .s-h,
+.site[data-template="VELVET_BOTANICAL"] .s-nav-mark,
+.site[data-template="VELVET_BOTANICAL"] .s-foot-names,
+.site[data-template="VELVET_BOTANICAL"] .inv-guest,
+.site[data-template="VELVET_BOTANICAL"] .s-prog-title,
+.site[data-template="VELVET_BOTANICAL"] .s-rsvp-thanks{
+  font-family:var(--s-face);font-weight:400}
+
+/* 52px against the house 50 — the smallest names of the three, because this
+   is the heaviest face. Playfair at 80px over a painting was a poster; the
+   reference sets it barely above body size and lets the artwork and the space
+   do the work. */
+.site[data-template="VELVET_BOTANICAL"] .s-name{
+  font-size:clamp(27px,3.9vw,52px);letter-spacing:.1em;line-height:1.2;
+  color:var(--s-name-ink);text-indent:.1em}
+.site[data-template="VELVET_BOTANICAL"] .s-names{gap:var(--sp-3)}
+/* One script moment between the names, in the blush lifted from the painting.
+   The conjunction was a tracked sans "and", which is the typographic equivalent
+   of a form label — correct, and completely without warmth on a page whose
+   whole subject is a wedding. */
+.site[data-template="VELVET_BOTANICAL"] .s-and{
+  font-family:var(--script);font-style:normal;font-size:clamp(20px,2.2vw,27px);
+  letter-spacing:0;color:var(--sa);opacity:1;line-height:1}
+
+.site[data-template="VELVET_BOTANICAL"] .s-h{
+  font-size:clamp(16px,1.8vw,23px);letter-spacing:.28em;text-indent:.28em;
+  text-transform:uppercase;color:var(--sd)}
+.site[data-template="VELVET_BOTANICAL"] .s-hs{
+  font-family:var(--serif);font-style:italic;font-size:var(--t-body);
+  letter-spacing:.02em;text-transform:none}
+.site[data-template="VELVET_BOTANICAL"] .inv-guest{
+  font-size:clamp(24px,3.2vw,40px);letter-spacing:.1em;text-indent:.1em;
+  text-transform:uppercase}
+.site[data-template="VELVET_BOTANICAL"] .inv-line{
+  font-family:var(--script);font-size:clamp(20px,2.4vw,28px);letter-spacing:.01em;
+  line-height:1.5;color:var(--sa);opacity:1}
+/* Dates and places in the serif. Paragraphs and captions in Inter were the
+   single reason this template read as a website rather than as stationery —
+   the body face is now the house serif, and these follow it. */
+.site[data-template="VELVET_BOTANICAL"] .s-meta,
+.site[data-template="VELVET_BOTANICAL"] .s-prog-day,
+.site[data-template="VELVET_BOTANICAL"] .s-foot-date{
+  font-family:var(--serif);font-size:var(--t-micro);letter-spacing:.22em;
+  text-indent:.22em}
+.site[data-template="VELVET_BOTANICAL"] .s-kicker{
+  font-family:var(--serif);font-style:italic;font-size:var(--t-micro);
+  letter-spacing:.14em;text-transform:none;text-indent:.14em}
+/* Event titles take the display serif, so the schedule reads as part of the
+   same invitation rather than as a list under it. */
+.site[data-template="VELVET_BOTANICAL"] .s-prog-title{
+  font-size:clamp(21px,2.5vw,30px);letter-spacing:.06em}
+.site[data-template="VELVET_BOTANICAL"] .s-foot-names{
+  font-size:clamp(16px,1.8vw,22px);letter-spacing:.24em;text-indent:.24em}
+
+/* --------------------------------------------------------------- chrome -- */
+.site[data-template="VELVET_BOTANICAL"] .s-nav{
+  background:var(--sb);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  padding-block:var(--sp-5) var(--sp-4);
+  border-bottom:1px solid color-mix(in srgb, var(--si) 10%, transparent)}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-mark{
+  font-size:clamp(14px,1.4vw,19px);letter-spacing:.24em;
+  color:var(--sd);text-indent:.24em}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-mark .amp{
+  font-family:var(--script);font-size:.9em;letter-spacing:0;
+  color:var(--sa);opacity:1}
+/* Links in the serif at reading size. Sans navigation over a painted still
+   life is the tell that gives a luxury invitation away as a web page. */
+.site[data-template="VELVET_BOTANICAL"] .s-nav-links{gap:clamp(16px,3vw,38px)}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-links a{
+  font-family:var(--serif);font-size:clamp(13px,1.05vw,15px);font-weight:500;
+  letter-spacing:.01em;text-transform:none;opacity:var(--muted)}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-links a:hover,
+.site[data-template="VELVET_BOTANICAL"] .s-nav-links a:focus-visible{
+  opacity:1;color:var(--sd)}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-cta{
+  border:0;border-radius:0;padding:6px 2px!important;margin-left:0;
+  color:var(--si)!important;opacity:var(--muted)}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-cta:hover,
+.site[data-template="VELVET_BOTANICAL"] .s-nav-cta:focus-visible{
+  background:transparent;color:var(--sd)!important;opacity:1}
+.site[data-template="VELVET_BOTANICAL"] .s-nav-cta::after{display:block}
+
+/* ----------------------------------------------------------- composition -- */
+/* Air above the names, and enough below them for the band to sit under the
+   type rather than behind it. */
+.site[data-template="VELVET_BOTANICAL"] .s-masthead{
+  padding-block:clamp(88px,13vw,160px) clamp(128px,19vw,240px)}
+.site[data-template="VELVET_BOTANICAL"] .s-sec{padding-block:var(--sp-9)}
+/* The hero keeps the house plate, for the same reason as Pacific Linen: the
+   photography should be recognisably the same layout in every template. */
+.site[data-template="VELVET_BOTANICAL"]{overflow-x:clip}
+
+/* --------------------------------------------------------------- actions --
+   A solid block of cream on near-black — the reference's one bright gesture,
+   and the inverse of Pacific Linen's. */
+.site[data-template="VELVET_BOTANICAL"] .s-btn{
+  border-radius:0;min-height:52px;padding-inline:clamp(40px,6.5vw,84px);
+  background:var(--sd);color:var(--sb);border-color:var(--sd);
+  font-family:var(--sans);font-size:clamp(11px,1vw,12.5px);font-weight:600;
+  letter-spacing:.2em;text-indent:.2em}
+.site[data-template="VELVET_BOTANICAL"] .s-count .t,
+.site[data-template="VELVET_BOTANICAL"] .s-inp{
+  background:color-mix(in srgb, var(--si) 5%, var(--sb));
+  border-color:color-mix(in srgb, var(--si) 14%, transparent)}
+
+/* On a narrow column the arrangement is mostly crop. Anchoring it to the
+   bottom and letting it run wider keeps whole flowers in frame instead of
+   three enormous petals. */
+@media (max-width:720px){
+  .site[data-art="floral"] .s-masthead::after{background-size:100% 100%, 100% 100%, 190% auto}
+  .site[data-template="VELVET_BOTANICAL"] .s-masthead{
+    padding-block:clamp(72px,14vw,120px) clamp(120px,34vw,200px)}
+}
+
+/* ── environment overrides ────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion:reduce){
   /* A pinned background against scrolling content is parallax, and parallax is
-     motion whatever it is built from. Under the preference it scrolls with the
-     page like any other element. */
-  .site .s-ground{position:absolute;height:100%}
+     motion whatever it is built from. Under the preference the ground scrolls
+     with the page like any other element.
+
+     `height:100%` needs a positioned ancestor to mean "the whole page"; without
+     one it resolves against the initial containing block and yields a single
+     viewport of photograph stranded at the top of the document, with flat
+     background colour under everything below it. `.site` is that ancestor. */
+  .site{position:relative}
+  .site .s-ground{position:absolute;inset:0;height:100%}
 }
 
 @media (max-width:720px){
-  /* Cheaper on a phone: a blurred backdrop filter over a blurred image is two
-     expensive passes for one effect, so the pane drops its own blur and leans
-     on the image's. */
-  .site{--pane-blur:0px}
-  .site .s-ground{--ground-blur:10px}
+  /* Cheaper on a phone: a blurred backdrop filter over an already blurred image
+     is two expensive passes for one effect, so the panels drop their own blur
+     and lean on the image's. */
+  .site{--pane-blur:0px;--panel-gap:22px}
+  .site .s-ground{--ground-blur:16px}
 }

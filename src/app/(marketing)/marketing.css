@@ -406,6 +406,28 @@
 /* The page stops here. A fixed, modest tail rather than a proportional one, so
    the last thing below the copyright line is always about the same amount of
    air on every page and at every viewport height. */
+/* The footer has to be positioned, and this is not cosmetic.
+ *
+ * `<footer class="m-ink">` is a static block, so it paints in the block phase —
+ * which comes *before* any positioned element, whatever the DOM order. The
+ * homepage, the login page and the three auth pages all wrap their content in
+ * `.m-plate`, which is `position: relative` and carries `.m-plate-field`: a
+ * `position: fixed; inset: 0` gradient covering the entire viewport.
+ *
+ * So the footer was painted first and the field was painted over it. Scrolled
+ * to the bottom of the homepage you got a footer-height band of empty navy and
+ * no footer at all — which is exactly the "excessive empty space at the bottom"
+ * that survived three rounds of fixing, because every check I ran was a
+ * geometry check. The DOM was right: the footer was there, 429px tall, opacity
+ * 1, visibility visible, correct colour, nothing above it in `elementsFromPoint`
+ * (the field is `pointer-events: none`, so hit-testing skips it). Only the
+ * pixels were wrong.
+ *
+ * Positioning it puts it in the same paint phase as the plate, and being later
+ * in DOM order it lands on top. */
+.m-foot-shell,
+.m footer.m-ink { position: relative; z-index: 3; }
+
 .m-foot { padding-block: var(--m-block) 5rem; }
 .m-foot-top {
   display: flex;
