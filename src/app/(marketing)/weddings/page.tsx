@@ -92,28 +92,35 @@ export default async function WeddingsPage() {
 
   return (
     <div className="m-wed">
+      {/*
+        The photograph, held behind the entire page.
+
+        One fixed element rather than a hero image followed by flat sections:
+        the same picture is behind the words at the top of the page and behind
+        the last line of the footer, and only the content moves. Everything
+        below floats on it.
+
+        This is the marketing page and only the marketing page. A guest opening
+        their own wedding site gets the couple's design, not ours — those
+        templates are stationery and stay flat.
+      */}
+      <div className="m-ground" aria-hidden="true">
+        <picture>
+          <source srcSet="/marketing/weddings-hero.avif" type="image/avif" />
+          <source srcSet="/marketing/weddings-hero.webp" type="image/webp" />
+          <img
+            src="/marketing/weddings-hero.webp"
+            alt=""
+            width={1600}
+            height={3466}
+            fetchPriority="high"
+            decoding="async"
+          />
+        </picture>
+      </div>
+
       {/* ======================================================= cinematic */}
       <section className="m-cine" data-hero-tone="warm">
-        <div className="m-cine-media" aria-hidden="true">
-          {/*
-            Structured so a film can replace the still without touching the
-            layout: drop a <video autoPlay muted loop playsInline poster> in
-            here and the scrim, sizing and type all still apply.
-          */}
-          <picture>
-            <source srcSet="/marketing/weddings-hero.avif" type="image/avif" />
-            <source srcSet="/marketing/weddings-hero.webp" type="image/webp" />
-            <img
-              src="/marketing/weddings-hero.webp"
-              alt=""
-              width={1600}
-              height={3466}
-              fetchPriority="high"
-              decoding="async"
-            />
-          </picture>
-        </div>
-
         <div className="m-wrap m-cine-body">
           <Reveal>
             <span className="m-eyebrow">EventOS for weddings</span>
@@ -147,7 +154,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ========================================================= the idea */}
-      <section id="what">
+      <section id="what" className="m-glass">
         <div className="m-wrap m-chapter">
           <div className="m-two-wide m-two" style={{ alignItems: "center" }}>
             <Reveal className="m-col">
@@ -180,7 +187,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ====================================================== the payoff */}
-      <section id="minutes" className="m-wed-raise">
+      <section id="minutes" className="m-glass">
         <div className="m-wrap m-chapter">
           <Reveal className="m-col-prose">
             <span className="m-eyebrow">Why it saves you the afternoon</span>
@@ -228,7 +235,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* =========================================================== films */}
-      <section id="films">
+      <section id="films" className="m-glass">
         <div className="m-wrap m-chapter">
           <Reveal>
             <span className="m-eyebrow">Watch</span>
@@ -261,7 +268,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ========================================================= example */}
-      <section id="example" className="m-wed-raise">
+      <section id="example" className="m-glass">
         <div className="m-wrap m-chapter">
           <Reveal>
             <span className="m-eyebrow">Live example</span>
@@ -308,7 +315,7 @@ export default async function WeddingsPage() {
       </section>
 
       {/* ============================================================= cta */}
-      <section>
+      <section className="m-glass">
         <div className="m-wrap m-chapter">
           <Reveal className="m-quote">
             <h2 className="m-serif" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", maxWidth: "14ch", marginInline: "auto" }}>

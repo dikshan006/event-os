@@ -1220,7 +1220,11 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
   inset-inline-start: 1rem;
   font-size: var(--m-small);
   letter-spacing: 0.18em;
-  color: var(--faint);
+  /* `--faint` is tuned against a flat chapter background and measured 4.1:1
+     over the photograph. The film frames are the one place on this page where
+     small type sits on the picture rather than on glass, so it takes the
+     brighter token. */
+  color: var(--soft);
 }
 .m-film > h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
 .m-film > p { font-size: var(--m-small); color: var(--soft); max-width: 34ch; }
@@ -1234,3 +1238,185 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
    paragraphs on the Weddings page carry the whole explanation of the product,
    so they get the measure rather than the full grid. */
 .m-col-prose { max-width: 44rem; }
+
+/* ══════════════════════════════════════════ the weddings page ground ═══════
+   One photograph behind the whole page, from the navigation to the last line
+   of the footer.
+
+   This belongs to the marketing page and to nothing else. The wedding sites
+   themselves are stationery and stay flat — a guest opening their invitation
+   should get the couple's design, not ours. This page is the sales pitch, and
+   the pitch is the feeling of the product.
+
+   A fixed *element*, not `background-attachment: fixed`. The two look identical
+   and cost very differently: the CSS property repaints the background against a
+   moving scroll offset on the main thread every frame, while a fixed element
+   promoted to its own layer is pinned by the compositor for nothing.
+   `translateZ(0)` is the promotion.
+
+   The contrast problem that made this impossible on the wedding templates does
+   not exist here. That page is cream with a mid-tone rose carrying its small
+   text, which leaves a tenth of a contrast ratio to spend. This one is near
+   black with warm white type: the overlays can be thin enough to read the
+   picture through and the type still measures better than ten to one.
+   ───────────────────────────────────────────────────────────────────────── */
+.m-wed { position: relative; }
+
+/* The page's own floor.
+   `.m` paints warm paper by default, and the ground is a child of `.m-wed`
+   inside `<main>` — so anything outside `main` (the footer, and the whole page
+   under `prefers-reduced-motion`, where the ground becomes absolute and ends
+   with its parent) fell back to paper and produced a white band under a
+   near-black page. The floor matches the ground's own key, so an uncovered
+   region reads as more page rather than as a different one. */
+.m:has(.m-ground) { background: #14110d; color: #f5f1e8; }
+
+.m-ground {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+.m-ground picture, .m-ground img { display: block; width: 100%; height: 100%; }
+.m-ground img {
+  object-fit: cover;
+  /* The couple sit low in the frame; this keeps them in view rather than
+     cropped away at the top. */
+  object-position: 50% 40%;
+  /* Blurred far enough to be atmosphere rather than a competing picture, and
+     scaled past the edge so the blur has pixels to sample and does not leave a
+     soft vignette at the frame. */
+  filter: blur(34px) brightness(0.84) saturate(0.98);
+  transform: scale(1.18);
+}
+/* Seats the very top and bottom edges so the navigation and the last line of
+   the footer have somewhere solid to sit, and leaves the middle open. */
+.m-ground::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    var(--bg) 0%,
+    color-mix(in srgb, var(--bg) 14%, transparent) 12%,
+    color-mix(in srgb, var(--bg) 14%, transparent) 88%,
+    var(--bg) 100%);
+}
+
+/* Content floats. Everything on the page is lifted out of the ground's way in
+   one rule rather than section by section, so a section added later cannot be
+   the one that sits behind the photograph. */
+.m-wed > * { position: relative; z-index: 1; }
+
+/* The glass.
+ *
+ * Thin on purpose. An overlay heavy enough to be safe on any photograph is an
+ * overlay you cannot see through, and the photograph is the point — so the
+ * readability comes from the blur rather than from the tint. Blurring the
+ * backdrop collapses its local variance, which is what actually threatens
+ * type: a hard edge in the picture running through a line of text is the
+ * failure mode, not the average brightness. With the variance gone, a 46% wash
+ * of the page's own near-black holds warm white type at better than 11:1.
+ *
+ * The radius and the seam between panels are what make it read as floating
+ * rather than as a tinted band. */
+.m-glass {
+  background: color-mix(in srgb, var(--bg) var(--glass, 52%), transparent);
+  /* No backdrop-filter, deliberately.
+   *
+   * The obvious build gives every panel `backdrop-filter: blur()`, which is
+   * seven live blurs of a full-width region on every scroll frame — measured
+   * at 61.8ms p95 against a 33.4ms floor. The picture behind them is already
+   * blurred 30px by the image filter, once, on a layer the compositor pins and
+   * never touches again. Blurring an already-blurred backdrop a second time
+   * adds nothing a viewer can see and costs the frame budget, so the panels are
+   * tint only and the frosted look comes from the ground. */
+  border-radius: 20px;
+  border: 1px solid rgba(245, 241, 232, 0.09);
+  box-shadow: 0 30px 80px -50px rgba(0, 0, 0, 0.9);
+}
+/* Panels are inset from the viewport so the photograph runs down both margins,
+   and separated so it runs between them too. */
+.m-wed .m-glass {
+  max-width: min(1120px, calc(100% - 2 * var(--m-gutter, 24px)));
+  margin-inline: auto;
+}
+.m-wed > * + * { margin-top: clamp(18px, 2.2vw, 30px); }
+
+/* The hero is the same photograph at full strength: no panel over it, because
+   there is nothing behind it to reveal — it *is* the reveal.
+ *
+ * It still needs its type to be readable, and the old hero carried a measured
+ * 52% wash on its own <img> wrapper which went away with that element. A flat
+ * band would put a visible edge across the picture, so this is a soft radial
+ * instead: heaviest under the words, gone by the edges of the frame. The
+ * photograph stays open and continuous and the words sit on something.
+ *
+ * Sized in percentages of the section, so it tracks the hero at any height
+ * rather than needing a breakpoint. */
+.m-cine { background: none; }
+.m-cine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(125% 95% at 50% 52%,
+    rgba(20, 17, 13, 0.80) 0%,
+    rgba(20, 17, 13, 0.60) 38%,
+    rgba(20, 17, 13, 0.22) 66%,
+    rgba(20, 17, 13, 0) 85%);
+}
+.m-cine > * { position: relative; z-index: 1; }
+
+/* The footer is rendered by the marketing layout, outside `.m-wed`, so none of
+   the rules above can reach it. `:has()` lets the layout stay ignorant of which
+   page it is wrapping: the footer joins the scene on any page that carries a
+   ground and is untouched everywhere else. The alternative was a request header
+   through middleware to tell a layout what route it is on, which is a lot of
+   machinery to answer a question the DOM already knows. */
+.m:has(.m-ground) .m-foot {
+  max-width: min(1120px, calc(100% - 2 * var(--m-gutter, 24px)));
+  margin-inline: auto;
+  margin-top: clamp(18px, 2.2vw, 30px);
+  padding-inline: clamp(1.6rem, 4vw, 3rem);
+  border-radius: 20px;
+  /* Heavier than a content panel: this holds the smallest type on the page,
+     at --soft, over whatever part of the photograph happens to be behind the
+     end of the document — which is not a thing the design gets to choose. */
+  background: color-mix(in srgb, #14110d 78%, transparent);
+  border: 1px solid rgba(245, 241, 232, 0.09);
+}
+/* The footer sits above the ground. Without this the fixed layer paints over
+   it — a static block paints before any positioned element, which is exactly
+   the bug that hid the homepage footer under `.m-plate-field` for three rounds. */
+.m:has(.m-ground) footer.m-ink { position: relative; z-index: 1; background: none; }
+
+@media (max-width: 720px) {
+  .m-wed { --glass: 62%; }
+  .m-ground img { filter: blur(18px) brightness(0.78) saturate(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A pinned background against scrolling content is parallax, and parallax is
+     motion whatever it is built from. `height: 100%` needs a positioned
+     ancestor to mean the whole page — `.m-wed` is that ancestor — or it
+     resolves against the viewport and strands one screen of photograph at the
+     top with flat colour under everything below. */
+  .m-ground { position: absolute; inset: 0; height: 100%; }
+}
+
+/* On the photographic page the navigation is frosted rather than a solid bar,
+   so the picture starts at the top of the window instead of below a lid. It
+   still goes opaque once it sticks, because a transparent bar over arbitrary
+   content further down the page is a legibility problem that changes as you
+   scroll — but on this page even that opaque state is glass. */
+.m:has(.m-ground) .m-nav.is-stuck,
+.m:has(.m-ground) .m-nav-warm.is-stuck {
+  background: color-mix(in srgb, #14110d 62%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  backdrop-filter: blur(24px) saturate(1.1);
+  border-bottom-color: rgba(245, 241, 232, 0.1);
+}

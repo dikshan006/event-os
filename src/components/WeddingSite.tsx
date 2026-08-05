@@ -7,7 +7,6 @@ import { SmoothScroll } from "./SmoothScroll";
 import { Reveal } from "./Reveal";
 import { Gallery } from "./Gallery";
 import { Botanical, BotanicalDefs } from "./Botanical";
-import { SiteGround } from "./SiteGround";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
 import { themeFor, themeVars } from "@/lib/themes";
@@ -34,28 +33,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
   const ornament = theme.ornament === "botanical";
   const days = [...new Set(events.map(e => e.day))];
   const first = guest?.name.split(" ")[0];
-  const baseVars = themeVars(theme);
-
-  /**
-   * On a photographic ground the accent takes its adjusted value.
-   *
-   * Swapped here rather than in a stylesheet rule because `themeVars` writes
-   * `--sa` as an inline style, and no selector outranks that — a
-   * `.site[data-ground="1"]{--sa:…}` rule looks right, cascades correctly on
-   * paper, and does nothing at all.
-   *
-   * Applied at the root rather than to the handful of rules that set small
-   * text in the accent, so a rule added later cannot miss it. On borders and
-   * display sizes the shift is imperceptible; on the event times, the table
-   * number and the registry lines it is the difference between 3.7:1 and 5:1
-   * over the photograph.
-   */
-  const vars = {
-    ...baseVars,
-    ...(photos.hero
-      ? { "--sa": baseVars["--s-accent-ground"], "--sd": baseVars["--s-deep-ground"] }
-      : null),
-  } as React.CSSProperties;
+  const vars = themeVars(theme) as React.CSSProperties;
 
   /**
    * The token the calendar endpoint is addressed by: a guest's invite code on
@@ -141,12 +119,6 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
       data-template={wedding.template}
       data-surface={theme.surface}
       data-navmark={theme.navMark ? "1" : undefined}
-      // Whether the page is sitting on the couple's photograph. Everything that
-      // has to change for that — the translucent section panels, the frosted
-      // navigation, the darkened accent — hangs off this one flag, so a wedding
-      // with no hero photo renders exactly as it always did rather than as a
-      // version of the photographic design with the photograph missing.
-      data-ground={photos.hero ? "1" : undefined}
       data-art={theme.art === "none" ? undefined : theme.art}
       style={vars}
     >
@@ -167,12 +139,6 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           <link rel="preload" as="image" type="image/webp" href="/art/dark-floral.webp" />
         </>
       )}
-      {/* The couple's photograph, held behind the entire page. Only when there
-          is one: a site without photography keeps the flat ground it was
-          designed to have, rather than a grey rectangle pinned to the
-          viewport. */}
-      {photos.hero && <SiteGround photo={photos.hero} />}
-
       {/* Guest pages only — the studio and admin dashboards keep native scroll. */}
       <SmoothScroll />
       <a className="skip" href="#main">Skip to content</a>
@@ -195,7 +161,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
         </span>
       </nav>
 
-      <div className="s-wrap s-above">
+      <div className="s-wrap">
         <main id="main">
           {/* --- Masthead: type first, generous air, no ornament. --------- */}
           <header className="s-masthead" id="home">
