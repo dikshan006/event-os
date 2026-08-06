@@ -1,0 +1,69 @@
+name: CI
+
+# Every push and every pull request. A check that only runs on main tells you
+# about a break after it is already on main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  # A second push to the same branch cancels the first: the older run's answer
+  # is about code nobody has any more.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # The build imports modules that read these at load time. They are
+      # syntactically valid and point at nothing — no CI job should be able to
+      # reach a real database, and a build that needs one is a build that cannot
+      # be verified on a pull request from a fork.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+      APP_URL: https://ci.invalid
+      AUTH_SECRET: ci-only-not-a-real-secret-000000000000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Generate the Prisma client but do not migrate: `prisma migrate deploy`
+      # needs a reachable database, and the type-level contract is what CI is
+      # checking.
+      - run: npx prisma generate
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm run test:coverage
+
+      - name: Build
+        run: npx next build
+
+      - name: Dependency audit
+        # Advisory rather than blocking: a transitive high in a dev-only tool
+        # should not stop a security fix from shipping. It is surfaced on every
+        # run so it cannot rot unnoticed.
+        run: npm audit --audit-level=high || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
