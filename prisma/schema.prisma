@@ -74,6 +74,28 @@ model User {
   studioId     String?
   studio       Studio?   @relation(fields: [studioId], references: [id], onDelete: Cascade)
   lastLoginAt  DateTime?
+  /**
+   * The cutoff that makes a JWT session revocable.
+   *
+   * Sessions are JWTs, which is what makes them fast — no session table read on
+   * every request. It is also what makes them impossible to revoke: a signed
+   * token stays valid until it expires no matter what happens to the account
+   * behind it. Before this column, resetting a password did not sign anyone out.
+   * An attacker holding a stolen session kept it, which is the exact scenario a
+   * password reset is performed to end.
+   *
+   * So every token records when it was issued, and this column records the
+   * moment tokens stopped being trusted. The `jwt` callback compares the two and
+   * drops anything older. Bumping this is what "sign out everywhere" means, and
+   * it is done on password reset, on an admin-issued password, and on any change
+   * to role or studio — because those are baked into the token and would
+   * otherwise stay stale for the life of it.
+   *
+   * Nullable: a row that predates this column has never been revoked, which is
+   * the correct reading, and treating null as "revoke everything" would sign out
+   * every existing user at deploy for no reason.
+   */
+  sessionsValidFrom DateTime?
   createdAt    DateTime  @default(now())
   resetTokens  PasswordResetToken[]
 

@@ -2,6 +2,40 @@ import { TEMPLATE_KEYS } from "./utils";
 import { BRAND_FONT_KEYS, DEFAULT_BRAND_FONT } from "./branding";
 import { z } from "zod";
 
+/**
+ * The passwords that actually appear in credential-stuffing runs.
+ *
+ * A denylist rather than a composition rule, following current NIST guidance:
+ * requiring an uppercase, a digit and a symbol produces `Password1!` across an
+ * entire user base and stops nobody, while eight characters plus a check
+ * against the known-bad list removes the credentials that are genuinely tried.
+ *
+ * Short on purpose. The full breach corpus is millions of entries and belongs
+ * behind a k-anonymity API call, not in a bundle; these are the ones that lead
+ * every list, plus the ones this product invites by name. Comparison is
+ * case-insensitive and ignores trailing digits, because `wedding123` is not a
+ * meaningfully better password than `wedding`.
+ */
+const TRIVIAL_PASSWORDS = new Set([
+  "password", "passw0rd", "letmein", "welcome", "iloveyou", "admin", "administrator",
+  "qwerty", "qwertyui", "asdfgh", "zxcvbnm", "abc", "abcdef", "abcdefg", "abcd",
+  "12345678", "123456789", "1234567890", "11111111", "00000000", "87654321",
+  "monkey", "dragon", "sunshine", "princess", "football", "baseball", "shadow",
+  "master", "superman", "trustno", "changeme", "secret", "login", "test",
+  // This is a wedding product. These are the first things anyone tries here.
+  "wedding", "weddings", "bride", "groom", "married", "marriage", "eventos",
+]);
+
+export function isTrivialPassword(raw: string): boolean {
+  const p = raw.trim().toLowerCase();
+  if (p.length < 8) return true;
+  // Trailing digits and punctuation are the usual way a banned word is smuggled
+  // past a denylist, so they are stripped before the comparison.
+  const core = p.replace(/[\d\W_]+$/, "");
+  return TRIVIAL_PASSWORDS.has(p) || TRIVIAL_PASSWORDS.has(core);
+}
+
+
 export const zWedding = z.object({
   partnerOne: z.string().min(1).max(60),
   partnerTwo: z.string().min(1).max(60),

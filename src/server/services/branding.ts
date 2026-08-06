@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { storage, storageEnabled } from "@/lib/storage";
 import { processLogo, ImageError } from "@/lib/images";
 import { UserError } from "@/lib/errors";
+import { rateLimit } from "@/lib/ratelimit";
 import { logAudit } from "./audit";
 
 /**
@@ -29,6 +30,17 @@ import { logAudit } from "./audit";
 export async function uploadLogo(studioId: string, file: File, actorName: string) {
   if (!storageEnabled) {
     throw new UserError("File storage is not configured yet, so logos cannot be uploaded.");
+  }
+
+  /**
+   * An upload is the most expensive thing an authenticated planner can ask for:
+   * it decodes an arbitrary image with sharp and writes to a bucket we pay for.
+   * Nothing else here bounds how often that happens, and a logo is something a
+   * studio changes a handful of times ever — so a generous hourly ceiling costs
+   * a legitimate planner nothing and caps both the CPU and the storage bill.
+   */
+  if (!(await rateLimit(`logo:${studioId}`, 20, 60 * 60 * 1000))) {
+    throw new UserError("That is a lot of logo changes at once. Please try again shortly.");
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());

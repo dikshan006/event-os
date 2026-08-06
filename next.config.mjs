@@ -90,9 +90,28 @@ const nextConfig = {
   // search and buys us nothing.
   poweredByHeader: false,
   experimental: {
-    // Must stay above MAX_UPLOAD_BYTES (4 MB) for multipart overhead, but below
-    // Vercel's own 4.5 MB request-body cap — which this setting cannot raise.
-    serverActions: { bodySizeLimit: "4.5mb" },
+    serverActions: {
+      // Must stay above MAX_UPLOAD_BYTES (4 MB) for multipart overhead, but below
+      // Vercel's own 4.5 MB request-body cap — which this setting cannot raise.
+      bodySizeLimit: "4.5mb",
+      /**
+       * The CSRF defence for server actions, pinned rather than inferred.
+       *
+       * Next already rejects an action whose `Origin` does not match the request
+       * host, which is what makes a mutation from evil.example fail without any
+       * token of our own. That comparison relies on the forwarded host header
+       * being trustworthy — true behind Vercel, not true behind an arbitrary
+       * proxy, and a spoofed `X-Forwarded-Host` would otherwise make the check
+       * agree with the attacker.
+       *
+       * Naming the origins takes the header out of the decision. Derived from
+       * APP_URL so there is one source of truth for what this deployment
+       * answers to; empty locally, where the host check alone is fine.
+       */
+      allowedOrigins: [process.env.APP_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
+        .filter(Boolean)
+        .map(u => String(u).replace(/^https?:\/\//, "").replace(/\/.*$/, "")),
+    },
   },
   // sharp is a native module; keep it external so Next never tries to bundle it.
   serverExternalPackages: ["sharp"],

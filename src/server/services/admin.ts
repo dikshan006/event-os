@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { slugify, inviteCode } from "@/lib/utils";
 import { emails } from "@/lib/email";
 import { logAudit } from "./audit";
-import { issueResetToken, INVITE_TOKEN_TTL_MS } from "./passwordReset";
+import { issueResetToken, INVITE_TOKEN_TTL_MS, revokeSessionsOp } from "./passwordReset";
 
 export async function createPlanner(input: { studioName: string; ownerName: string; email: string }) {
   const tempPassword = inviteCode().toLowerCase();
@@ -68,6 +68,14 @@ export async function resetPlannerPassword(studioId: string, custom?: string) {
       where: { userId: owner.id, usedAt: null },
       data: { usedAt: new Date() },
     }),
+    /**
+     * And every session opened with the old password.
+     *
+     * This is the path an admin takes when a planner reports their account is
+     * compromised. Handing out a new password while the intruder's session
+     * stayed live would answer the wrong half of the problem.
+     */
+    revokeSessionsOp(owner.id),
   ]);
 
   await logAudit({
@@ -79,6 +87,25 @@ export async function resetPlannerPassword(studioId: string, custom?: string) {
 
 export async function setPlannerStatus(studioId: string, status: "ACTIVE" | "SUSPENDED") {
   const studio = await prisma.studio.update({ where: { id: studioId }, data: { status } });
+
+  /**
+   * Suspension ends the studio's sessions rather than waiting for them to expire.
+   *
+   * `requireStudio()` already re-reads the studio on every request and turns
+   * away a suspended one, so this is not what makes suspension effective \u2014 it is
+   * what makes it *clean*. Without it a suspended planner keeps a valid token and
+   * sits on a redirect loop; with it, the session is gone and they are simply
+   * signed out. It also closes the gap for any future surface that trusts the
+   * token's claims without re-reading the studio behind them.
+   */
+  if (status === "SUSPENDED") {
+    const users = await prisma.user.findMany({ where: { studioId }, select: { id: true } });
+    await prisma.user.updateMany({
+      where: { id: { in: users.map(u => u.id) } },
+      data: { sessionsValidFrom: new Date(Date.now() + 1000) },
+    });
+  }
+
   await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", studioId, action: `${status === "SUSPENDED" ? "Suspended" : "Reactivated"} planner \u201C${studio.name}\u201D` });
 }
 

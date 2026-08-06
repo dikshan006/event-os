@@ -74,14 +74,40 @@ export async function claimGift(
     );
   }
 
-  return prisma.registryItem.update({
-    where: { id: itemId },
+  /**
+   * The claim is conditional on the gift still being unclaimed.
+   *
+   * The check above is not enough on its own, and the gap between it and the
+   * write is exactly where this feature breaks. Two guests reading the same
+   * wishlist on the same evening — which is the normal way a wishlist is read —
+   * can both pass the `purchasedBy` check before either writes, and the second
+   * write would replace the first claimer's name. That is the one outcome this
+   * function documents itself as preventing: the couple would see one claim,
+   * receive two toasters, and have no record of who to thank.
+   *
+   * `updateMany` with `purchasedBy: null` in the WHERE clause pushes the
+   * decision into the database, where the row is locked for the duration.
+   * Exactly one caller updates a row; the other is told the truth.
+   */
+  const { count } = await prisma.registryItem.updateMany({
+    where: { id: itemId, weddingId, purchasedBy: null },
     data: {
       purchasedBy: input.name,
       purchaseNote: input.note || null,
       purchasedAt: new Date(),
     },
   });
+
+  if (!count) {
+    // Someone claimed it between the read above and the write just now. Re-read
+    // so the message names whoever actually got there first.
+    const now = await prisma.registryItem.findFirst({ where: { id: itemId, weddingId } });
+    throw new UserError(
+      `Thank you — ${now?.purchasedBy ?? "another guest"} has already marked this one as purchased. Do let the couple know if you bought it too.`,
+    );
+  }
+
+  return prisma.registryItem.findFirstOrThrow({ where: { id: itemId, weddingId } });
 }
 
 /** Planner-side: put a gift back on the list. */

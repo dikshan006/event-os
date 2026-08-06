@@ -23,17 +23,38 @@ export async function startPublish(studioId: string, weddingId: string, actorNam
   ]);
   const couple = `${wedding.partnerOne} & ${wedding.partnerTwo}`;
 
-  const free = settings.firstWeddingFree && !studio.freeWeddingUsed;
-  if (free) {
-    await prisma.$transaction([
-      prisma.wedding.update({ where: { id: wedding.id }, data: { status: "PUBLISHED", publishedAt: new Date() } }),
-      prisma.studio.update({ where: { id: studioId }, data: { freeWeddingUsed: true } }),
-      prisma.payment.create({
-        data: { studioId, weddingId: wedding.id, amountCents: 0, status: "PAID", description: `Publish \u2014 ${couple} (first wedding free)` },
-      }),
-    ]);
-    await logAudit({ actorType: "PLANNER", actorName, studioId, action: `Published \u201C${couple}\u201D \u2014 first wedding free`, targetId: wedding.id });
-    return { ok: true as const };
+  /**
+   * Claiming the free wedding is a compare-and-swap, not a read then a write.
+   *
+   * `freeWeddingUsed` was read above and would have been written below, and
+   * between those two statements a second publish request can read the same
+   * `false`. Two tabs, or one impatient double-click, and a studio publishes two
+   * weddings for the price of none \u2014 a paid feature given away by a race that
+   * costs nothing to trigger and leaves two perfectly ordinary-looking audit
+   * rows behind.
+   *
+   * `updateMany` with the expected value in the WHERE clause makes the database
+   * the arbiter: the row is locked for the update, and exactly one caller sees
+   * `count: 1`. The loser falls through to the paid path, which is the correct
+   * outcome \u2014 it is genuinely their second wedding.
+   */
+  if (settings.firstWeddingFree && !studio.freeWeddingUsed) {
+    const claimed = await prisma.studio.updateMany({
+      where: { id: studioId, freeWeddingUsed: false },
+      data: { freeWeddingUsed: true },
+    });
+
+    if (claimed.count === 1) {
+      await prisma.$transaction([
+        prisma.wedding.update({ where: { id: wedding.id }, data: { status: "PUBLISHED", publishedAt: new Date() } }),
+        prisma.payment.create({
+          data: { studioId, weddingId: wedding.id, amountCents: 0, status: "PAID", description: `Publish \u2014 ${couple} (first wedding free)` },
+        }),
+      ]);
+      await logAudit({ actorType: "PLANNER", actorName, studioId, action: `Published \u201C${couple}\u201D \u2014 first wedding free`, targetId: wedding.id });
+      return { ok: true as const };
+    }
+    // Lost the race: someone else took the free slot. Fall through and charge.
   }
 
   const amountCents = settings.pricePerWeddingCents;

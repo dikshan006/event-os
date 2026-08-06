@@ -1,0 +1,18 @@
+-- Make JWT sessions revocable.
+--
+-- Sessions are stateless JWTs. That is why there is no session table to read on
+-- every request, and also why, until now, nothing could end a session early: a
+-- signed token stayed valid for its full lifetime regardless of what happened to
+-- the account. Resetting a password did not sign anyone out, which is precisely
+-- backwards — a password reset is what you do *because* someone else may hold
+-- your session.
+--
+-- Every issued token now carries its issue time, and this column carries the
+-- moment tokens stopped being trusted for that user. The auth callback drops any
+-- token older than it.
+--
+-- Nullable with no backfill, deliberately. NULL means "nothing has ever been
+-- revoked for this user", which is true of every existing row. Defaulting to
+-- now() would invalidate every live session the moment this migration ran, which
+-- is a self-inflicted outage for every signed-in planner and buys nothing.
+ALTER TABLE "User" ADD COLUMN "sessionsValidFrom" TIMESTAMP(3);

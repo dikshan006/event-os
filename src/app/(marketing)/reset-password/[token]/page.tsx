@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { resetPassword } from "@/server/services/passwordReset";
+import { rateLimit } from "@/lib/ratelimit";
+import { isTrivialPassword } from "@/lib/validators";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -15,8 +18,35 @@ async function doReset(formData: FormData) {
   const token = String(formData.get("token"));
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
+
+  /**
+   * A ceiling on how fast tokens can be tried from one address.
+   *
+   * The token is 32 random bytes, so this is not what makes guessing infeasible
+   * — 256 bits already does that, and no rate limit would rescue a weak token.
+   * It is here because an unauthenticated endpoint that performs a bcrypt hash
+   * at cost 12 is a cheap way to make our own CPU the target: a few hundred
+   * concurrent posts of a junk token and every other request queues behind them.
+   * The limit bounds the work a stranger can ask us to do.
+   */
+  const ip = ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
+  if (!(await rateLimit(`reset:${ip}`, 10, 10 * 60_000))) {
+    redirect(`/reset-password/${token}?error=rate`);
+  }
+
   if (password.length < 8) redirect(`/reset-password/${token}?error=short`);
   if (password !== confirm) redirect(`/reset-password/${token}?error=match`);
+  /**
+   * A floor on password quality, and deliberately a low one.
+   *
+   * Composition rules (an uppercase, a digit, a symbol) reliably produce
+   * `Password1!` and stop nothing; length plus a denylist of the passwords
+   * actually used in credential stuffing is what the current NIST guidance
+   * recommends instead. This rejects the handful that appear at the top of every
+   * breach corpus without lecturing anyone about punctuation.
+   */
+  if (isTrivialPassword(password)) redirect(`/reset-password/${token}?error=weak`);
+
   const ok = await resetPassword(token, password);
   redirect(ok ? "/login?reset=1" : `/reset-password/${token}?error=invalid`);
 }
@@ -33,6 +63,8 @@ export default async function ResetPassword({
   const messages: Record<string, string> = {
     short: "Password must be at least 8 characters.",
     match: "Those two passwords do not match.",
+    weak: "That password appears in every published breach list — please choose another.",
+    rate: "Too many attempts — please wait a few minutes and try again.",
     invalid: "This reset link is invalid, already used, or expired — request a new one.",
   };
 

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { inviteCode, GROUPS } from "@/lib/utils";
 import { emails } from "@/lib/email";
 import { emailBrandingFor } from "@/lib/branding";
+import { rateLimit } from "@/lib/ratelimit";
+import { UserError } from "@/lib/errors";
+import { runOnce, invitationKey } from "./idempotency";
 import { logAudit } from "./audit";
 import type { z } from "zod";
 import type { zGuest } from "@/lib/validators";
@@ -71,6 +74,46 @@ export async function deleteGuest(studioId: string, guestId: string) {
   await prisma.guest.deleteMany({ where: { id: guestId, studioId } });
 }
 
+/**
+ * Send one invitation, at most once per guest per invite code.
+ *
+ * The idempotency wrapper is not defensive decoration. `sendInvitations` selects
+ * on `invitedAt: null` and only stamps it *after* a successful send, so two
+ * requests that overlap — a double-click, a Vercel retry after a timeout, a
+ * planner refreshing an apparently-stuck page — both read the same pending list
+ * and both mail every guest on it. The guest receives two identical invitations
+ * from a domain we are trying to keep out of spam folders.
+ *
+ * The key includes the invite code, so deliberately regenerating a guest's code
+ * and re-sending still works immediately; it is only *the same* invitation that
+ * is suppressed.
+ *
+ * A duplicate reports success. The caller's contract is "this guest has been
+ * invited", and after a suppressed duplicate that is true.
+ */
+async function sendInvitationOnce(
+  weddingId: string,
+  studioId: string,
+  guest: { id: string; name: string; email: string | null; inviteCode: string },
+  wedding: { partnerOne: string; partnerTwo: string },
+  studio: Parameters<typeof emailOneGuest>[2],
+): Promise<boolean> {
+  const outcome = await runOnce({
+    key: invitationKey(weddingId, guest.id, guest.inviteCode),
+    scope: "invitation",
+    studioId,
+    // Long enough to absorb a retry storm, short enough that a planner who
+    // genuinely wants to nudge a guest tomorrow is not blocked.
+    ttlMs: 6 * 60 * 60 * 1000,
+    effect: () => emailOneGuest(guest, wedding, studio),
+  });
+
+  if (outcome.status === "performed") return outcome.result;
+  // Already sent, or a concurrent attempt is sending it right now. Either way
+  // this guest is invited and must not be mailed a second time.
+  return outcome.status === "duplicate" ? outcome.result !== false : true;
+}
+
 async function emailOneGuest(
   guest: { id: string; name: string; email: string | null; inviteCode: string },
   wedding: { partnerOne: string; partnerTwo: string },
@@ -128,7 +171,7 @@ export async function sendInvitations(studioId: string, weddingId: string, actor
     // also precisely the shape a spam filter is watching for — a steady trickle
     // reads as correspondence.
     if (i > 0) await new Promise(r => setTimeout(r, INVITE_SEND_INTERVAL_MS));
-    const ok = g.email ? await emailOneGuest(g, wedding, studio) : true;
+    const ok = g.email ? await sendInvitationOnce(weddingId, studioId, g, wedding, studio) : true;
     if (ok) {
       sent++;
       await prisma.guest.update({ where: { id: g.id }, data: { invitedAt: new Date() } });
@@ -147,7 +190,31 @@ export async function sendInvitations(studioId: string, weddingId: string, actor
 export async function resendInvitation(studioId: string, guestId: string, actorName: string) {
   const guest = await prisma.guest.findFirst({ where: { id: guestId, studioId }, include: { wedding: true } });
   if (!guest) throw new Error("Not found");
+
+  /**
+   * The one send path with no natural brake.
+   *
+   * `sendInvitations` is bounded by `invitedAt: null` — it cannot mail the same
+   * guest twice without a deliberate reset. Re-send exists precisely to bypass
+   * that, which means the only thing standing between a stuck button and a
+   * hundred identical emails to one address is this limit. The address is a
+   * guest's, the sending domain is ours, and the cost of the abuse lands on our
+   * deliverability rather than on the person doing it.
+   *
+   * Keyed per guest, not per studio: a planner working through a list of
+   * bounced addresses is doing something legitimate and should not be stopped
+   * because they have several to fix.
+   */
+  if (!(await rateLimit(`resend:${guestId}`, 3, 60 * 60 * 1000))) {
+    throw new UserError(
+      "This guest has been sent several invitations in the last hour. Please wait before sending another.",
+    );
+  }
+
   const studio = await prisma.studio.findUniqueOrThrow({ where: { id: studioId } });
+  // Not `sendInvitationOnce`: a re-send is the deliberate act of sending again,
+  // and suppressing it as a duplicate would break the only button that exists
+  // to do it. The rate limit above is what bounds this path.
   const ok = await emailOneGuest(guest, guest.wedding, studio);
   if (ok) await prisma.guest.update({ where: { id: guest.id }, data: { invitedAt: new Date() } });
   await logAudit({ actorType: "PLANNER", actorName, studioId, targetId: guest.weddingId, action: `Re-sent invitation to ${guest.name}${ok ? "" : " (delivery failed \u2014 see email log)"}` });

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { processImage, ImageError, asVariants, srcSet, fallbackSrc } from "@/lib/images";
 import { asTone, toneStyle } from "@/lib/photo-tone";
+import { rateLimit } from "@/lib/ratelimit";
 import { logAudit } from "./audit";
 import type { PhotoView, PhotoSet } from "@/lib/photo-view";
 
@@ -86,6 +87,22 @@ export async function uploadPhoto(
 ) {
   const wedding = await prisma.wedding.findFirst({ where: { id: weddingId, studioId } });
   if (!wedding) throw new Error("Not found");
+
+  /**
+   * A ceiling on image processing per studio per hour.
+   *
+   * The per-slot caps below bound how many photos are *kept*, not how many are
+   * processed: uploading and deleting in a loop passes every one of them while
+   * running sharp — eight AVIF and WebP encodes of a 4 MB image — as fast as the
+   * requests arrive. That is a straightforward way for one authenticated planner
+   * to saturate the function's CPU for everybody.
+   *
+   * 120/hour is roughly two full galleries, which is more than a real session of
+   * uploading and far less than a loop.
+   */
+  if (!(await rateLimit(`upload:${studioId}`, 120, 60 * 60 * 1000))) {
+    throw new ImageError("That is a lot of uploads at once. Please try again shortly.");
+  }
 
   const existing = await prisma.photo.count({ where: { weddingId, studioId, slot } });
   const { max, label } = SLOT_META[slot];
