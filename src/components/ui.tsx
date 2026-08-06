@@ -32,9 +32,24 @@ export function StatusChip({ s }: { s: string }) {
   return <span className={`chip ${toneMap[s] ?? ""}`}><i className="dot" />{label}</span>;
 }
 
-export function Sidebar({ brand, brandMono, items, footer, accent, wordmark }: {
+export function Sidebar({ brand, brandMono, items, footer, accent, wordmark, logo, face }: {
   brand: string; brandMono: string; items: { href: string; label: string }[];
   footer: React.ReactNode; accent?: string;
+  /**
+   * The studio's uploaded logo, when it has one.
+   *
+   * It replaces the monogram *and* the name rather than sitting beside them: a
+   * logo already contains the studio's name, and showing both is the mark of
+   * software that has been bolted onto a brand rather than dressed in it. The
+   * name is kept as the image's alt text, so nothing is lost to a screen reader
+   * or to a failed request.
+   *
+   * The platform's own admin sidebar passes nothing here. EventOS is not a
+   * tenant and has no logo row to read.
+   */
+  logo?: { src: string; width: number; height: number } | null;
+  /** CSS font stack for the brand line — see lib/branding.ts. */
+  face?: string;
   /**
    * Whether `brand` is our own name rather than a studio's.
    *
@@ -49,8 +64,19 @@ export function Sidebar({ brand, brandMono, items, footer, accent, wordmark }: {
   return (
     <aside className="side" style={accent ? ({ "--accent": accent, "--accent-soft": accent + "1A" } as React.CSSProperties) : undefined}>
       <div className="brand">
-        <div className="brand-mono">{brandMono}</div>
-        <div className={`brand-name${wordmark ? " is-wordmark" : ""}`}>{brand}</div>
+        {logo ? (
+          /* Not next/image — the host is whatever bucket the deployment uses,
+             and at this size there is nothing for the optimizer to win. */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo.src} alt={brand} width={logo.width} height={logo.height} className="brand-logo" />
+        ) : (
+          <>
+            <div className="brand-mono">{brandMono}</div>
+            <div className={`brand-name${wordmark ? " is-wordmark" : ""}`} style={face ? { fontFamily: face } : undefined}>
+              {brand}
+            </div>
+          </>
+        )}
       </div>
       <nav className="nav">
         {items.map(i => <Link key={i.href} href={i.href}>{i.label}</Link>)}

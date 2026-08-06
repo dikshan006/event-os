@@ -1,4 +1,5 @@
 import { TEMPLATE_KEYS } from "./utils";
+import { BRAND_FONT_KEYS, DEFAULT_BRAND_FONT } from "./branding";
 import { z } from "zod";
 
 export const zWedding = z.object({
@@ -97,6 +98,14 @@ export const zRegistryItem = z.object({
 export const zStudioBranding = z.object({
   name: z.string().min(1).max(120),
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  /**
+   * The column is a plain String — this is what keeps it a closed set.
+   *
+   * `BRAND_FONT_KEYS` is the same array the picker renders from, so a value can
+   * only be stored if it was offerable, and adding a face is a one-line change
+   * in `lib/branding.ts` rather than a change in three places.
+   */
+  brandFont: z.enum(BRAND_FONT_KEYS as [string, ...string[]]).default(DEFAULT_BRAND_FONT),
   website: z.string().max(200).optional().or(z.literal("")),
   instagram: z.string().max(120).optional().or(z.literal("")),
   contactEmail: z.string().email().optional().or(z.literal("")),

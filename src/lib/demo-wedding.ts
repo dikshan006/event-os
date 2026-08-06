@@ -154,7 +154,19 @@ export const DEMO_STUDIO = {
   name: "Your Studio",
   slug: "demo",
   status: "ACTIVE" as const,
+  /**
+   * No logo, and the house serif.
+   *
+   * The template previews exist to show a planner what a *template* looks like,
+   * so the one variable that must be held constant is everything that is not
+   * the template. Giving the demo studio a mark or an unusual face would put a
+   * second design decision into a comparison meant to isolate one.
+   */
   logoUrl: null,
+  logoKey: null,
+  logoWidth: null,
+  logoHeight: null,
+  brandFont: "CLASSIC",
   brandColor: "#9B5B63",
   website: null,
   instagram: null,

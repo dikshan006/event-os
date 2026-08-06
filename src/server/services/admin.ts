@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { slugify, inviteCode } from "@/lib/utils";
 import { emails } from "@/lib/email";
 import { logAudit } from "./audit";
+import { issueResetToken, INVITE_TOKEN_TTL_MS } from "./passwordReset";
 
 export async function createPlanner(input: { studioName: string; ownerName: string; email: string }) {
   const tempPassword = inviteCode().toLowerCase();
@@ -16,7 +17,23 @@ export async function createPlanner(input: { studioName: string; ownerName: stri
     },
   });
   await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", studioId: studio.id, action: `Created planner \u201C${input.studioName}\u201D \u2014 studio generated, login invite emailed` });
-  await emails.plannerInvite({ to: input.email, ownerName: input.ownerName, studio: input.studioName, link: `${process.env.APP_URL}/login`, studioId: studio.id });
+  // The invitation carries a one-time link so the planner can set their own
+  // password without ever typing the temporary one. Minted here rather than
+  // asking them to go through "forgot password" for an account they have not
+  // been told the address of yet.
+  const owner = await prisma.user.findFirstOrThrow({ where: { email: input.email.toLowerCase() } });
+  const resetToken = await issueResetToken(owner.id, INVITE_TOKEN_TTL_MS);
+  const appUrl = (process.env.APP_URL ?? "").replace(/\/$/, "");
+
+  await emails.plannerInvite({
+    to: input.email,
+    ownerName: input.ownerName,
+    studio: input.studioName,
+    link: `${appUrl}/login`,
+    resetLink: `${appUrl}/reset-password/${resetToken}`,
+    tempPassword,
+    studioId: studio.id,
+  });
   return { studio, tempPassword }; // shown once to the admin in the UI
 }
 

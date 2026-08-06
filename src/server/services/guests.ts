@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { inviteCode, GROUPS } from "@/lib/utils";
 import { emails } from "@/lib/email";
+import { emailBrandingFor } from "@/lib/branding";
 import { logAudit } from "./audit";
 import type { z } from "zod";
 import type { zGuest } from "@/lib/validators";
@@ -73,13 +74,21 @@ export async function deleteGuest(studioId: string, guestId: string) {
 async function emailOneGuest(
   guest: { id: string; name: string; email: string | null; inviteCode: string },
   wedding: { partnerOne: string; partnerTwo: string },
-  studio: { id: string; name: string; brandColor: string; contactEmail: string | null },
+  studio: {
+    id: string; name: string; brandColor: string; contactEmail: string | null;
+    brandFont?: string | null;
+    logoUrl?: string | null; logoWidth?: number | null; logoHeight?: number | null;
+  },
 ) {
   if (!guest.email) return false;
+  const brand = emailBrandingFor(studio);
   return emails.guestInvitation({
     to: guest.email, guestName: guest.name,
     couple: `${wedding.partnerOne} & ${wedding.partnerTwo}`,
     studio: studio.name, color: studio.brandColor, studioId: studio.id,
+    // The planner's letterhead, not ours — the guest should never learn that
+    // a platform exists behind this.
+    logo: brand.logo, face: brand.face,
     // A guest who hits reply should reach the planner, not a void. This is
     // also what makes the message look like correspondence rather than a
     // broadcast, which is half of why invitations get filtered.

@@ -10,6 +10,7 @@ import { Botanical, BotanicalDefs } from "./Botanical";
 import { EMPTY_PHOTOS, type PhotoSet } from "@/lib/photo-view";
 import { fmtDate } from "@/lib/utils";
 import { themeFor, themeVars } from "@/lib/themes";
+import { brandingFor } from "@/lib/branding";
 import { EventActions, ScheduleCalendarLink, VenueDirections } from "./EventActions";
 import { hasPlace, resolvePlace } from "@/lib/maps";
 
@@ -24,6 +25,57 @@ type Props = {
   photos?: PhotoSet;
   rsvpAction?: (code: string, input: { status: string; meal: string; dietary: string; notes: string }) => Promise<void>;
 };
+
+/**
+ * The studio's credit, at the very bottom of a guest's page.
+ *
+ * The one place a planner's brand is allowed onto a wedding site, and it stays
+ * small on purpose — the page belongs to the couple. A logo replaces the words
+ * entirely; without one the name is set in the studio's chosen face, which is
+ * the only typography on the page not dictated by the template.
+ *
+ * `mix-blend-mode` is not used and the logo is not tinted: a studio's mark is
+ * their mark, and recolouring it to suit a palette is the one liberty a
+ * white-label product does not get to take.
+ */
+function StudioCredit({ studio }: { studio: Studio }) {
+  const brand = brandingFor(studio);
+
+  if (brand.logo) {
+    return (
+      <p className="by">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={brand.logo.src}
+          alt={`Designed by ${studio.name}`}
+          width={brand.logo.width}
+          height={brand.logo.height}
+          className="by-logo"
+          loading="lazy"
+        />
+      </p>
+    );
+  }
+
+  const tracked = brand.font.treatment === "tracked";
+  return (
+    <p className="by">
+      Designed by{" "}
+      <span
+        style={{
+          fontFamily: brand.font.stack,
+          // A script credit needs its natural case and a little more size to be
+          // legible at all; a text face reads better tracked, as it already did.
+          textTransform: tracked ? undefined : "none",
+          letterSpacing: tracked ? undefined : "0",
+          fontSize: tracked ? undefined : "1.5em",
+        }}
+      >
+        {studio.name}
+      </span>
+    </p>
+  );
+}
 
 export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHOTOS, tableByEvent = {}, rsvpAction }: Props) {
   const theme = themeFor(wedding.template);
@@ -419,7 +471,7 @@ export function WeddingSite({ wedding, studio, events, guest, photos = EMPTY_PHO
           {ornament && <Botanical corners={["bl", "br"]} />}
           <p className="s-foot-names">{wedding.partnerOne} &amp; {wedding.partnerTwo}</p>
           <p className="s-foot-date">{dateLine}</p>
-          <p className="by">Designed by {studio.name}</p>
+          <StudioCredit studio={studio} />
         </footer>
       </div>
     </div>

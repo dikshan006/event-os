@@ -37,7 +37,7 @@ const SANDBOX_FROM = "onboarding@resend.dev";
 const FROM = process.env.EMAIL_FROM ?? `EventOS <${SANDBOX_FROM}>`;
 
 export type EmailKind =
-  | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE"
+  | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE" | "CUSTOM_DESIGN_REQUEST"
   | "PAYMENT_RECEIPT" | "PASSWORD_RESET"
   | "ACCESS_REQUEST"
   | "ACCESS_REQUEST_ACK";
@@ -279,12 +279,31 @@ export async function sendEmail(args: SendArgs): Promise<boolean> {
 const PLATFORM_COLOR = "#9D5C64";
 const PLATFORM_REPLY_TO = process.env.EMAIL_REPLY_TO ?? null;
 
+/**
+ * Where platform notifications go.
+ *
+ * `ACCESS_REQUEST_TO` if set, otherwise the address inside `EMAIL_FROM` — which
+ * is almost always the owner's own inbox and means notifications work out of
+ * the box rather than needing a second variable nobody knows to set. Null when
+ * neither is configured, in which case the request is still recorded and only
+ * the nudge is lost.
+ */
+export const PLATFORM_INBOX: string | null = (() => {
+  const explicit = process.env.ACCESS_REQUEST_TO?.trim();
+  if (explicit) return explicit;
+  const from = process.env.EMAIL_FROM ?? "";
+  return from.match(/<([^>]+)>/)?.[1] ?? (from.includes("@") ? from.trim() : null);
+})();
+
 export const emails = {
   guestInvitation: (o: {
     to: string; guestName: string; couple: string; studio: string;
     color: string; link: string; studioId: string;
     /** The studio's own address, so a guest's reply reaches the planner. */
     studioEmail?: string | null;
+    /** Letterhead: the studio's logo and typeface. See lib/branding.ts. */
+    logo?: { src: string; width: number; height: number } | null;
+    face?: string;
   }) =>
     sendEmail({
       to: o.to,
@@ -296,6 +315,8 @@ export const emails = {
       message: {
         brand: o.studio,
         color: o.color,
+        logo: o.logo,
+        face: o.face,
         preheader: `${o.guestName}, your personal invitation to ${o.couple} is ready.`,
         blocks: [
           { t: "p", text: `Dear ${o.guestName},` },
@@ -311,6 +332,8 @@ export const emails = {
   rsvpConfirmation: (o: {
     to: string; guestName: string; couple: string; studio: string;
     color: string; status: string; studioId: string; studioEmail?: string | null;
+    logo?: { src: string; width: number; height: number } | null;
+    face?: string;
   }) =>
     sendEmail({
       to: o.to,
@@ -321,6 +344,8 @@ export const emails = {
       message: {
         brand: o.studio,
         color: o.color,
+        logo: o.logo,
+        face: o.face,
         preheader: `Your reply to ${o.couple} has been recorded.`,
         blocks: [
           { t: "p", text: `Thank you, ${o.guestName}.` },
@@ -332,7 +357,13 @@ export const emails = {
       },
     }),
 
-  plannerInvite: (o: { to: string; ownerName: string; studio: string; link: string; studioId: string }) =>
+  plannerInvite: (o: {
+    to: string; ownerName: string; studio: string; link: string; studioId: string;
+    /** Shown once, in this email, and never stored in plaintext anywhere. */
+    tempPassword: string;
+    /** One-time link that lets them set their own password without using the temporary one. */
+    resetLink: string;
+  }) =>
     sendEmail({
       to: o.to,
       kind: "PLANNER_INVITE",
@@ -344,12 +375,32 @@ export const emails = {
         wordmark: true,
         color: PLATFORM_COLOR,
         preheader: `${o.studio} is set up and waiting for your first wedding.`,
+        /**
+         * The credential travels in this email.
+         *
+         * It used to say the password "was shared with you separately", which
+         * was not true of any mechanism that existed — the admin saw it once on
+         * screen and the planner received an email telling them to sign in with
+         * something nobody had sent them.
+         *
+         * Emailing a temporary password is a real, accepted tradeoff rather
+         * than an oversight: it is single-use in practice, it is bounded by the
+         * invitation link's lifetime, and the alternative is a credential
+         * handed over on the phone. The mitigation is the button above it — a
+         * one-time link that sets a password of their own, so the temporary one
+         * can go unused entirely.
+         */
         blocks: [
           { t: "p", text: `Hi ${o.ownerName},` },
-          { t: "p", text: `Your planner studio ${o.studio} has been created.` },
-          { t: "button", label: "Sign in to your studio", href: o.link },
+          { t: "p", text: `Your planner studio ${o.studio} has been created and is ready for its first wedding.` },
+          { t: "button", label: "Set your password", href: o.resetLink },
+          { t: "fallback", href: o.resetLink },
+          { t: "p", text: "That link is good for seven days and can be used once." },
+          { t: "rule" },
+          { t: "p", text: "If you would rather sign in straight away, use this temporary password and change it from Settings:" },
+          { t: "quote", text: o.tempPassword },
+          { t: "button", label: "Sign in instead", href: o.link },
           { t: "fallback", href: o.link },
-          { t: "p", text: "Your temporary password was shared with you separately. Please change it after your first sign-in." },
         ],
       },
     }),
@@ -370,6 +421,37 @@ export const emails = {
           { t: "p", text: "Thank you — your payment has been received." },
           { t: "lines", items: [["Item", o.desc], ["Amount", o.amount]] },
           { t: "p", text: "A copy is kept on your Billing page." },
+        ],
+      },
+    }),
+
+  /**
+   * A planner asking for a design outside the six templates.
+   *
+   * Goes to the platform inbox, not to the planner — they get an on-screen
+   * acknowledgement instead, because the useful reply here is a person, not a
+   * receipt. `replyTo` is unset deliberately: the request is attributed to a
+   * studio the owner can already look up, and the conversation that follows is
+   * usually a call about pricing rather than an email thread.
+   */
+  customDesignRequest: (o: {
+    to: string; studio: string; studioId: string; actorName: string; note?: string;
+  }) =>
+    sendEmail({
+      to: o.to,
+      kind: "CUSTOM_DESIGN_REQUEST",
+      studioId: o.studioId,
+      subject: `Custom design request — ${o.studio}`,
+      message: {
+        brand: "EventOS",
+        wordmark: true,
+        color: PLATFORM_COLOR,
+        preheader: `${o.studio} would like a custom wedding design.`,
+        blocks: [
+          { t: "p", text: `${o.actorName} at ${o.studio} has asked about a custom wedding design.` },
+          ...(o.note ? ([{ t: "quote", text: o.note }] as const) : []),
+          { t: "p", text: "They have been told an admin will contact them shortly." },
+          { t: "button", label: "Open the activity log", href: `${(process.env.APP_URL ?? "").replace(/\/$/, "")}/admin/activity` },
         ],
       },
     }),

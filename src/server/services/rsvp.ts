@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { emails } from "@/lib/email";
+import { emailBrandingFor } from "@/lib/branding";
 import { logAudit } from "./audit";
 import type { z } from "zod";
 import type { zRsvp } from "@/lib/validators";
@@ -28,10 +29,13 @@ export async function submitRsvp(code: string, input: z.infer<typeof zRsvp>) {
     action: `RSVP received \u2014 ${guest.name} (${couple}): ${input.status.toLowerCase()}`, targetId: guest.weddingId,
   });
   if (guest.email) {
+    const brand = emailBrandingFor(guest.wedding.studio);
     await emails.rsvpConfirmation({
       to: guest.email, guestName: guest.name, couple,
       studio: guest.wedding.studio.name, color: guest.wedding.studio.brandColor,
       status: input.status, studioId: guest.studioId,
+      // The planner's letterhead, matching the invitation this replies to.
+      logo: brand.logo, face: brand.face,
       // Same reasoning as the invitation: a reply should reach the planner.
       studioEmail: guest.wedding.studio.contactEmail,
     });

@@ -39,12 +39,20 @@ export const SECTIONS = [
  * `import type` — erased at compile time, so this stays safe to import from a
  * Client Component.
  */
+/**
+ * The order here is the order a planner sees.
+ *
+ * Object literals preserve insertion order for string keys, and every surface
+ * that lists templates iterates this record — so the sequence is a property of
+ * this declaration rather than something each picker sorts for itself. Moving a
+ * template means moving its line.
+ */
 export const TEMPLATES: Record<TemplateKey, { name: string; color: string; desc: string }> = {
-  BLUSH_ROMANCE: { name: "Blush Romance", color: "#9D5C64", desc: "Romantic and elegant with soft blush tones and delicate details." },
   MODERN_SAGE: { name: "Modern Sage", color: "#87A07A", desc: "Clean, modern and timeless with a fresh sage green palette." },
-  CLASSIC_ELEGANCE: { name: "Classic Elegance", color: "#A93A42", desc: "Timeless and sophisticated with a classic red and cream aesthetic." },
-  MIDNIGHT_BLOOM: { name: "Midnight Bloom", color: "#C8A99E", desc: "Dark, botanical and cinematic — hairline type and photography lit out of near-black." },
   PACIFIC_LINEN: { name: "Pacific Linen", color: "#26313A", desc: "Bright and textured — a signature hand on soft printed paper, with air to spare." },
+  CLASSIC_ELEGANCE: { name: "Classic Elegance", color: "#A93A42", desc: "Timeless and sophisticated with a classic red and cream aesthetic." },
+  BLUSH_ROMANCE: { name: "Blush Romance", color: "#9D5C64", desc: "Romantic and elegant with soft blush tones and delicate details." },
+  MIDNIGHT_BLOOM: { name: "Midnight Bloom", color: "#C8A99E", desc: "Dark, botanical and cinematic — hairline type and photography lit out of near-black." },
   VELVET_BOTANICAL: { name: "Velvet Botanical", color: "#DDB9AD", desc: "A painted still life brought onto the web — burgundy and cream, dramatic serif, deep shadow." },
 };
 

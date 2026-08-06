@@ -5,6 +5,8 @@ import { importGuests } from "@/server/services/guests";
 import { PageHead } from "@/components/ui";
 import { zWedding } from "@/lib/validators";
 import { TimeZoneField } from "@/components/TimeZoneField";
+import { CustomDesignCard } from "@/components/CustomDesignCard";
+import { requestCustomTemplate } from "./actions";
 import { TEMPLATES, SECTIONS } from "@/lib/utils";
 
 export default async function NewWedding({
@@ -89,6 +91,11 @@ export default async function NewWedding({
                 </a>
               </div>
             ))}
+            {/*
+              Last in the grid, after all six. It is an ask rather than a
+              choice, so it deliberately has no radio — see CustomDesignCard.
+            */}
+            <CustomDesignCard action={requestCustomTemplate} />
           </div>
         </div>
 

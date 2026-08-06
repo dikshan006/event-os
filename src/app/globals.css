@@ -114,6 +114,14 @@ html.lenis{scroll-behavior:auto}
 /* Our own name is a wordmark, not a label: fixed casing, and tracking to suit
    mixed case rather than caps. A studio's name keeps the uppercase treatment. */
 .brand-name.is-wordmark{font-size:13px;letter-spacing:.02em;text-transform:none}
+
+/* A studio's uploaded logo, wherever it stands in for their name.
+   Height-capped rather than width-capped: logos vary from a square monogram to
+   a long wordmark, and it is the vertical space that has to stay predictable —
+   a 4:1 wordmark and a 1:1 crest should occupy the same band. `width:auto`
+   with the intrinsic attributes still present is what keeps the ratio while
+   letting the box reserve the right space before the file lands. */
+.brand-logo{display:block;max-width:100%;width:auto;height:auto;max-height:56px;object-fit:contain}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav a{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:var(--soft);font-weight:500}
 .nav a:hover{background:var(--bg);color:var(--ink)}
@@ -767,6 +775,9 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .s-foot-date{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.2em;
   text-transform:uppercase;opacity:var(--muted);text-indent:.2em;margin-top:var(--sp-3)}
 .s-foot .by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--muted);margin-top:8px}
+/* The studio's logo in place of the credit line. Smaller than in the sidebar:
+   this is a signature at the bottom of someone else's page, not a masthead. */
+.s-foot .by-logo{display:inline-block;max-height:34px;width:auto;height:auto;max-width:190px;object-fit:contain}
 
 /* --------------------------------------------------- planner photo manager */
 .ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:20px}
@@ -810,6 +821,42 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 .tpl-choice > span{display:grid;gap:4px}
 .tpl-choice b{font-size:18px}
 .tpl-preview{align-self:flex-start}
+
+/* The custom-design card. Same shell as a template card so it belongs to the
+   grid, one dashed edge so it reads as the thing that is not a template.
+   `--line` rather than the accent: it is an option, not a promotion. */
+.tpl-card-custom{border-style:dashed}
+.tpl-badge{justify-self:start;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  font-weight:600;padding:3px 9px;border-radius:999px;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)}
+.tpl-thanks{margin:0}
+
+/* --------------------------------------------------------- brand chooser --
+   Picking a typeface from a list of names is picking blind, so each option is
+   set in the face it names, in the studio's own words and colour. The label
+   underneath is the fallback for anyone who cannot tell two serifs apart at a
+   glance — which is most people, which is the point. */
+.font-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.font-choice{display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+  border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface);
+  transition:border-color .15s ease,box-shadow .15s ease}
+.font-choice:hover{border-color:var(--accent)}
+.font-choice[data-on="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.font-choice:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.font-choice-body{display:grid;gap:5px;min-width:0}
+/* The sample must not blow out the card: a long studio name in a script face
+   is wider than the column, and clipping it is better than reflowing the grid. */
+.font-choice-sample{font-size:26px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.font-choice-name{font-size:12px;font-weight:600;letter-spacing:.04em}
+.field legend{font-size:13px;font-weight:500;padding:0;margin-bottom:2px}
+
+/* The white-label preview and the current-logo row in settings. */
+.brand-credit{display:grid;gap:6px;justify-items:center}
+.brand-credit-by{font:500 10px var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--muted)}
+.brand-credit-name{line-height:1.2}
+.logo-current{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg)}
 
 /* -------------------------------------------------------------- preview --
    A full-bleed render of the real guest site with one quiet bar above it.

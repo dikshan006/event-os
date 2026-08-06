@@ -97,7 +97,37 @@ model Studio {
   name             String
   slug             String       @unique
   status           StudioStatus @default(ACTIVE)
+  /**
+   * The studio's logo: a resolved public URL, plus the storage prefix behind it
+   * and the intrinsic pixel size of the largest derivative.
+   *
+   * The URL is denormalised deliberately. A logo is rendered in the sidebar of
+   * every studio page, in the footer of every published wedding site and in the
+   * header of every email — and email in particular cannot call a resolver, it
+   * needs an absolute URL baked into the HTML at send time. Storing the derived
+   * URL keeps all three paths identical and removes a `storage()` call from
+   * hot render paths. `logoKey` is what makes the object deletable; a URL alone
+   * would strand the derivatives on replacement.
+   *
+   * Width and height exist so every `<img>` can be given real dimensions. A
+   * logo above the fold with no intrinsic size is a guaranteed layout shift.
+   */
   logoUrl          String?
+  logoKey          String?
+  logoWidth        Int?
+  logoHeight       Int?
+  /**
+   * Which typeface the studio's own name is set in — see lib/branding.ts.
+   *
+   * A validated String rather than a Prisma enum, and that is the one place
+   * this model departs from the house style. Adding a value to a Postgres enum
+   * is a migration that cannot run inside the same transaction as anything
+   * using the new value, so shipping a seventh typeface would mean a two-step
+   * deploy. A brand style is presentation, chosen from a list that will grow;
+   * it does not warrant that. The set is enforced by `zStudioBranding`, and an
+   * unrecognised value falls back to CLASSIC rather than breaking a render.
+   */
+  brandFont        String       @default("CLASSIC")
   brandColor       String       @default("#9D5C64")
   website          String?
   instagram        String?

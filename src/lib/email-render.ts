@@ -40,6 +40,26 @@ export type Message = {
    * requests, password resets) sets this.
    */
   wordmark?: boolean;
+  /**
+   * The studio's logo, when it has uploaded one — an absolute URL, because mail
+   * clients cannot resolve a relative one and will not call a redirect.
+   *
+   * It replaces the letterhead only. The footer keeps the studio's name as
+   * text, deliberately: most clients block remote images until the reader asks
+   * for them, so a logo-only message would arrive from nobody. The text footer
+   * is what makes the sender identifiable in that state, and the `alt` on the
+   * image is what makes it identifiable in the header.
+   *
+   * A width is required and is expressed as an HTML attribute rather than only
+   * in CSS, because Outlook's Word renderer ignores `max-width` on an image and
+   * will otherwise print a 640px logo across a 560px card.
+   */
+  logo?: { src: string; width: number; height: number } | null;
+  /**
+   * Font stack for the brand line — resident faces only. See lib/branding.ts
+   * for why a webfont is not an option here.
+   */
+  face?: string;
   color: string;
   blocks: Block[];
   /** Optional line under the footer rule, e.g. why this email was received. */
@@ -64,6 +84,26 @@ const esc = (s: string) =>
  */
 function safeHref(url: string) {
   return /^https?:\/\//i.test(url) ? esc(url) : "#";
+}
+
+/**
+ * The line at the top of the card: a logo if the studio has one, otherwise its
+ * name set in the studio's chosen face.
+ *
+ * The image is capped at 180px wide *in the attribute*, not only in CSS, and
+ * the height is scaled to match so the aspect ratio survives Outlook. It is
+ * given `display:block` with automatic side margins rather than
+ * `text-align:center` on the parent alone, because the two disagree in Outlook
+ * and only the former is reliable.
+ */
+function letterhead(m: Message): string {
+  if (m.logo && /^https?:\/\//i.test(m.logo.src)) {
+    const w = Math.min(180, m.logo.width);
+    const h = Math.max(1, Math.round((m.logo.height / m.logo.width) * w));
+    return `            <img src="${safeHref(m.logo.src)}" alt="${esc(m.brand)}" width="${w}" height="${h}" style="display:block;margin:0 auto 28px;max-width:${w}px;height:auto;border:0;outline:none;text-decoration:none">`;
+  }
+  const face = m.face ?? "Helvetica,Arial,sans-serif";
+  return `            <p style="margin:0 0 28px;text-align:center;font-family:${esc(face)};font-size:${m.wordmark ? 11 : 13}px;font-weight:600;letter-spacing:${m.wordmark ? "0.4px" : "3px"};text-transform:${m.wordmark ? "none" : "uppercase"};color:${esc(m.color)}">${esc(m.brand)}</p>`;
 }
 
 /* ----------------------------------------------------------------- text -- */
@@ -194,7 +234,7 @@ ${esc(m.preheader)}${"&#847;&zwnj;&nbsp;".repeat(60)}
         <tr>
           <td class="p" style="padding:40px 44px">
 
-            <p style="margin:0 0 28px;text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:${m.wordmark ? "0.4px" : "3px"};text-transform:${m.wordmark ? "none" : "uppercase"};color:${esc(m.color)}">${esc(m.brand)}</p>
+${letterhead(m)}
 
 ${body}
 

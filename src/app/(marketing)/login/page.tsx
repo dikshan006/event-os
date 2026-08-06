@@ -49,7 +49,10 @@ async function login(formData: FormData) {
   await applyDelay(gate.delayMs);
 
   try {
-    await signIn("credentials", { email, password: formData.get("password"), redirectTo: "/" });
+    // `/continue` reads the session and forwards to the right dashboard.
+    // Sending them to "/" put a signed-in planner on the marketing homepage
+    // with a "Dashboard" link to find, which is a step nobody wants.
+    await signIn("credentials", { email, password: formData.get("password"), redirectTo: "/continue" });
   } catch (err) {
     if (err instanceof AuthError) {
       await recordSecurityEvent("SECURITY.LOGIN_FAILED", { email, ip });

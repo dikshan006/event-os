@@ -228,6 +228,91 @@ export async function processImage(
   return { variants, blurData, tone, width: srcW, height: srcH, bytes };
 }
 
+/* ------------------------------------------------------------- logos ------ */
+
+/**
+ * The widest a logo is ever stored at: 2× a ~320px display, which is the
+ * largest it is rendered anywhere (the settings preview). The sidebar shows it
+ * at 150px and the email at 180px.
+ */
+export const LOGO_MAX_WIDTH = 640;
+
+export type ProcessedLogo = { key: string; width: number; height: number; bytes: number };
+
+/**
+ * A logo is not a photograph, and running it through `processImage` would be
+ * wrong in four separate ways — hence a second, much smaller path.
+ *
+ * 1. **Shape.** A wordmark is commonly 800×120. The photo pipeline rejects
+ *    anything under 400px on either edge, so it would refuse most real logos.
+ * 2. **Alpha.** Photographs are opaque and the tone analysis strips alpha. A
+ *    logo's transparency is the whole point: it has to sit on the cream
+ *    sidebar, on a white email card and over a wedding site's footer.
+ * 3. **Format.** The photo ladder emits AVIF and WebP. Outlook renders
+ *    neither, and a logo that is invisible in Outlook is not a logo. PNG is the
+ *    one format every mail client and every browser has always understood, and
+ *    it keeps alpha. One file, one URL, identical on every surface — worth more
+ *    here than the handful of kilobytes WebP would save on an image this size.
+ * 4. **Tone.** There is no focal point to find and no blur placeholder worth
+ *    inlining for a 12 KB image.
+ *
+ * SVG is deliberately not accepted. An SVG is a document that can carry script
+ * and external references, and this one would be served from our origin and
+ * embedded in mail — the sanitising required to make that safe is a larger
+ * commitment than the format is worth. The rejection message says so.
+ */
+export async function processLogo(
+  input: Buffer,
+  basePath: string,
+  emit: (key: string, body: Buffer, contentType: string) => Promise<{ key: string; bytes: number }>,
+): Promise<ProcessedLogo> {
+  if (input.byteLength > MAX_UPLOAD_BYTES) {
+    throw new ImageError(`Logo is larger than ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.`);
+  }
+
+  const source = sharp(input, { failOn: "none" });
+  let meta;
+  try {
+    meta = await source.metadata();
+  } catch {
+    throw new ImageError("That file could not be read as an image.");
+  }
+
+  if (meta.format === "svg") {
+    throw new ImageError("SVG logos are not supported — please upload a PNG with a transparent background.");
+  }
+  if (!meta.format || !ACCEPTED.has(meta.format)) {
+    throw new ImageError("That file is not an image we can process (use PNG, JPEG, WebP or AVIF).");
+  }
+  if (!meta.width || !meta.height) throw new ImageError("Could not read the logo's dimensions.");
+  if (Math.max(meta.width, meta.height) < 80) {
+    throw new ImageError("That logo is too small — please upload at least 80 pixels on its longest edge.");
+  }
+  if (meta.width * meta.height > 40_000_000) throw new ImageError("That image is too large to process.");
+
+  // `.rotate()` applies EXIF orientation and the re-encode drops the rest of the
+  // metadata, exactly as the photo path does.
+  const normalized = sharp(await source.rotate().toBuffer(), { failOn: "none" });
+
+  const width = Math.min(LOGO_MAX_WIDTH, meta.width);
+  const body = await normalized
+    .resize({ width, withoutEnlargement: true })
+    // `palette` gets a flat wordmark down to a few kilobytes without visible
+    // banding, and keeps the alpha channel that `flatten()` would destroy.
+    .png({ compressionLevel: 9, palette: true })
+    .toBuffer();
+
+  const out = await sharp(body).metadata();
+  const stored = await emit(`${basePath}/logo.png`, body, "image/png");
+
+  return {
+    key: stored.key,
+    width: out.width ?? width,
+    height: out.height ?? Math.round((meta.height / meta.width) * width),
+    bytes: stored.bytes,
+  };
+}
+
 /* ------------------------------------------------- rendering helpers ------ */
 
 /** Narrowing helper: `variants` comes back from Prisma as `Json`. */
