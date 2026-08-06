@@ -62,7 +62,7 @@ export async function claimGift(
   itemId: string,
   input: z.infer<typeof zGiftClaim>,
 ) {
-  if (!rateLimit(`gift:${weddingId}`, 30, 60 * 60 * 1000)) {
+  if (!(await rateLimit(`gift:${weddingId}`, 30, 60 * 60 * 1000))) {
     throw new UserError("That is a lot of gifts at once. Please try again shortly.");
   }
 

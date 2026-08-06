@@ -170,31 +170,31 @@ describe("validators", () => {
 /* ────────────────────────────────────────────────────────────── rate limiter */
 
 describe("rate limiter", () => {
-  beforeEach(() => vi.useFakeTimers());
+  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
   afterEach(() => vi.useRealTimers());
 
   it("allows up to the limit and then refuses", async () => {
     const { rateLimit } = await import("@/lib/ratelimit");
     const key = `test:${Math.random()}`;
-    for (let i = 0; i < 5; i++) expect(rateLimit(key, 5, 60_000)).toBe(true);
-    expect(rateLimit(key, 5, 60_000)).toBe(false);
+    for (let i = 0; i < 5; i++) expect(await rateLimit(key, 5, 60_000)).toBe(true);
+    expect(await rateLimit(key, 5, 60_000)).toBe(false);
   });
 
   it("reopens after the window rather than locking someone out permanently", async () => {
     const { rateLimit } = await import("@/lib/ratelimit");
     const key = `test:${Math.random()}`;
-    for (let i = 0; i < 5; i++) rateLimit(key, 5, 60_000);
-    expect(rateLimit(key, 5, 60_000)).toBe(false);
+    for (let i = 0; i < 5; i++) await rateLimit(key, 5, 60_000);
+    expect(await rateLimit(key, 5, 60_000)).toBe(false);
     vi.advanceTimersByTime(60_001);
-    expect(rateLimit(key, 5, 60_000)).toBe(true);
+    expect(await rateLimit(key, 5, 60_000)).toBe(true);
   });
 
   it("counts each key separately, so one guest cannot lock out another", async () => {
     const { rateLimit } = await import("@/lib/ratelimit");
     const a = `a:${Math.random()}`, b = `b:${Math.random()}`;
-    for (let i = 0; i < 5; i++) rateLimit(a, 5, 60_000);
-    expect(rateLimit(a, 5, 60_000)).toBe(false);
-    expect(rateLimit(b, 5, 60_000)).toBe(true);
+    for (let i = 0; i < 5; i++) await rateLimit(a, 5, 60_000);
+    expect(await rateLimit(a, 5, 60_000)).toBe(false);
+    expect(await rateLimit(b, 5, 60_000)).toBe(true);
   });
 });
 

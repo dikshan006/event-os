@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 async function request(formData: FormData) {
   "use server";
   const ip = ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
-  if (rateLimit(`forgot:${ip}`, 5, 60_000)) {
+  if (await rateLimit(`forgot:${ip}`, 5, 60_000)) {
     await requestPasswordReset(String(formData.get("email") ?? ""));
   }
   // Always the same outcome — never reveals whether the account exists.

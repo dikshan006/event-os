@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { AuthError } from "next-auth";
 import { auth, signIn, type SessionUser } from "@/lib/auth";
-import { rateLimit } from "@/lib/ratelimit";
+import { gateLogin, applyDelay, clearLoginFailures } from "@/lib/lockout";
+import { recordSecurityEvent, pseudonymise } from "@/server/services/security-events";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -29,17 +30,38 @@ export const metadata: Metadata = {
 async function login(formData: FormData) {
   "use server";
   const ip = ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
-  if (!rateLimit(`login:${ip}`, 10, 60_000)) redirect("/login?error=rate");
-  try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: "/",
+  const email = String(formData.get("email") ?? "");
+  // The address is hashed before it is used as a counter key or written to a
+  // security event. Keys end up in memory dumps and slow-query logs like
+  // anything else, and the security log should not become a list of everyone
+  // who has ever tried to sign in.
+  const subject = await pseudonymise(email);
+
+  const gate = await gateLogin(subject, ip);
+  if (!gate.allow) {
+    await recordSecurityEvent("SECURITY.LOGIN_LOCKED", {
+      email, ip, metadata: { reason: gate.reason, retryAfter: gate.retryAfter },
     });
+    redirect("/login?error=rate");
+  }
+  // Escalating delay before the password is checked, so the cost of guessing
+  // rises with the number of guesses rather than staying flat.
+  await applyDelay(gate.delayMs);
+
+  try {
+    await signIn("credentials", { email, password: formData.get("password"), redirectTo: "/" });
   } catch (err) {
-    if (err instanceof AuthError) redirect("/login?error=1");
+    if (err instanceof AuthError) {
+      await recordSecurityEvent("SECURITY.LOGIN_FAILED", { email, ip });
+      redirect("/login?error=1");
+    }
     throw err; // NEXT_REDIRECT passes through
   }
+
+  // Unreachable on success — `signIn` redirects by throwing NEXT_REDIRECT —
+  // but kept correct so that if the redirect behaviour ever changes, the
+  // counters are still cleared rather than silently accumulating.
+  await clearLoginFailures(subject, ip);
 }
 
 export default async function LoginPage({

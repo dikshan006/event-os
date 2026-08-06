@@ -1,0 +1,37 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Patch and minor arrive grouped, as one reviewable pull request a week
+    # rather than fifteen. Majors come separately because each one needs a
+    # human to read a changelog.
+    groups:
+      production-patch-minor:
+        dependency-type: production
+        update-types: [minor, patch]
+      development:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Next majors change rendering behaviour across the whole app. Deliberate
+      # work, scheduled, not a dependency bump.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+    labels: [dependencies]
+    commit-message:
+      prefix: deps
+
+  # The CI workflow's own actions. Stale action versions are how a supply-chain
+  # advisory sits unnoticed in a repository that otherwise updates weekly.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies]
+    commit-message:
+      prefix: ci

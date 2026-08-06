@@ -44,7 +44,7 @@ export default async function GuestPortal({ params }: { params: Promise<{ code: 
   async function rsvpAction(inviteCode: string, input: { status: string; meal: string; dietary: string; notes: string }) {
     "use server";
     // Invite code as the limiter key: a code can update its RSVP, not hammer the endpoint.
-    if (!rateLimit(`rsvp:${inviteCode}`, 6, 60_000)) throw new Error("Too many attempts \u2014 please wait a moment.");
+    if (!(await rateLimit(`rsvp:${inviteCode}`, 6, 60_000))) throw new Error("Too many attempts \u2014 please wait a moment.");
     await submitRsvp(inviteCode, zRsvp.parse(input));
   }
 

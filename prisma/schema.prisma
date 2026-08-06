@@ -489,3 +489,37 @@ enum AccessRequestStatus {
   INVITED
   DECLINED
 }
+
+/**
+ * A record that a side effect has already happened.
+ *
+ * Sending an invitation is not idempotent by nature: the planner clicks
+ * "Send", the function is slow, the browser retries or they click again, and a
+ * guest receives the same invitation twice. That is not a data-integrity
+ * problem — it is embarrassing, on the one email a couple cares most about.
+ *
+ * The `key` is derived from what the operation *is* rather than from when it
+ * was requested: for an invitation, the guest and the wedding. Two attempts to
+ * send the same guest the same invitation therefore collide on the unique
+ * index, and the second one loses. The row is claimed *before* the side effect
+ * runs, so the race is settled by Postgres rather than by timing.
+ *
+ * `expiresAt` keeps the table from growing without bound and, more usefully,
+ * defines what "again" means: re-sending an invitation next month is a
+ * legitimate action, re-sending it four seconds later is a double-click.
+ */
+model IdempotencyKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  scope     String
+  studioId  String?
+  /** Set once the operation completes, so a retry can tell "done" from "in flight". */
+  completedAt DateTime?
+  /** Provider id or similar, returned to a retry instead of redoing the work. */
+  result    Json?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@index([scope, studioId])
+}

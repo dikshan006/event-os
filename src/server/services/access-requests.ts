@@ -56,7 +56,7 @@ export async function submitAccessRequest(
   // was caught only teaches whoever wrote it to stop filling that field in.
   if (input.role) return { ok: true };
 
-  if (!rateLimit(`access:${ip ?? "unknown"}`, 3, 60 * 60 * 1000)) {
+  if (!(await rateLimit(`access:${ip ?? "unknown"}`, 3, 60 * 60 * 1000))) {
     return {
       ok: false,
       message: "We already have a request from you. Give us a little time to read it.",
