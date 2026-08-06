@@ -13,6 +13,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only by default. A workflow that only builds and tests has no business
+# being able to push, comment or cut a release, and the default token is
+# broader than that.
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -21,35 +27,53 @@ jobs:
     env:
       # The build imports modules that read these at load time. They are
       # syntactically valid and point at nothing — no CI job should be able to
-      # reach a real database, and a build that needs one is a build that cannot
-      # be verified on a pull request from a fork.
+      # reach a real database, and a build that needs one cannot be verified on
+      # a pull request from a fork.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
       APP_URL: https://ci.invalid
       AUTH_SECRET: ci-only-not-a-real-secret-000000000000
+      # Anonymous build telemetry, on a machine that is not ours.
+      NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
-      - uses: actions/checkout@v4
+      # v5 across the board. The v4 line runs on the Node 20 action runtime,
+      # which GitHub has deprecated: jobs still pass but every run carries a
+      # deprecation annotation, and those become failures on GitHub's schedule
+      # rather than ours.
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
+          # Matches the runtime Vercel builds on, so an API difference surfaces
+          # here rather than in production.
           node-version: 22
           cache: npm
 
       - run: npm ci
 
-      # Generate the Prisma client but do not migrate: `prisma migrate deploy`
-      # needs a reachable database, and the type-level contract is what CI is
-      # checking.
-      - run: npx prisma generate
+      # Generate the Prisma client, but do not migrate: `prisma migrate deploy`
+      # needs a reachable database, and what CI verifies is the type-level
+      # contract between the schema and the code.
+      - name: Prisma client
+        run: npx prisma generate
 
       - name: Types
         run: npm run typecheck
 
+      # `eslint` directly, not `next lint`.
+      #
+      # This was the original failure. `next lint` is deprecated in Next 15 and
+      # removed in 16, and when it finds no ESLint configuration it does not
+      # fail — it asks a question: "How would you like to configure ESLint?" On
+      # a runner there is no TTY to answer, so it exits 1 with output that looks
+      # nothing like a lint error. The repository had no ESLint config at all,
+      # so this ran on every single build.
       - name: Lint
         run: npm run lint
 
       - name: Tests
+        id: tests
         run: npm run test:coverage
 
       - name: Build
@@ -57,13 +81,22 @@ jobs:
 
       - name: Dependency audit
         # Advisory rather than blocking: a transitive high in a dev-only tool
-        # should not stop a security fix from shipping. It is surfaced on every
-        # run so it cannot rot unnoticed.
+        # should not stand between a security fix and production. Printed on
+        # every run so it cannot rot unnoticed. Triage lives in SECURITY.md.
         run: npm audit --audit-level=high || true
 
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - name: Coverage report
+        # Only when the tests actually ran. `if: always()` uploads after a
+        # failed *install*, when the directory does not exist — producing an
+        # upload warning stacked on top of the real failure, which is one more
+        # thing to read past when something is already broken.
+        if: ${{ !cancelled() && steps.tests.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@v5
         with:
           name: coverage
           path: coverage/
+          # The artifact is a convenience, not a gate — the gate is the
+          # threshold check inside `npm run test:coverage`, which has already
+          # run and already failed the job if it was going to.
+          if-no-files-found: ignore
           retention-days: 14

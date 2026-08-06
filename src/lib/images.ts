@@ -1,5 +1,5 @@
 import "server-only";
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 import { UserError } from "./errors";
 import { NEUTRAL_TONE, type PhotoTone } from "./photo-tone";
 
@@ -68,7 +68,18 @@ export type ProcessedImage = {
  * detection — but the failure mode is simply the centre of the frame, which is
  * where a fixed crop would have been anyway.
  */
-async function analyseImage(img: sharp.Sharp): Promise<PhotoTone> {
+/**
+ * `Sharp` is imported as a named type, which it is from 0.35 onwards.
+ *
+ * This used to read `sharp.Sharp`. That worked while the package shipped
+ * `export = sharp` with a function/namespace merge — the default import carried
+ * the namespace, so members were reachable through it in type position. 0.35
+ * moved to real ESM type declarations (`dist/index.d.mts`), where `Sharp` is an
+ * ordinary named export and there is no namespace to reach through. The
+ * security bump to 0.35.3 therefore turned a file nobody had touched into
+ * `TS2503: Cannot find namespace 'sharp'`, which failed the Vercel build.
+ */
+async function analyseImage(img: Sharp): Promise<PhotoTone> {
   const W = 64;
   const { data, info } = await img
     .clone()

@@ -8,12 +8,15 @@ import { fmtDate, TEMPLATES } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
 export default async function WeddingsPage({ searchParams }: { searchParams: Promise<{ published?: string; canceled?: string }> }) {
-  const { studioId, user } = await requireStudio();
+  const { studioId } = await requireStudio();
   const weddings = await listWeddings(studioId);
   const sp = await searchParams;
 
   async function publishAction(formData: FormData) {
     "use server";
+    // Actor and tenant both come from this action's own session check rather
+    // than from the render's closure: a server action is a separate request,
+    // and everything it authorises on should be re-derived inside it.
     const { studioId, user } = await requireStudio();
     const result = await startPublish(studioId, String(formData.get("id")), user.name);
     if (!result.ok) redirect(result.checkoutUrl);
@@ -21,18 +24,26 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
   }
   async function unpublishAction(formData: FormData) {
     "use server";
+    // Unpublish takes no actor — see the note in weddings.ts about it being the
+    // one state change on this page that is not attributed.
     const { studioId } = await requireStudio();
     await unpublishWedding(studioId, String(formData.get("id")));
     revalidatePath("/studio/weddings");
   }
   async function duplicateAction(formData: FormData) {
     "use server";
+    // Actor and tenant both come from this action's own session check rather
+    // than from the render's closure: a server action is a separate request,
+    // and everything it authorises on should be re-derived inside it.
     const { studioId, user } = await requireStudio();
     await duplicateWedding(studioId, user.name, String(formData.get("id")));
     revalidatePath("/studio/weddings");
   }
   async function deleteAction(formData: FormData) {
     "use server";
+    // Actor and tenant both come from this action's own session check rather
+    // than from the render's closure: a server action is a separate request,
+    // and everything it authorises on should be re-derived inside it.
     const { studioId, user } = await requireStudio();
     await deleteWedding(studioId, user.name, String(formData.get("id")));
     revalidatePath("/studio/weddings");

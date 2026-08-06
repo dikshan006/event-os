@@ -2,6 +2,25 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+/**
+ * The services under test import `@/lib/db` at module load, which constructs a
+ * PrismaClient — a real one, with a real engine, in a process that has no
+ * database and no business talking to one. It surfaced here as an unhandled
+ * rejection about a missing query engine, which is noise in the best case and a
+ * false positive in the worst.
+ *
+ * Nothing in this file exercises a query: the functions covered are key
+ * derivation, hashing and backoff, all pure. So the client is stubbed rather
+ * than the tests being rewritten around it.
+ */
+vi.mock("@/lib/db", () => ({
+  prisma: new Proxy({}, {
+    get() {
+      throw new Error("tests/reliability.test.ts must not reach the database");
+    },
+  }),
+}));
+
 /* ─────────────────────────────────────────────────────── progressive lockout */
 
 describe("login throttling", () => {

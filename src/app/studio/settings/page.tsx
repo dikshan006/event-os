@@ -48,7 +48,7 @@ export default async function StudioSettings() {
         <div className="card pad" style={{ background: "var(--cream)", border: "none" }}>
           <div className="eyebrow" style={{ color: "var(--soft)" }}>White label</div>
           <h2 className="section-t" style={{ marginTop: 6 }}>What guests see</h2>
-          <p className="meta" style={{ marginBottom: 18 }}>Every wedding website carries your studio's name — never ours.</p>
+          <p className="meta" style={{ marginBottom: 18 }}>Every wedding website carries your studio’s name — never ours.</p>
           <div className="card pad" style={{ textAlign: "center" }}>
             <div className="script" style={{ fontSize: 26, color: studio.brandColor }}>Sarah &amp; James</div>
             <div className="meta" style={{ letterSpacing: ".2em", textTransform: "uppercase", fontSize: 10, marginTop: 10 }}>

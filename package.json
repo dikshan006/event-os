@@ -13,13 +13,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:create-admin": "tsx --env-file=.env prisma/create-admin.ts",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:backfill-timezones": "tsx --env-file=.env prisma/backfill-timezones.ts",
     "email:check": "tsx --env-file=.env scripts/email-check.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:fix": "eslint . --fix"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -41,10 +42,13 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.22",
     "prisma": "^6.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
