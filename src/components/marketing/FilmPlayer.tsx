@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 
 /**
  * A film card that expands into a centred player.
@@ -20,6 +19,24 @@ import { createPortal } from "react-dom";
  * This is a FLIP, and it is the difference between "a lightbox appeared" and
  * "the thing I clicked became the player". Every scale and translate is on the
  * compositor, so it holds 60fps regardless of the page behind it.
+ *
+ * ── WHY NO PORTAL ──────────────────────────────────────────────────────────
+ *
+ * A modal usually needs `createPortal` to escape ancestors that create a
+ * containing block for `position: fixed` — any transform, filter or
+ * will-change on a parent traps it. Here it does not:
+ *
+ *   `.m .reveal.armed.in { transform: none; }`
+ *   `.m .reveal.in       { will-change: auto; }`
+ *
+ * The wrapper drops both the moment its entrance finishes, and a card cannot
+ * be clicked before it has been revealed. `.m-wed` sets no transform, filter
+ * or isolation either, so the dialog at z-index 120 resolves against the
+ * viewport and sits above everything (the nav is 40).
+ *
+ * Avoiding the portal also avoids importing from `react-dom`, which this
+ * project has no types for — and adding `@types/react-dom` for one function
+ * is a dependency the layout does not need.
  *
  * ── PLAYBACK POSITION ──────────────────────────────────────────────────────
  *
@@ -230,66 +247,63 @@ export function FilmPlayer({ n, title, line, src, poster, label }: Props) {
       <h3>{title}</h3>
       <p>{line}</p>
 
-      {mounted && open
-        ? createPortal(
-            <div
-              className={`m-lightbox${entered ? " is-in" : ""}`}
-              onMouseDown={(e) => {
-                // Only a press that both starts and ends on the backdrop closes,
-                // so dragging the scrubber out of the dialog does not dismiss it.
-                if (e.target === e.currentTarget) close();
+      {mounted && open ? (
+        <div
+          className={`m-lightbox${entered ? " is-in" : ""}`}
+          onMouseDown={(e) => {
+            // Only a press that both starts and ends on the backdrop closes,
+            // so dragging the scrubber out of the dialog does not dismiss it.
+            if (e.target === e.currentTarget) close();
+          }}
+        >
+          <div
+            ref={dialogRef}
+            className="m-lightbox-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={label ?? title}
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+          >
+            <video
+              ref={videoRef}
+              className="m-lightbox-video"
+              src={src}
+              poster={poster}
+              controls={showControls}
+              controlsList="nodownload"
+              playsInline
+              preload="auto"
+              onPlaying={() => {
+                setPlaying(true);
+                setLoading(false);
               }}
+              onPause={() => setPlaying(false)}
+              onWaiting={() => setLoading(true)}
+              onCanPlay={() => setLoading(false)}
+              onEnded={() => {
+                rememberedTime = 0;
+                setPlaying(false);
+              }}
+            />
+
+            <div className={`m-lightbox-loading${loading ? " is-on" : ""}`} aria-hidden="true">
+              <span />
+            </div>
+
+            <button
+              type="button"
+              className="m-lightbox-close"
+              onClick={close}
+              aria-label="Close"
             >
-              <div
-                ref={dialogRef}
-                className="m-lightbox-dialog"
-                role="dialog"
-                aria-modal="true"
-                aria-label={label ?? title}
-                onMouseEnter={() => setHovering(true)}
-                onMouseLeave={() => setHovering(false)}
-              >
-                <video
-                  ref={videoRef}
-                  className="m-lightbox-video"
-                  src={src}
-                  poster={poster}
-                  controls={showControls}
-                  controlsList="nodownload"
-                  playsInline
-                  preload="auto"
-                  onPlaying={() => {
-                    setPlaying(true);
-                    setLoading(false);
-                  }}
-                  onPause={() => setPlaying(false)}
-                  onWaiting={() => setLoading(true)}
-                  onCanPlay={() => setLoading(false)}
-                  onEnded={() => {
-                    rememberedTime = 0;
-                    setPlaying(false);
-                  }}
-                />
-
-                <div className={`m-lightbox-loading${loading ? " is-on" : ""}`} aria-hidden="true">
-                  <span />
-                </div>
-
-                <button
-                  type="button"
-                  className="m-lightbox-close"
-                  onClick={close}
-                  aria-label="Close"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
