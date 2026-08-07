@@ -4,6 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { showcaseWeddings } from "@/server/services/showcase";
 import { fmtDate } from "@/lib/utils";
 import { InvitationSpecimen } from "@/components/marketing/Specimens";
+import { FilmPlayer } from "@/components/marketing/FilmPlayer";
 
 export const metadata: Metadata = {
   title: "Weddings — EventOS",
@@ -68,12 +69,30 @@ const GUEST = [
   "The registry",
 ];
 
-/** The three films. Ordered as someone learns the product, not as we built it. */
-const FILMS = [
+/**
+ * The three films. Ordered as someone learns the product, not as we built it.
+ *
+ * `film` is optional and present only on the ones that exist. Typed explicitly
+ * rather than inferred, because inference would give a union in which only one
+ * member has the property — and reading `f.film` off that union is an error.
+ */
+type FilmCard = {
+  n: string;
+  title: string;
+  line: string;
+  film?: { src: string; poster: string };
+};
+
+const FILMS: FilmCard[] = [
   {
     n: "01",
     title: "What EventOS is",
     line: "The idea in a couple of minutes, and how the pieces fit together.",
+    /* Finished. `film` present means the card plays rather than waits. */
+    film: {
+      src: "/marketing/films/eventos-launch.mp4",
+      poster: "/marketing/films/eventos-launch-poster.jpg",
+    },
   },
   {
     n: "02",
@@ -248,21 +267,34 @@ export default async function WeddingsPage() {
           </Reveal>
 
           {/*
-            Placeholders with the final proportions and the final copy. Each
-            card is a 16:9 frame; dropping a <video> or an embed inside
-            `.m-film-frame` needs no other change to the layout.
+            Film 01 is finished and plays in place; 02 and 03 are still
+            placeholders. Both use the same 16:9 frame, the same play
+            affordance and the same number, so the row reads as one set —
+            the only difference is that the first one responds.
           */}
           <div className="m-films" style={{ marginTop: "var(--m-block)" }}>
-            {FILMS.map((f, i) => (
-              <Reveal key={f.n} className="m-film" delay={i * 60}>
-                <div className="m-film-frame">
-                  <span className="m-play" aria-hidden="true" />
-                  <span className="m-film-n" aria-hidden="true">{f.n}</span>
-                </div>
-                <h3>{f.title}</h3>
-                <p>{f.line}</p>
-              </Reveal>
-            ))}
+            {FILMS.map((f, i) =>
+              f.film ? (
+                <Reveal key={f.n} className="m-film" delay={i * 60}>
+                  <FilmPlayer
+                    n={f.n}
+                    title={f.title}
+                    line={f.line}
+                    src={f.film.src}
+                    poster={f.film.poster}
+                  />
+                </Reveal>
+              ) : (
+                <Reveal key={f.n} className="m-film" delay={i * 60}>
+                  <div className="m-film-frame">
+                    <span className="m-play" aria-hidden="true" />
+                    <span className="m-film-n" aria-hidden="true">{f.n}</span>
+                  </div>
+                  <h3>{f.title}</h3>
+                  <p>{f.line}</p>
+                </Reveal>
+              ),
+            )}
           </div>
         </div>
       </section>

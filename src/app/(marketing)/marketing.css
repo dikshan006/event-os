@@ -1399,3 +1399,163 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
  * nothing moves at a different rate on a timer, and there is no vestibular
  * trigger in a still image that stays still. The content scrolls; the picture
  * does not. */
+
+/* ──────────────────────────────────────────────────────── film lightbox ──
+   The first film card opens into a centred player. Everything here is
+   additive: the card keeps the placeholder's frame, number and play
+   affordance, so the grid, layout and typography are untouched.
+
+   The whole interaction runs on `transform` and `opacity` only, which keeps
+   it on the compositor and off the main thread — the page behind it is still
+   running Lenis, and a modal that stutters the scroll it froze would give the
+   game away immediately. */
+
+.m-film-open {
+  display: block;
+  inline-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.m-film-open .m-film-frame { display: grid; }
+.m-film-open img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+.m-film-open .m-play,
+.m-film-open .m-film-n { position: relative; z-index: 2; }
+
+/* The play affordance is the only thing that moves on hover. A card that
+   lifts, brightens and scales is three ideas where one will do. */
+.m-film-open .m-play {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-film-open:hover .m-play,
+.m-film-open:focus-visible .m-play {
+  transform: scale(1.08);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+}
+.m-film-open:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+
+/* ── the backdrop ─────────────────────────────────────────────────────── */
+.m-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: color-mix(in srgb, #05070c 62%, transparent);
+  backdrop-filter: blur(18px) saturate(0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(0.9);
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-lightbox.is-in { opacity: 1; }
+
+/* ── the dialog ───────────────────────────────────────────────────────────
+   76vw, capped so it never becomes absurd on a wide display, and capped again
+   by height so a short window does not push the controls off screen. */
+.m-lightbox-dialog {
+  position: relative;
+  inline-size: min(76vw, 1360px, calc((100dvh - 8rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  border-radius: clamp(10px, 1vw, 18px);
+  overflow: hidden;
+  background: #05070c;
+  border: 1px solid rgba(242, 242, 239, 0.14);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.4),
+    0 40px 90px rgba(0, 0, 0, 0.55),
+    0 120px 220px rgba(0, 0, 0, 0.4);
+  transform-origin: center center;
+  will-change: transform, opacity;
+  /* The long tail is what makes it read as settling rather than snapping. */
+  transition:
+    transform 460ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-lightbox-video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  display: block;
+  background: #05070c;
+}
+
+/* ── loading ──────────────────────────────────────────────────────────────
+   A slow sweep rather than a spinner. Spinners announce a wait; this reads as
+   the film gathering itself, and it only appears if the buffer actually runs
+   dry. */
+.m-lightbox-loading {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 2px;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+  z-index: 3;
+}
+.m-lightbox-loading.is-on { opacity: 1; }
+.m-lightbox-loading > span {
+  display: block;
+  block-size: 100%;
+  inline-size: 34%;
+  background: linear-gradient(90deg, transparent, rgba(242, 242, 239, 0.75), transparent);
+  animation: m-sweep 1.25s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes m-sweep {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(420%); }
+}
+
+/* ── close ────────────────────────────────────────────────────────────── */
+.m-lightbox-close {
+  position: absolute;
+  inset-block-start: clamp(0.6rem, 1.2vw, 1rem);
+  inset-inline-end: clamp(0.6rem, 1.2vw, 1rem);
+  z-index: 4;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(242, 242, 239, 0.2);
+  background: color-mix(in srgb, #05070c 55%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f2f2ef;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 260ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-lightbox-dialog:hover .m-lightbox-close,
+.m-lightbox-close:focus-visible { opacity: 1; }
+.m-lightbox-close:hover { background: color-mix(in srgb, #05070c 78%, transparent); transform: scale(1.06); }
+.m-lightbox-close svg { inline-size: 1rem; block-size: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+@media (prefers-reduced-motion: reduce) {
+  .m-lightbox,
+  .m-lightbox-dialog,
+  .m-lightbox-close,
+  .m-film-open .m-play { transition-duration: 1ms; }
+  .m-lightbox-loading > span { animation: none; }
+}
