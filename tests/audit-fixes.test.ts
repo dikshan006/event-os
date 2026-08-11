@@ -105,6 +105,9 @@ describe("production environment validation", () => {
       DATABASE_URL: "postgresql://u:p@host/db",
       AUTH_SECRET: "a".repeat(44),
       APP_URL: "https://eventos.example",
+      // Production requires a shared rate-limit store; see the Upstash case below.
+      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "t".repeat(40),
       ...over,
     } as NodeJS.ProcessEnv;
     return checkEnv();
@@ -139,5 +142,38 @@ describe("production environment validation", () => {
     const r = prod({ RESEND_API_KEY: undefined });
     expect(r.ok).toBe(true);
     expect(r.missingExpected).toContain("RESEND_API_KEY");
+  });
+
+  /**
+   * Rate limiting without a shared store is the failure this guard exists for,
+   * and it is invisible at runtime: `consume()` falls back to a per-process Map
+   * and returns a perfectly ordinary allow/deny. Nothing in a log distinguishes
+   * a limit of 10 from a limit of 10 per instance across eight warm instances.
+   * Refusing to boot is the only place the mistake is still cheap.
+   */
+  it("fails in production when the shared rate-limit store is not configured", () => {
+    expect(prod({ UPSTASH_REDIS_REST_URL: undefined }).ok).toBe(false);
+    expect(prod({ UPSTASH_REDIS_REST_TOKEN: undefined }).ok).toBe(false);
+    expect(prod({ UPSTASH_REDIS_REST_URL: undefined }).missingRequired.join(" ")).toMatch(
+      /UPSTASH_REDIS_REST_URL/,
+    );
+  });
+
+  /**
+   * ...and only in production. A contributor cloning the repo has no Redis, and
+   * a limiter that refused to start without one would make the first-run
+   * experience a stack trace.
+   */
+  it("does not require the rate-limit store outside production", () => {
+    process.env = {
+      ...ORIGINAL,
+      NODE_ENV: "development",
+      DATABASE_URL: "postgresql://u:p@host/db",
+      AUTH_SECRET: "a".repeat(44),
+      APP_URL: "http://localhost:3000",
+      UPSTASH_REDIS_REST_URL: undefined,
+      UPSTASH_REDIS_REST_TOKEN: undefined,
+    } as NodeJS.ProcessEnv;
+    expect(checkEnv().ok).toBe(true);
   });
 });

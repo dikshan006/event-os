@@ -19,6 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headers": "playwright test headers",
     "typecheck": "tsc --noEmit",
     "lint:fix": "eslint . --fix"
   },
@@ -41,8 +43,25 @@
     "stripe": "^17.5.0",
     "zod": "^3.24.1"
   },
+  "//overrides": [
+    "sharp: Next 15.5 declares an optional sharp ^0.34.3 and resolved a second,",
+    "nested copy at 0.34.5 — vulnerable to the libvips CVEs in GHSA-f88m-g3jw-g9cj.",
+    "The app's own uploads already go through the top-level sharp 0.35.3, so the",
+    "attacker-supplied path was never on the vulnerable copy; the nested one is",
+    "reachable only via /_next/image, which cannot fetch remote images because no",
+    "images.remotePatterns are configured. Pinned anyway so one version ships.",
+    "postcss: 8.4.31 carries four advisories (XSS via unescaped </style>, arbitrary",
+    ".map disclosure via sourceMappingURL). Build-time only and our CSS is our own,",
+    "but 8.5.26 satisfies Next's declared ^8.4.31 range, so this costs nothing.",
+    "It also drags postcss's nested nanoid past the <3.3.17 advisory."
+  ],
+  "overrides": {
+    "sharp": "^0.35.3",
+    "postcss": "^8.5.26"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",

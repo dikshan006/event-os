@@ -2029,3 +2029,204 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .site[data-template="VELVET_BOTANICAL"] .s-masthead{
     padding-block:clamp(72px,14vw,120px) clamp(120px,34vw,200px)}
 }
+
+/* ══════════════════════════════════════════════════════ help centre ═══════
+   The help centre uses the studio's own tokens and components — .card, .btn,
+   .chip, .field, .section-t — so it reads as the same product rather than as a
+   documentation site bolted on. Nothing below introduces a new colour, a new
+   radius or a new typeface; it is layout for pieces that already exist. */
+
+/* ─────────────────────────────────────────────────────────── search ─── */
+.help-search{margin-bottom:36px;max-width:640px;position:relative}
+.help-search-box{display:flex;align-items:center;gap:10px;background:var(--surface);
+  border:1px solid var(--line-strong);border-radius:12px;padding:0 14px;
+  box-shadow:var(--shadow-sm);transition:border-color var(--dur) var(--ease)}
+.help-search-box:focus-within{border-color:var(--accent)}
+.help-search-icon{font-size:17px;color:var(--faint);line-height:1}
+.help-search-box input{flex:1;border:0;background:none;outline:none;padding:13px 0;
+  font:inherit;font-size:14px;color:var(--ink)}
+.help-search-box input::placeholder{color:var(--faint)}
+/* Safari draws its own clear affordance on type=search and it collides. */
+.help-search-box input::-webkit-search-decoration,
+.help-search-box input::-webkit-search-cancel-button{-webkit-appearance:none}
+.help-search-box kbd{font:inherit;font-size:11px;color:var(--faint);border:1px solid var(--line);
+  border-radius:6px;padding:2px 7px;line-height:1.4}
+
+.help-results{position:absolute;inset-inline:0;top:calc(100% + 8px);z-index:20;
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.10);padding:8px;max-height:60vh;overflow:auto}
+.help-resultcount{font-size:11px;color:var(--faint);padding:6px 10px 8px}
+.help-noresult{font-size:13px;color:var(--soft);padding:14px 12px;line-height:1.6}
+.help-results ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.help-results a{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 12px;
+  border-radius:10px;text-decoration:none;color:inherit}
+.help-results a:hover{background:var(--accent-soft)}
+.help-results a b{font-size:14px;font-weight:500}
+.help-results a em{font-style:normal;font-size:11px;color:var(--accent);
+  letter-spacing:.08em;text-transform:uppercase;grid-column:2;grid-row:1;align-self:center}
+.help-results a span{font-size:12px;color:var(--soft);grid-column:1/-1}
+
+/* ──────────────────────────────────────────────────────────── index ─── */
+.help-index{display:grid;gap:40px}
+.help-cat-head{margin-bottom:14px}
+.help-cat-head .section-t{margin-bottom:2px}
+.help-toc{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.help-toc a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:16px 20px;text-decoration:none;color:inherit;
+  transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.help-toc a:hover{border-color:var(--accent);transform:translateX(2px)}
+.help-toc-n{font-family:var(--serif);font-size:15px;color:var(--faint);min-width:2ch}
+.help-toc a:hover .help-toc-n{color:var(--accent)}
+.help-toc-t{display:grid;gap:1px;min-width:0}
+.help-toc-t b{font-size:15px;font-weight:500}
+.help-toc-t em{font-style:normal;font-size:12.5px;color:var(--soft)}
+.help-toc-go{color:var(--faint);transition:transform var(--dur) var(--ease)}
+.help-toc a:hover .help-toc-go{color:var(--accent);transform:translateX(3px)}
+.help-foot{margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.help-foot b{display:block;margin-bottom:3px}
+.help-foot .meta{max-width:52ch;line-height:1.6}
+
+/* ────────────────────────────────────────────────────────── article ─── */
+.help-article{max-width:760px}
+.help-crumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;
+  color:var(--faint);margin-bottom:20px}
+.help-crumbs a{color:var(--soft);text-decoration:none}
+.help-crumbs a:hover{color:var(--accent)}
+.help-crumbs b{color:var(--ink);font-weight:500}
+.help-head{margin-bottom:28px}
+.help-head .h1{font-size:36px;margin:0}
+
+.help-body{font-size:15px;line-height:1.72;color:var(--ink)}
+.help-lede{font-size:17px;line-height:1.62;color:var(--soft);margin-bottom:34px;
+  padding-bottom:26px;border-bottom:1px solid var(--line)}
+.help-q{margin-bottom:38px}
+.help-q > h2{font-family:var(--serif);font-size:22px;font-weight:500;margin:0 0 12px}
+.help-q p{margin:0 0 12px}
+.help-q p:last-child{margin-bottom:0}
+.help-list{margin:0 0 12px;padding-left:20px;display:grid;gap:5px}
+.help-steps{margin:0 0 18px;padding-left:0;list-style:none;counter-reset:s;display:grid;gap:10px}
+.help-steps li{counter-increment:s;position:relative;padding-left:38px}
+.help-steps li::before{content:counter(s);position:absolute;left:0;top:1px;
+  inline-size:24px;block-size:24px;display:grid;place-items:center;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600}
+
+/* ──────────────────────────────────────────── live interface examples ─── */
+.help-demo{margin:0 0 20px;border:1px solid var(--line);border-radius:16px;
+  background:color-mix(in srgb,var(--ink) 2.5%,transparent);overflow:hidden}
+.help-demo figcaption{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);padding:12px 18px;border-bottom:1px solid var(--line)}
+.help-demo-stage{padding:20px}
+.help-demo.guest figcaption{color:var(--accent)}
+.help-demo.guest{background:color-mix(in srgb,var(--accent) 4%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 22%,var(--line))}
+
+.help-input{border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;
+  background:var(--surface);font-size:13.5px;min-height:40px;color:var(--ink)}
+.help-input.ph{color:var(--faint)}
+.help-hint{font-size:11.5px;color:var(--faint);line-height:1.5}
+.help-fieldrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.help-demo-stage .field{margin-bottom:14px}
+.help-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:4px}
+.help-groups{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.help-audience{margin:14px 0 4px}
+.help-check{display:grid;gap:9px;font-size:13.5px}
+.help-check > div{display:flex;align-items:center;gap:10px}
+
+.help-pin{display:inline-grid;place-items:center;inline-size:20px;block-size:20px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;
+  margin-left:8px;flex:none}
+.help-callouts{list-style:none;counter-reset:c;margin:-8px 0 20px;padding:0;display:grid;gap:6px}
+.help-callouts li{counter-increment:c;position:relative;padding-left:30px;
+  font-size:13px;color:var(--soft);line-height:1.6}
+.help-callouts li::before{content:counter(c);position:absolute;left:0;top:1px;
+  inline-size:20px;block-size:20px;display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:11px;font-weight:600}
+
+.help-note{display:grid;gap:4px;margin:0 0 20px;padding:15px 18px;border-radius:14px;
+  background:var(--accent-soft);border-left:3px solid var(--accent);font-size:13.5px;line-height:1.65}
+.help-note b{font-weight:600}
+.help-note.warn{background:var(--wine-soft);border-left-color:var(--wine)}
+.help-note.warn b{color:var(--wine)}
+
+.help-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  line-height:1.9;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:14px 16px;overflow-x:auto;color:var(--ink)}
+
+.help-table{overflow-x:auto}
+.help-table table{width:100%;border-collapse:collapse;font-size:13.5px}
+.help-table th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;padding:0 14px 9px 0;border-bottom:1px solid var(--line)}
+.help-table td{padding:11px 14px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.help-table tr:last-child td{border-bottom:0}
+.help-body > .help-table,.help-q > .help-table{margin-bottom:18px}
+
+.help-see{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+
+/* ───────────────────────────────────────────────────── seating board ─── */
+.help-seating{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px}
+.help-seat-col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.help-seat-tables{display:grid;gap:12px}
+.help-seat-h{display:flex;justify-content:space-between;align-items:center;font-size:12px;
+  font-weight:600;color:var(--soft);margin-bottom:9px}
+.help-seat-h span{font-weight:400;color:var(--faint)}
+.help-seat-guest{font-size:13px;padding:7px 10px;border-radius:8px;background:var(--accent-soft);
+  margin-bottom:5px}
+
+/* ───────────────────────────────────────────────── guest-side phone ─── */
+.help-phone{max-width:280px;margin-inline:auto;border:1px solid var(--line-strong);
+  border-radius:26px;padding:9px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.help-phone-screen{border-radius:19px;overflow:hidden;background:var(--cream,#faf7f4);padding:18px 15px}
+
+.help-mail{text-align:center;display:grid;gap:11px}
+.help-mail-logo{font-size:10px;letter-spacing:.28em;color:var(--soft)}
+.help-mail-h{font-family:var(--serif);font-size:21px;margin:0}
+.help-mail-b{font-size:12px;color:var(--soft);line-height:1.6;margin:0}
+.help-mail-btn{display:inline-block;background:var(--accent);color:#fff;font-size:12px;
+  padding:9px 18px;border-radius:9px}
+.help-mail-f{font-size:10.5px;color:var(--faint);margin:0}
+
+.help-sched{display:grid;gap:9px}
+.help-sched-day{font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);margin-top:5px}
+.help-sched-row{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:baseline}
+.help-sched-row b{font-size:11.5px;white-space:nowrap}
+.help-sched-row span{display:block;font-size:13px}
+.help-sched-row em{display:block;font-style:normal;font-size:11px;color:var(--soft)}
+
+.help-portal{display:grid;gap:10px}
+.help-portal-h{text-align:center;display:grid;gap:3px;margin-bottom:4px}
+.help-portal-h em{font-style:normal;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--soft)}
+.help-portal-h b{font-family:var(--serif);font-size:20px;font-weight:500}
+.help-portal-h span{font-size:10.5px;color:var(--soft)}
+.help-portal-card{background:var(--surface);border-radius:11px;padding:11px 13px;display:grid;gap:3px}
+.help-portal-card em{font-style:normal;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint)}
+.help-portal-card span{font-size:12.5px}
+.help-portal-btns{display:flex;gap:6px;margin-top:5px}
+.help-portal-btns span{flex:1;text-align:center;font-size:11.5px;padding:6px 0;
+  border-radius:8px;border:1px solid var(--line-strong);color:var(--soft)}
+.help-portal-btns span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ───────────────────────────────────────────────── previous / next ─── */
+.help-nextprev{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:44px;
+  padding-top:26px;border-top:1px solid var(--line)}
+.help-np{display:grid;gap:3px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:15px 18px;text-decoration:none;color:inherit;
+  transition:border-color var(--dur) var(--ease)}
+.help-np:hover{border-color:var(--accent)}
+.help-np em{font-style:normal;font-size:11px;color:var(--faint)}
+.help-np b{font-size:14px;font-weight:500}
+.help-np.next{text-align:right}
+.help-back{margin-top:22px;font-size:13px}
+.help-back a{color:var(--soft);text-decoration:none}
+.help-back a:hover{color:var(--accent)}
+
+@media (max-width:760px){
+  .help-fieldrow,.help-nextprev,.help-seating{grid-template-columns:minmax(0,1fr)}
+  .help-np.next{text-align:left}
+  .help-head .h1{font-size:29px}
+  .help-toc a{grid-template-columns:auto 1fr;gap:12px}
+  .help-toc-go{display:none}
+}

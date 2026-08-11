@@ -25,6 +25,10 @@ export default async function StudioLayout({ children }: { children: React.React
           { href: "/studio/weddings", label: "Weddings" },
           { href: "/studio/billing", label: "Billing" },
           { href: "/studio/settings", label: "Settings" },
+          // Last, and always present. A planner looks for help at the moment
+          // something is confusing, which is not a moment to go hunting for
+          // where help lives — so it sits in the same place on every page.
+          { href: "/studio/help", label: "Help" },
         ]}
         footer={
           <>

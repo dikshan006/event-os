@@ -75,6 +75,38 @@ export function checkEnv(): EnvReport {
     if (/localhost|127\.0\.0\.1/.test(process.env.APP_URL ?? "")) {
       missingRequired.push("APP_URL (points at localhost in production)");
     }
+
+    /**
+     * Rate limiting has to be shared across instances in production.
+     *
+     * `lib/ratelimit` falls back to a per-process `Map` when Upstash is absent,
+     * which is a real limiter on one long-lived server and very nearly no
+     * limiter on Vercel: every serverless instance keeps its own counters, so
+     * the effective limit is the configured one multiplied by however many
+     * instances happen to be warm, and every deployment resets all of them. The
+     * login throttle is the one that matters — a credential-stuffing run spread
+     * across instances walks through a limit that looks correct in the source.
+     *
+     * That fallback is right for local development and CI, where there is no
+     * Redis and a limiter that threw would turn a missing variable into an
+     * outage. It is wrong for production, where the fallback is silent: nothing
+     * distinguishes "rate limited" from "rate limited thirty times over".
+     *
+     * So production requires both variables and refuses to boot without them,
+     * which fails the deploy rather than shipping a limiter that quietly does
+     * not hold. The runtime fallback in `consume()` is untouched and still
+     * catches Redis being *unreachable* — an outage mid-flight degrades to the
+     * weaker limiter rather than refusing every request, which is the correct
+     * trade. This only closes the case where it was never configured at all.
+     */
+    const upstash = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"].filter(
+      n => !process.env[n]?.trim(),
+    );
+    if (upstash.length) {
+      missingRequired.push(
+        `${upstash.join(" and ")} (rate limiting would be per-instance, so every limit multiplies by instance count)`,
+      );
+    }
   }
 
   return { ok: missingRequired.length === 0, missingRequired, missingExpected };

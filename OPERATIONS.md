@@ -50,6 +50,46 @@ wait for a support ticket.
 
 ## Backups
 
+### Configuration status — last checked 11 August 2026
+
+**Nothing in this section is verified.** It is a hosting configuration, and this
+repository cannot see it. A connection string proves a database exists; it says
+nothing about whether anyone can get the data back. The targets below this
+heading are what we intend, not what is true — and the difference between the
+two is invisible until the morning it matters.
+
+What the repository *does* prove:
+
+| Fact | How it was established |
+|---|---|
+| Postgres, reached through a pooled endpoint | `DATABASE_URL` / `DIRECT_URL` in `.env`, and the split is what `prisma migrate` needs |
+| The provider is Neon or Supabase | the connection string's host |
+| Migrations run at build time | `"build": "prisma generate && prisma migrate deploy && next build"` |
+| Deletes cascade widely | `onDelete: Cascade` from Studio → weddings → guests; one mistaken delete removes a great deal |
+
+That last row is the reason this matters more here than in an average
+application. Deleting a studio is a single statement that takes its weddings,
+guests, RSVPs, seating and photographs with it, and there is no soft-delete and
+no undo in the product.
+
+**Confirm these five things in the provider console, then replace this block
+with what you actually found — including the date and the plan name.** The
+answers change with the plan, so "it was on when we launched" is not durable.
+
+1. **Point-in-time recovery is enabled.** Neon: Console → Project → Settings →
+   *History retention*. Supabase: Dashboard → Database → *Backups*.
+2. **The retention window is at least 7 days.** Free tiers commonly give 24
+   hours or nothing, which does not cover the failure that actually happens — a
+   planner deletes a wedding and the couple asks about it a week later.
+3. **Who can perform a restore.** Names, not roles. If it is one person, that
+   person is a single point of failure on a fixed-date product.
+4. **Where the console is, and how to reach it without the app.** An incident
+   that takes out `APP_URL` should not also take out the runbook.
+5. **A restore has been performed at least once.** Not tested is not backed up.
+
+Until those are answered in writing, treat the RPO and RTO above as aspirations.
+The honest current position is: **recovery capability unknown.**
+
 ### Postgres — the one that matters
 
 **Enable point-in-time recovery on the database provider.** This is the single

@@ -1247,6 +1247,42 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
 .m-film > h3 { font-size: var(--m-body); font-weight: 500; letter-spacing: -0.005em; }
 .m-film > p { font-size: var(--m-small); color: var(--soft); max-width: 34ch; }
 
+/* One film rather than a row of three.
+   Capped at the reading measure instead of the full grid: a 16:9 frame
+   stretched across the whole page puts the play control a long way from the
+   words that introduce it, and the eye has to travel back. Centred, so the
+   section reads as one column. */
+.m-film-solo { max-width: 56rem; margin-inline: auto; }
+.m-film-solo .m-film > p { max-width: 52ch; }
+
+/* The demo invitation, directly beneath the film.
+   Sits on the same glass as the other chapter blocks so it belongs to the page
+   rather than arriving as a banner. Generous top margin because it is a change
+   of subject — from watching to asking — and that deserves a pause. */
+.m-demo {
+  max-width: 56rem;
+  margin-inline: auto;
+  margin-block-start: clamp(2.5rem, 6vw, 4.5rem);
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+  display: grid;
+  justify-items: start;
+  gap: 0.9rem;
+  text-align: start;
+}
+.m-demo > h3 {
+  font-size: var(--m-h3, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.m-demo > p {
+  font-size: var(--m-small);
+  color: var(--soft);
+  max-width: 56ch;
+}
+.m-demo > .m-btn { margin-block-start: 0.4rem; }
+
 /* A row of actions, centred. The two hero blocks each had this inline. */
 .m-actions-center { justify-content: center; }
 

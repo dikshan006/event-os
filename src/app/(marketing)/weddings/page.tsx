@@ -70,41 +70,21 @@ const GUEST = [
 ];
 
 /**
- * The three films. Ordered as someone learns the product, not as we built it.
+ * The launch film — the whole explanation of the product, in one place.
  *
- * `film` is optional and present only on the ones that exist. Typed explicitly
- * rather than inferred, because inference would give a union in which only one
- * member has the property — and reading `f.film` off that union is an error.
+ * There were three cards here: one finished film and two empty frames labelled
+ * 02 and 03. Two placeholders sitting beside a real thing do not read as
+ * "more coming", they read as unfinished, and they took two thirds of the row
+ * to say nothing. The film that exists says what EventOS is, so it is now the
+ * only one, at full width, with a way to ask for a demo underneath it.
  */
-type FilmCard = {
-  n: string;
-  title: string;
-  line: string;
-  film?: { src: string; poster: string };
+const LAUNCH_FILM = {
+  n: "01",
+  title: "What EventOS is",
+  line: "The idea in a couple of minutes, and how the pieces fit together.",
+  src: "/marketing/films/eventos-launch.mp4",
+  poster: "/marketing/films/eventos-launch-poster.jpg",
 };
-
-const FILMS: FilmCard[] = [
-  {
-    n: "01",
-    title: "What EventOS is",
-    line: "The idea in a couple of minutes, and how the pieces fit together.",
-    /* Finished. `film` present means the card plays rather than waits. */
-    film: {
-      src: "/marketing/films/eventos-launch.mp4",
-      poster: "/marketing/films/eventos-launch-poster.jpg",
-    },
-  },
-  {
-    n: "02",
-    title: "How a planner runs a wedding",
-    line: "From an empty studio to a published website and invitations sent.",
-  },
-  {
-    n: "03",
-    title: "What a guest sees",
-    line: "One link, from the invitation arriving to the morning of the day.",
-  },
-];
 
 export default async function WeddingsPage() {
   const examples = await showcaseWeddings(3);
@@ -161,7 +141,7 @@ export default async function WeddingsPage() {
                 Request access <span className="m-arrow" aria-hidden="true">→</span>
               </Link>
               <a href="#films" className="m-btn m-btn-line m-btn-lg">
-                Watch the films
+                Watch the film
               </a>
             </div>
           </Reveal>
@@ -259,7 +239,7 @@ export default async function WeddingsPage() {
           <Reveal>
             <span className="m-eyebrow">Watch</span>
             <h2 className="m-title m-serif" style={{ maxWidth: "18ch", marginBlock: "1.25rem 1rem" }}>
-              Three films, start to finish.
+              The film, start to finish.
             </h2>
             <p className="m-lead">
               Shorter than reading about it, and closer to the truth.
@@ -267,35 +247,44 @@ export default async function WeddingsPage() {
           </Reveal>
 
           {/*
-            Film 01 is finished and plays in place; 02 and 03 are still
-            placeholders. Both use the same 16:9 frame, the same play
-            affordance and the same number, so the row reads as one set —
-            the only difference is that the first one responds.
+            One film, at the measure of the prose rather than a third of the
+            grid. `m-film` is the same component the row used, so the frame,
+            the play affordance and the caption below are unchanged — it is
+            the container that is different, not the piece.
           */}
-          <div className="m-films" style={{ marginTop: "var(--m-block)" }}>
-            {FILMS.map((f, i) =>
-              f.film ? (
-                <Reveal key={f.n} className="m-film" delay={i * 60}>
-                  <FilmPlayer
-                    n={f.n}
-                    title={f.title}
-                    line={f.line}
-                    src={f.film.src}
-                    poster={f.film.poster}
-                  />
-                </Reveal>
-              ) : (
-                <Reveal key={f.n} className="m-film" delay={i * 60}>
-                  <div className="m-film-frame">
-                    <span className="m-play" aria-hidden="true" />
-                    <span className="m-film-n" aria-hidden="true">{f.n}</span>
-                  </div>
-                  <h3>{f.title}</h3>
-                  <p>{f.line}</p>
-                </Reveal>
-              ),
-            )}
+          <div className="m-film-solo" style={{ marginTop: "var(--m-block)" }}>
+            <Reveal className="m-film">
+              <FilmPlayer
+                n={LAUNCH_FILM.n}
+                title={LAUNCH_FILM.title}
+                line={LAUNCH_FILM.line}
+                src={LAUNCH_FILM.src}
+                poster={LAUNCH_FILM.poster}
+              />
+            </Reveal>
           </div>
+
+          {/*
+            The ask, immediately under the film.
+
+            Someone who has just watched two minutes of explanation is at the
+            most interested they will be on this page, and the next thing they
+            need is not another section of the tour — it is a way to get in
+            touch. `/request-access` is the existing front door and is left
+            exactly as it is; this is a second entrance to it, not a new flow.
+          */}
+          <Reveal className="m-demo" delay={80}>
+            <h3 className="m-serif">See EventOS in action</h3>
+            <p>
+              The film above is the short version of what EventOS is and how a
+              wedding comes together in it. For the long version — your own
+              studio, your own branding, a real wedding built end to end — ask
+              us for a demo and we will walk you through it.
+            </p>
+            <Link href="/request-access" className="m-btn m-btn-solid m-btn-lg">
+              Get a Demo <span className="m-arrow" aria-hidden="true">→</span>
+            </Link>
+          </Reveal>
         </div>
       </section>
 
