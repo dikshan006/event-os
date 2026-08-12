@@ -220,8 +220,30 @@ listed as recommended, not done.
 | `/api/ready` | Is it configured to do its job? | On deploy |
 | `/api/build` | Which commit is serving? | On demand |
 
-Point an uptime monitor (Better Stack, Pingdom, UptimeRobot) at `/api/health`
-and alert on **two consecutive failures** — one failure is a cold start.
+### External uptime monitoring — CONFIGURED
+
+| | |
+|---|---|
+| **Monitor** | EventOS Production Health |
+| **Provider** | Better Stack |
+| **Target** | `https://event-os-brown.vercel.app/api/health` |
+| **Alerting** | Email |
+
+This is the one endpoint worth watching from outside, because it is the only one
+that proves something rather than reporting it: `/api/health` runs a real
+`SELECT 1` against Postgres, so a green check means the serverless function
+booted *and* reached the database. A monitor pointed at the marketing homepage
+would stay green through a total database outage, because that page is
+statically generated and served from cache.
+
+`/api/ready` is deliberately **not** monitored. It answers a configuration
+question, not a liveness one, and its answer only changes when someone changes
+an environment variable — polling it would produce an alert nobody can act on at
+3am. Check it after a deploy instead.
+
+**Alert on two consecutive failures, not one.** A single failure is usually a
+cold start on an idle deployment, and a monitor that pages on those trains
+whoever carries the pager to ignore it.
 
 ### What to alert on
 

@@ -19,7 +19,25 @@ import { defineConfig } from "@playwright/test";
  * tests invalidating each other's sessions.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100);
-const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+
+/**
+ * `localhost`, never `127.0.0.1`.
+ *
+ * The session cookie is `__Host-authjs.session-token` with `Secure`, because
+ * `NODE_ENV` is production here — which is the point of building for
+ * production rather than running `next dev`. A `Secure` cookie is not stored
+ * or replayed over plaintext http at a raw IP, so against `127.0.0.1` the
+ * server set the cookie, the browser dropped it, and every request after
+ * sign-in arrived anonymous. Five tests failed on a 307 to /login and four
+ * more *passed* while proving nothing, because "redirected to /login" happened
+ * to satisfy their assertion.
+ *
+ * Chromium treats the hostname `localhost` as a trustworthy origin and keeps
+ * `Secure` cookies set over it. Nothing in the application changes: the cookie
+ * name, the `Secure` flag and the `__Host-` prefix are exactly what production
+ * serves over HTTPS. Only the hostname the tests dial is different.
+ */
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -50,7 +68,19 @@ export default defineConfig({
      */
     command: `npm run build && npx next start -p ${PORT}`,
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    /**
+     * Never reuse a running server.
+     *
+     * Rate-limit counters live in the server process whenever Upstash is
+     * absent or unreachable, and they outlive a test run. Reusing a warm server
+     * carried the previous run's login counters into the next one and exhausted
+     * the per-address budget partway through — a failure that looks like a bug
+     * in whichever test happens to sign in last.
+     *
+     * A fresh process per run is the only way the limiter starts from zero.
+     * This deliberately does not touch `IP_HARD` or any other production limit.
+     */
+    reuseExistingServer: false,
     timeout: 180_000,
     stdout: "pipe",
     stderr: "pipe",

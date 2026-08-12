@@ -18,3 +18,9 @@ Thumbs.db
 
 # test coverage output
 coverage/
+
+# Playwright artifacts — traces, screenshots and error contexts from E2E runs.
+# Traces embed request/response bodies and page snapshots from a seeded run;
+# they are debugging output, not source, and must not reach the repository.
+test-results/
+playwright-report/

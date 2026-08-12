@@ -1,6 +1,7 @@
 import { test, expect, type BrowserContext } from "@playwright/test";
-import { seed, close, prisma, IDS, EMAILS, CODES } from "./seed";
-import { signIn, rawGet, expectBouncedFromStudioResource } from "./helpers";
+import bcrypt from "bcryptjs";
+import { seed, close, prisma, IDS, EMAILS, CODES, PASSWORD } from "./seed";
+import { signIn, signInAs, rawGet, expectBouncedFromStudioResource } from "./helpers";
 
 /**
  * Cases 1–10 of the security suite: who may read what.
@@ -115,6 +116,21 @@ test("6 · suspending a studio ends its planner's access", async ({ browser }) =
 test("7 · a password reset invalidates sessions opened with the old password", async ({
   browser,
 }) => {
+  /**
+   * Longer than the suite default, because the wait below is a production
+   * constant rather than a guess.
+   *
+   * `auth.ts` re-reads the account only after `CLAIM_REFRESH_MS` (60s), so a
+   * revoked session is genuinely still usable until the next re-read — that is
+   * the documented design, not a bug. Observing the revocation therefore takes
+   * just over a minute, and the suite's 30s cap killed this test mid-wait
+   * before it reached a single assertion.
+   *
+   * Scoped to this test. The global timeout, the 61s wait and
+   * `CLAIM_REFRESH_MS` are all unchanged.
+   */
+  test.setTimeout(120_000);
+
   const victim = await signIn(browser, EMAILS.plannerA);
   expect((await rawGet(victim.request, "/studio")).status).toBe(200);
 
@@ -144,33 +160,105 @@ test("7 · a password reset invalidates sessions opened with the old password", 
 test("8 · an admin-issued password invalidates the planner's existing sessions", async ({
   browser,
 }) => {
+  /**
+   * Longer than the suite default, because the wait below is a production
+   * constant rather than a guess.
+   *
+   * `auth.ts` re-reads the account only after `CLAIM_REFRESH_MS` (60s), so a
+   * revoked session is genuinely still usable until the next re-read — that is
+   * the documented design, not a bug. Observing the revocation therefore takes
+   * just over a minute, and the suite's 30s cap killed this test mid-wait
+   * before it reached a single assertion.
+   *
+   * Scoped to this test. The global timeout, the 61s wait and
+   * `CLAIM_REFRESH_MS` are all unchanged.
+   */
+  test.setTimeout(120_000);
+
   const victim = await signIn(browser, EMAILS.plannerB);
   expect((await rawGet(victim.request, "/studio")).status).toBe(200);
 
-  const admin = await signIn(browser, EMAILS.admin);
-  // Drive the real admin action rather than writing the column directly: the
-  // point of this test is that the admin path remembers to revoke.
-  const issued = await admin.request.post(`/admin/planners/${IDS.studioB}`, {
-    form: { intent: "issue-password" },
-    maxRedirects: 0,
-  }).catch(() => null);
-  if (!issued || issued.status() >= 400) {
-    // The admin UI is a server action, not a documented POST contract. Fall
-    // back to the column the action is required to set, so this test still
-    // asserts the revocation rule even if the action's wire format changes.
+  /**
+   * Registered *before* the mutation, so it runs however this test ends.
+   *
+   * This test issues planner B a genuinely new credential through the real
+   * admin dialog — that is the behaviour under test and it is working. What it
+   * failed to do was put the fixture back: the seeded password no longer
+   * authenticated planner B, and case 16 died at sign-in with `?error=1`
+   * before it could evaluate a single ticket-isolation assertion.
+   *
+   * `sessionsValidFrom` was already restored at the end of the happy path, but
+   * an assertion failing partway through skipped even that. A registered
+   * cleanup runs on pass, on failure and on timeout alike, which is the only
+   * arrangement that leaves the fixture usable for the tests that follow.
+   *
+   * The password is re-hashed with bcrypt at the same cost the application
+   * uses. The plaintext never reaches the database — only a hash of the value
+   * `seed.ts` already knows.
+   */
+  const restorePlannerB = async () => {
     await prisma.user.update({
       where: { id: IDS.plannerB },
-      data: { sessionsValidFrom: new Date(Date.now() + 1000) },
+      data: { sessionsValidFrom: null, passwordHash: await bcrypt.hash(PASSWORD, 12) },
     });
+  };
+
+  /**
+   * Driven through the real admin dialog, with no fallback.
+   *
+   * The previous version POSTed at `/admin/planners` and, when that did not
+   * work — which it never could, because issuing a password is a Server Action
+   * — wrote `sessionsValidFrom` directly and carried on. That asserted the
+   * revocation *rule* while quietly excusing the admin *path* from proving it
+   * triggers the rule, which is the only thing this test exists to show.
+   *
+   * Now: open the planners list, press Password on studio B's row, choose the
+   * generated option, submit. If any of that is missing the test fails here.
+   */
+  const admin = await signInAs(browser, EMAILS.admin);
+
+  try {
+    await admin.page.goto("/admin/planners");
+
+    const row = admin.page.locator("tr", { hasText: "E2E e2e-b" }).first();
+    await expect(row, "studio B must appear in the planners list").toBeVisible();
+    await row.getByRole("button", { name: "Password" }).click();
+
+    const dialog = admin.page.locator("dialog.dlg[open]");
+    await expect(dialog, "the password dialog must open").toBeVisible();
+    await dialog.getByRole("button", { name: "Generate password" }).click();
+
+    /**
+     * The flash confirms the action actually ran: it is rendered from the value
+     * `resetPlannerPassword` returned, so it cannot appear unless a password
+     * was genuinely issued.
+     */
+    await expect(
+      admin.page.locator("code"),
+      "the new credential must be shown once, which proves the action ran",
+    ).toBeVisible({ timeout: 15_000 });
+
+    // And the database must record the revocation, not merely the new password.
+    const revoked = await prisma.user.findUniqueOrThrow({
+      where: { id: IDS.plannerB },
+      select: { sessionsValidFrom: true },
+    });
+    expect(
+      revoked.sessionsValidFrom,
+      "issuing a password must stamp sessionsValidFrom, or old sessions survive",
+    ).toBeInstanceOf(Date);
+
+    // The claim refresh is throttled to once a minute, so the cutoff lands on
+    // the next re-read rather than the next request.
+    await new Promise(r => setTimeout(r, 61_000));
+    const { status, location } = await rawGet(victim.request, "/studio");
+    expect(status, "an admin-issued credential must end old sessions").toBeGreaterThanOrEqual(300);
+    expect(location).toContain("/login");
+  } finally {
+    await restorePlannerB();
+    await victim.close();
+    await admin.context.close();
   }
-
-  await new Promise(r => setTimeout(r, 61_000));
-  const { status } = await rawGet(victim.request, "/studio");
-  expect(status, "an admin-issued credential must end old sessions").toBeGreaterThanOrEqual(300);
-
-  await prisma.user.update({ where: { id: IDS.plannerB }, data: { sessionsValidFrom: null } });
-  await victim.close();
-  await admin.close();
 });
 
 test("9 · an expired session cannot reach a protected route", async ({ browser }) => {
@@ -200,11 +288,21 @@ test("10 · an invite code cannot be replayed against another wedding", async ({
   const aBody = await a.text();
   expect(aBody).not.toContain("Guest One's toaster");
 
-  // The calendar feed accepts either an invite code or a published slug, and
-  // must not let one wedding's code produce another wedding's events.
-  const feed = await anon.request.get(`/calendar/${CODES.guestA}`);
-  expect(feed.status()).toBe(200);
+  /**
+   * The calendar feed, at its real address.
+   *
+   * The route is `/calendar/{token}/{event}.ics` — one handler serving both an
+   * invite code and a published wedding slug. The earlier `/calendar/{code}`
+   * matched no route and 404'd, so this assertion had never once run.
+   *
+   * Strengthened while correcting it: A's feed must positively contain A's
+   * event, not merely lack B's. A 404 body or an empty calendar would satisfy
+   * "does not contain B" without proving anything.
+   */
+  const feed = await anon.request.get(`/calendar/${CODES.guestA}/all.ics`);
+  expect(feed.status(), "the personal .ics feed must resolve for a valid code").toBe(200);
   const ics = await feed.text();
+  expect(ics, "A's feed must carry A's own event").toContain(`${IDS.eventA}@eventos`);
   expect(ics, "A's feed must not contain B's event").not.toContain(IDS.eventB);
 
   // A code that does not exist is a 404, never a 403 — the token space stays
@@ -226,59 +324,147 @@ test("10 · an invite code cannot be replayed against another wedding", async ({
  * The ticket id is created through the real form rather than seeded, so the
  * whole path — action, session, service, page — is exercised.
  */
-test("16 · planner A cannot open planner B's support ticket", async () => {
-  // B opens a ticket through the UI.
-  const open = await plannerB.request.post("/studio/help/tickets/new", {
-    form: {
-      subject: "Guests are not receiving invitations",
-      category: "GUESTS_AND_RSVPS",
-      body: "I pressed send invitations and nothing arrived for anyone.",
-    },
+/**
+ * Opens a ticket the way a planner does: from the Help Center, through the
+ * form, pressing the button. Returns the ticket id from the URL it lands on.
+ */
+async function openTicketViaUi(
+  page: import("@playwright/test").Page,
+  subject: string,
+  body: string,
+) {
+  await page.goto("/studio/help/tickets/new");
+  await page.fill('input[name="subject"]', subject);
+  await page.selectOption('select[name="category"]', "GUESTS_AND_RSVPS");
+  await page.fill('textarea[name="body"]', body);
+  /**
+   * The negative lookahead is load-bearing.
+   *
+   * `/\/studio\/help\/tickets\/[^/]+/` matches the form's own URL,
+   * `/studio/help/tickets/new`. `waitForURL` checks the current location first,
+   * so it resolved instantly — before the click had even been processed — and
+   * captured the literal string "new" as the ticket id. The database lookup
+   * then failed on a record that was never going to exist, while the real
+   * submission may not have happened at all.
+   */
+  await Promise.all([
+    page.waitForURL(/\/studio\/help\/tickets\/(?!new(\?|$))[^/?]+/, { timeout: 20_000 }),
+    page.getByRole("button", { name: "Send to support" }).click(),
+  ]);
+  const id = page.url().match(/tickets\/([^/?]+)/)?.[1];
+  expect(id, `expected a ticket id in ${page.url()}`).toBeTruthy();
+  expect(
+    id,
+    `landed back on the form at ${page.url()} — the ticket was not created, ` +
+      "most likely a validation error on the submitted fields",
+  ).not.toBe("new");
+  return id as string;
+}
+
+test("16 · a planner opens a ticket, and only their studio can read it", async ({ browser }) => {
+  const b = await signInAs(browser, EMAILS.plannerB);
+  const subject = "Guests are not receiving invitations";
+  const ticketId = await openTicketViaUi(
+    b.page,
+    subject,
+    "I pressed send invitations and nothing arrived for anyone.",
+  );
+
+  // The ticket really exists, owned by B's studio — not merely a redirect.
+  const row = await prisma.supportTicket.findUniqueOrThrow({
+    where: { id: ticketId },
+    include: { messages: true },
+  });
+  expect(row.studioId, "ownership comes from the session, not the form").toBe(IDS.studioB);
+  expect(row.userId).toBe(IDS.plannerB);
+  expect(row.status).toBe("OPEN");
+  expect(row.messages, "the opening message is written with the ticket").toHaveLength(1);
+  expect(row.messages[0].authorType).toBe("PLANNER");
+
+  // B sees their own thread, with what they typed in it.
+  await expect(b.page.getByText(subject)).toBeVisible();
+  await b.page.goto("/studio/help/tickets");
+  await expect(
+    b.page.getByRole("link", { name: /Open ticket/ }).first(),
+    "the ticket must be listed with a way to open it",
+  ).toBeVisible();
+
+  /**
+   * A must not — and must not be able to tell it exists. 404, never 403: a
+   * foreign ticket and a missing one have to be indistinguishable, or the
+   * response becomes an oracle for which ids are real.
+   */
+  const theirs = await plannerA.request.get(`/studio/help/tickets/${ticketId}`, {
     maxRedirects: 0,
   });
-  // The action redirects to the new ticket; the id is in the Location header.
-  const location = open.headers()["location"] ?? "";
-  const ticketId = location.match(/tickets\/([^/?]+)/)?.[1];
-  expect(ticketId, `expected a ticket id in ${location || "(no redirect)"}`).toBeTruthy();
-
-  // B can read their own.
-  const mine = await plannerB.request.get(`/studio/help/tickets/${ticketId}`, { maxRedirects: 0 });
-  expect(mine.status(), "the owner must be able to open it").toBe(200);
-
-  // A must not — and must not be able to tell it exists.
-  const theirs = await plannerA.request.get(`/studio/help/tickets/${ticketId}`, { maxRedirects: 0 });
   expect(theirs.status(), "a foreign ticket must 404, never 200 or 403").toBe(404);
-  const body = await theirs.text().catch(() => "");
-  expect(body).not.toContain("Guests are not receiving invitations");
+  expect(await theirs.text().catch(() => "")).not.toContain(subject);
+
+  // Nor may it leak into A's own list.
+  const a = await signInAs(browser, EMAILS.plannerA);
+  await a.page.goto("/studio/help/tickets");
+  await expect(
+    a.page.getByText(subject),
+    "another studio's subject must never appear in this planner's list",
+  ).toHaveCount(0);
+
+  await a.context.close();
+  await b.context.close();
 });
 
-test("17 · planner A cannot reply to planner B's ticket, or reach the admin queue", async () => {
-  const open = await plannerB.request.post("/studio/help/tickets/new", {
-    form: {
-      subject: "Second ticket for the reply test",
-      category: "OTHER",
-      body: "This body is long enough to pass validation.",
-    },
+test("17 · a planner replies to their own ticket, and cannot reach anyone else's", async ({
+  browser,
+}) => {
+  const b = await signInAs(browser, EMAILS.plannerB);
+  const ticketId = await openTicketViaUi(
+    b.page,
+    "Second ticket, for the reply test",
+    "This body is long enough to pass validation.",
+  );
+
+  // Reply through the real form on the thread page.
+  const reply = "Adding one more detail: it started on Tuesday.";
+  await b.page.fill('textarea[name="body"]', reply);
+  await b.page.getByRole("button", { name: /Send reply/ }).click();
+  await expect(
+    b.page.getByText(reply),
+    "the planner's own reply must appear in their thread",
+  ).toBeVisible({ timeout: 15_000 });
+
+  const after = await prisma.supportTicket.findUniqueOrThrow({
+    where: { id: ticketId },
+    include: { messages: { orderBy: { createdAt: "asc" } } },
+  });
+  expect(after.messages, "the reply is appended, not replacing the original").toHaveLength(2);
+  expect(after.messages[1].body).toBe(reply);
+  expect(after.messages[1].authorType).toBe("PLANNER");
+
+  /**
+   * A has no route to B's reply form at all.
+   *
+   * Stated rather than faked. Replying is a Server Action rendered inside the
+   * thread page, and Next verifies an encoded action id server-side — so there
+   * is no request a planner can construct from outside that reaches it. The
+   * boundary a browser can prove is that the page carrying the form is
+   * unreachable, and that is what is asserted. The service-level guard, that
+   * `replyAsPlanner` filters on studioId even if called directly, is covered by
+   * `tests/support.test.ts`.
+   */
+  const page404 = await plannerA.request.get(`/studio/help/tickets/${ticketId}`, {
     maxRedirects: 0,
   });
-  const ticketId = (open.headers()["location"] ?? "").match(/tickets\/([^/?]+)/)?.[1];
-  expect(ticketId).toBeTruthy();
+  expect(page404.status(), "no reply form is reachable for a foreign ticket").toBe(404);
 
-  // A posts a reply to B's thread.
-  const reply = await plannerA.request.post(`/studio/help/tickets/${ticketId}`, {
-    form: { body: "I should not be able to write here." },
-    maxRedirects: 0,
-  });
-  expect(reply.status(), "writing into another studio's thread must not succeed").not.toBe(200);
+  // The message count must be unchanged by A's attempt to reach it.
+  const untouched = await prisma.ticketMessage.count({ where: { ticketId } });
+  expect(untouched, "nothing may be appended by a planner who cannot open it").toBe(2);
 
-  // And the message must not have landed. Read as the owner and check.
-  const owner = await plannerB.request.get(`/studio/help/tickets/${ticketId}`);
-  expect(await owner.text()).not.toContain("I should not be able to write here.");
-
-  // The admin queue is closed to planners entirely.
+  // And the admin queue is closed to planners entirely.
   for (const path of ["/admin/support", `/admin/support/${ticketId}`]) {
     const { status, location } = await rawGet(plannerA.request, path);
     expect(status, `${path} must not serve a planner`).toBeGreaterThanOrEqual(300);
     expect(location).toContain("/login");
   }
+
+  await b.context.close();
 });

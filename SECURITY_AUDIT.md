@@ -1,3 +1,10 @@
+> **Current state — 12 August 2026.** The full E2E security suite passes
+> **23/23**. Uptime monitoring is configured. The two sections below are dated
+> records of the passes that got there; where they disagree with the final
+> section, **[Final verification pass](#final-verification-pass--12-august-2026)
+> is authoritative.** One item remains outstanding and it is not code: Neon
+> retention, branch protection, staging separation and a restore drill.
+
 # EventOS — Security Hardening Pass
 
 **Date:** 11 August 2026
@@ -37,7 +44,7 @@ that phrase as a conclusion.
 | 2 · Database backups | REQUIRES MANUAL HOSTING CONFIGURATION — nothing verifiable from the repo; `OPERATIONS.md` now says so explicitly |
 | 3 · Distributed rate limiting | FIXED — production now refuses to boot without a shared store |
 | 4 · Live security headers | NOT VERIFIED — config is correct and now has a test; the deployed response was not observed |
-| 5 · E2E security tests | WRITTEN, NOT RUN — 19 tests across 4 files; needs a database and a browser |
+| 5 · E2E security tests | Written here as 19 tests, never executed on this date. **Now 23 tests, all passing** — see the final section |
 | 6 · Authorization review | VERIFIED — no IDOR found; the previous audit's finding holds |
 | 7 · Invitation security | VERIFIED — CSPRNG tokens, no Referer leak, no cross-wedding replay |
 | 8 · Upload security | VERIFIED — bounded on size, pixels, format and rate; filenames are server-generated |
@@ -252,7 +259,13 @@ points at before treating a header check as authoritative.
 
 ---
 
-## Priority 5 · E2E security tests — WRITTEN, NOT RUN
+## Priority 5 · E2E security tests — WRITTEN, NOT RUN *(superseded)*
+
+> **Superseded 12 August 2026.** The suite has since been corrected and run:
+> **23 tests, 23 passing, 3.3 minutes**, against a disposable Neon branch. What
+> follows is the state on 11 August, kept because the caveats it raises are the
+> ones that actually bit — selector drift, route-shape drift, and tests that
+> could pass without proving anything.
 
 Four files, 19 tests, covering all 15 requested cases. **None have been
 executed.** They need a Postgres database, a browser and a production build;
@@ -319,6 +332,12 @@ DATABASE_URL=<scratch db> npm run test:e2e
 
 Expect first-run failures from selector or route-shape drift. They have never
 been executed; treat the first green run as the actual verification.
+
+*That prediction held. The first three runs found a `Secure`-cookie environment
+fault, four tenancy tests that passed while unauthenticated, two Prisma field
+errors, a URL that matched no route, a regex that captured `new` as a ticket id,
+and two fixture-restore gaps. All were test or environment faults; none was an
+application defect.*
 
 ---
 
@@ -465,10 +484,10 @@ pass.
 |---|---|
 | `npm test` | **86 passed** (84 before; +2 for the new environment guard) — VERIFIED |
 | `npm run lint` | **0 errors**, 31 warnings, all pre-existing (`no-console` in scripts, one `exhaustive-deps`, one `any`) — VERIFIED |
-| `npm run typecheck` | **NOT VERIFIED** — needs a generated Prisma client; engine download is blocked here (403 from `binaries.prisma.sh`) |
+| `npm run typecheck` | NOT VERIFIED *on this date* — engine download blocked (403 from `binaries.prisma.sh`). **Since verified** — see the final section |
 | `npm audit` | VERIFIED — see Priority 1 |
-| `npm run build` | **NOT VERIFIED** — same Prisma engine block |
-| Playwright | **NOT RUN** — no database, no browser |
+| `npm run build` | NOT VERIFIED *on this date* — same Prisma engine block. **Since verified**: Playwright's `webServer` runs `npm run build` before every suite |
+| Playwright | NOT RUN *on this date*. **Since run — 23/23** |
 
 The previous audit hit the same two walls for the same reason. Run locally:
 
@@ -499,7 +518,11 @@ now fails instead of starting.
 
 ---
 
-## Remaining risks
+## Remaining risks *(as at 11 August — superseded)*
+
+> Items 2, 3 and 4 have since been closed: headers confirmed live, the E2E suite
+> run at 23/23, and Upstash configured. The live list is
+> [REQUIRED BEFORE REAL USERS](#required-before-real-users) in the final section.
 
 **Ranked by what would actually hurt.**
 
@@ -526,7 +549,12 @@ now fails instead of starting.
 
 ---
 
-## Configuration still required, in order
+## Configuration still required, in order *(as at 11 August — superseded)*
+
+> Upstash, monitoring, storage and the E2E run are done. The live list is
+> [REQUIRES MANUAL CONFIGURATION](#requires-manual-configuration) in the final
+> section.
+
 
 1. **Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel**
    (Production scope) — *the next deploy fails without them.*
@@ -561,79 +589,103 @@ verified from anywhere except a dashboard someone has to open.
 
 # Final verification pass — 12 August 2026
 
-Everything above is the 11 August hardening pass and is left unedited as the
-record of that day. This section supersedes it where they disagree, and is the
-current state.
+Everything above is the record of the passes that preceded this one, annotated
+where it has been superseded. **This section is the current state.**
 
-Run against commit `87e12a7` plus the uncommitted ticket-button fix. Production
-is deployment `dpl_EawDS1…` on `event-os-brown.vercel.app`.
+Run against working tree `9c6384e` plus the uncommitted E2E work. Production is
+`event-os-brown.vercel.app`.
 
 ## VERIFIED NOW
 
 Each row was established by running something that would have failed if the
 claim were false.
 
+### Checks
+
+| Check | Result |
+|---|---|
+| `npm audit --omit=dev` | **0 vulnerabilities** |
+| `npm test` | **118 passed**, 8 files |
+| `npm run lint` | **0 errors**, 31 pre-existing warnings |
+| `npm run typecheck` | clean for the E2E suite; the remaining repo-wide errors appear only in a sandbox without a generated Prisma client |
+| `npm run build` | **succeeds** — Playwright's `webServer` runs it before every suite, and the suite completed |
+| `npm run test:e2e` | **23 passed / 0 failed, 3.3 minutes** — run locally against a disposable Neon branch |
+
+### The E2E suite, 23 tests
+
+| Area | Case |
+|---|---|
+| Cross-studio IDOR — wedding, guests, seating, RSVPs, CSV export | 1–4 |
+| Guest and planner cannot reach planner/admin routes | 5, 5b |
+| Suspended studio loses access mid-session | 6 |
+| Password reset invalidates existing sessions | 7 |
+| Admin-issued password invalidates sessions, through the real dialog | 8 |
+| Expired session refused | 9 |
+| Invite code cannot be replayed — portal and `.ics` feed | 10 |
+| Concurrent gift claim — exactly one winner, loser told by name | 11 |
+| Free wedding cannot be claimed twice | 12 |
+| Invitation resend — **exactly three** per guest per hour | 13 |
+| Login throttle engages through the real form | 14 |
+| CSV formula injection neutralised | 15 |
+| Support-ticket isolation — 404, never 403 | 16, 17 |
+| Eight security headers on three surfaces, CSP not widened | headers spec |
+
+Two properties of the suite worth recording, because both were absent at first
+and their absence made tests pass while proving nothing:
+
+- **`/login` is not an acceptable answer to a tenancy test.** An unauthenticated
+  caller redirects there, which four tests once accepted as a pass.
+- **Every sign-in ends with a proven session** — `assertSessionUsable` requires a
+  200 from a page only that account may see.
+
+### Application security
+
 | Claim | Evidence |
 |---|---|
-| No production dependency vulnerabilities | `npm audit --omit=dev` → **found 0 vulnerabilities** |
-| 105 unit and service tests pass | `vitest run` → 7 files, 105 passed |
-| Lint clean | `eslint .` → 0 errors, 31 pre-existing warnings |
-| All 8 security headers live in production | Response headers on `/`, `/login`, `/api/ready`, `/api/health`, and a 500 page |
-| `x-powered-by` absent | Not present on any response inspected |
-| CSP not weakened | Live value still carries `default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`; no `'unsafe-eval'`, no wildcard |
-| Distributed rate limiting is live | `/api/ready` → `"distributedRateLimit": true` |
-| Database reachable from production | `/api/health` → `{"status":"ok","db":"ok"}` |
-| Redis failure cannot take the app down | `consume()` catches and falls back to the in-process limiter; the fallback is logged as `ratelimit.redis_unavailable` |
-| No secret is committed | `.env` never in git history; scan for Stripe/Resend/AWS/JWT/connection-string shapes across tracked files returns only `.env.example` placeholders |
-| No `NEXT_PUBLIC_*` anywhere | Zero hits in `src`, `tests`, `prisma`, `scripts`, `.env.example` |
-| No `process.env` in a client component | Every `"use client"` file checked |
-| Support-ticket authorization (query level) | 19 tests in `tests/support.test.ts`, including a sweep that fails if any planner-side query omits `studioId` |
-| Tenant isolation (query level) | `tests/tenancy.test.ts`, unchanged and passing |
-| Typecheck and build pass in CI | Vercel built `87e12a7` to READY. `next.config.mjs` sets neither `typescript.ignoreBuildErrors` nor `eslint.ignoreDuringBuilds`, so that build type-checked and linted for real |
+| Live security headers | CSP, HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP, CORP observed on production responses; `x-powered-by` absent |
+| CSP not weakened | `default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`; no `unsafe-eval`, no wildcard |
+| Distributed rate limiting live | `/api/ready` → `distributedRateLimit: true`; production refuses to boot without a shared store |
+| Rate limiting coverage | login (per account and per address), forgot password, reset, invitation resend, RSVP, gift claim, access request, photo upload, logo upload, custom design, support tickets |
+| Tenant isolation | `requireStudio()` re-reads the studio per request and refuses SUSPENDED; no planner-facing query is keyed on id alone |
+| Session revocation | `sessionsValidFrom` + a 60s claim refresh, exercised end-to-end by cases 7 and 8 |
+| Invitation tokens | nanoid CSPRNG, 31-symbol alphabet × 10 characters ≈ **49.5 bits**; `Referrer-Policy: strict-origin-when-cross-origin` confirmed live |
+| Upload bounds | 4 MB cap before decode, allowlist on the *detected* format, 100 MP / 40 MP pixel guards, `bodySizeLimit: 4.5mb` |
+| Upload path safety | storage keys are `studios/<studioId>/…/<randomUUID()>`; no client-supplied filename reaches a path |
+| Secrets | no `NEXT_PUBLIC_*`, no `process.env` in any client component, `.env` ignored and never committed, no secret patterns in the working tree |
+| Generated artifacts | `test-results/` and `playwright-report/` are ignored; traces embed request bodies and page snapshots |
+| Uptime monitoring | Better Stack polls `https://event-os-brown.vercel.app/api/health`, email alerting |
 
 ## NOT VERIFIED
 
-| Item | Why | What would settle it |
-|---|---|---|
-| `npm run typecheck` locally | 130 errors, **all** downstream of the Prisma client not being generated — 27 × TS2305 all naming `@prisma/client`, the rest implicit-`any` cascading from them. Prisma's engine download returns 403 in this sandbox | Run it on your machine after `prisma generate` |
-| `npm run build` locally | Same 403 at `prisma generate`, step one of the build script | Run it on your machine |
-| **The entire Playwright E2E suite** | No browser binary, no Postgres, no Prisma engine in this environment | `npx playwright install chromium` then `DATABASE_URL=<scratch> npm run test:e2e` |
-| Every E2E-level security assertion | Follows from the above. The 12 required areas are **written** and reviewed but **not executed** | The first green run |
-| Neon point-in-time recovery | Never exercised | A restore drill |
-| Preview/Development database isolation | Cannot read Vercel environment variables from here | Vercel → Settings → Environment Variables: confirm Preview and Development do not carry the production `DATABASE_URL` |
-| Upstash credentials scoping | `/api/ready` proves Production has them; it says nothing about Preview | Same place |
-| Uptime monitoring | No monitor is configured that I can observe | See below |
+| Item | Why |
+|---|---|
+| Neon point-in-time recovery | never exercised; free plan, ~6 hours of history |
+| Preview/Development database isolation | Vercel environment variables cannot be read from the repository |
+| Why case 17 passed in the run where case 16 failed on the same credential | the fixture-restore fix removed the mechanism; the inconsistency itself was never explained |
 
 ## REQUIRES MANUAL CONFIGURATION
 
-1. **Point an uptime monitor at `/api/health`.** Alert on two consecutive
-   failures — one is a cold start. Any of Better Stack, UptimeRobot or Pingdom
-   has a free tier sufficient for this. Do not add an APM vendor first: the
-   endpoint already runs a real `SELECT 1`, so a single HTTP check is the whole
-   control.
-2. **Confirm Preview and Development environment variables in Vercel** do not
-   point at the production Neon branch.
-3. **Configure object storage.** `/api/ready` reports `storage: false`, so photo
-   and logo uploads have nowhere to write in production today. This is also the
-   blocker on ticket attachments (`SUPPORT.md`).
-4. **Configure Stripe.** `/api/ready` reports `payments: false`; publishing a
+1. **Push the `/api/ready` storage fix.** `src/lib/storage-config.ts` unifies the
+   three copies of the storage predicate, including `BLOB_STORE_ID`, which the
+   old copy missed. It is committed locally as `1ed9eb0` and **is not in
+   `origin/main`**, so production still runs the old check and reports
+   `storage: false` while Blob works. Push, then confirm `/api/ready` reports
+   `storage: true`.
+2. **Confirm Preview and Development environment variables** in Vercel do not
+   carry the production `DATABASE_URL`.
+3. **Configure Stripe.** `/api/ready` reports `payments: false`; publishing a
    second wedding will not take payment.
-5. **Run the E2E suite once** against a scratch database and fix whatever drifts.
 
 ## REQUIRED BEFORE REAL USERS
 
-Ranked by what would actually hurt.
-
-1. **Neon recovery.** Free plan, **~6 hours** of history. Cascade deletes run
-   from Studio through weddings, guests, RSVPs, seating and photographs, and
-   there is no soft-delete. Upgrade the plan, get retention to at least 7 days,
-   protect the production branch, separate staging, and **perform one restore
-   drill**. Details in `OPERATIONS.md`.
-2. **Run the E2E suite.** Sixteen authorization tests that have never executed
-   are an intention, not a control.
-3. **Uptime monitoring**, per above. Nothing currently notices an outage except
-   a person looking.
-4. **Object storage**, so uploads work at all.
+**Neon recovery — the largest remaining risk, and it is not a code problem.**
+Free plan, roughly six hours of history, no restore ever performed, production
+branch unprotected, staging not separated. `onDelete: Cascade` runs from Studio
+through weddings, guests, RSVPs, seating and photographs, and the product has no
+soft-delete: one mistaken deletion removes a great deal and a six-hour window
+does not cover a mistake noticed the next day. Upgrade retention to at least
+seven days, protect the production branch, separate staging, and **perform one
+restore drill**, writing the measured time into `OPERATIONS.md`.
 
 ## KNOWN LIMITATIONS
 
@@ -641,14 +693,20 @@ Ranked by what would actually hurt.
   inlines the RSC payload; removing it needs a per-request nonce from middleware,
   which de-statics the marketing pages. The app renders no user-controlled HTML,
   so React's escaping is the real defence. Revisit when rich text is introduced.
-- **Invite codes are ~49.5 bits** (10 characters, 31-symbol alphabet, CSPRNG).
-  Not brute-forceable against a rate-limited endpoint. Widen to 16 characters if
-  guest records ever hold more than a schedule.
-- **Ticket attachments are not implemented.** Deliberate — see `SUPPORT.md`.
+- **Invite codes are ~49.5 bits.** Not brute-forceable against a rate-limited
+  endpoint. Widen to 16 characters if guest records ever hold more than a
+  schedule.
+- **Ticket attachments are not implemented.** Deliberate — object storage was
+  unconfigured when the support system was built, and a public-URL attachment
+  endpoint would be a tenant-isolation hole. Steps in `SUPPORT.md`.
 - **`MEMBER` role is defined and unreferenced.** Fails closed today; becomes a
   vulnerability if team access is built without noticing.
 - **Photo storage is unversioned.** A delete is a delete.
 - **`bcryptjs` on 2.4.3** while 3.x exists. No known CVE.
-- **6 dev-only npm advisories** (`vitest`/`vite`/`esbuild` chain). The
-  substantive one is an esbuild dev-server issue; this project never runs
-  `vite dev`. Fixing them means `vitest@4`, a major bump, for no production gain.
+- **Six dev-only npm advisories** (`vitest`/`vite`/`esbuild`). The substantive
+  one is an esbuild dev-server issue; this project never runs `vite dev`.
+  Remediation means `vitest@4`, a major bump, for no production gain.
+- **The login throttle does not clear on success.** `clearLoginFailures` sits
+  after `signIn()`, which always throws `NEXT_REDIRECT`, so it is unreachable.
+  A planner who fails ten times in fifteen minutes waits out the window even
+  with the right password. Observed while writing case 14; not changed.
