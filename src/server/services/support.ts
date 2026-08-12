@@ -152,12 +152,29 @@ export async function createTicket(
   return ticket;
 }
 
-/** Every ticket belonging to the caller's studio. Never anyone else's. */
+/**
+ * Every ticket belonging to the caller's studio. Never anyone else's.
+ *
+ * Carries the most recent message so the list can show a preview. One extra
+ * row per ticket rather than a second query per ticket, and `take: 1` on a
+ * descending order means Postgres reads the newest and stops — the
+ * `(ticketId, createdAt)` index exists for exactly this.
+ *
+ * The tenancy filter is unchanged: `where: { studioId }` is the whole security
+ * property of this function and nothing here touches it.
+ */
 export function listMyTickets(studioId: string) {
   return prisma.supportTicket.findMany({
     where: { studioId },
     orderBy: { lastMessageAt: "desc" },
-    include: { _count: { select: { messages: true } } },
+    include: {
+      _count: { select: { messages: true } },
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { body: true, authorType: true, createdAt: true },
+      },
+    },
     take: 200,
   });
 }

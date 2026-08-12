@@ -18,9 +18,12 @@ export const metadata: Metadata = {
  * URL and no parameter to tamper with. The security property is a consequence
  * of the query, not of anything this file does.
  *
- * Split into open and settled rather than paginated by status: a planner has a
- * handful of tickets, and the only question they arrive with is "what is still
- * going on", which a tab would hide behind a click.
+ * Each row is a plain block with an explicit **Open ticket →** button rather
+ * than a card that happens to be wrapped in a link. A whole-card link looks
+ * identical to a card that is not clickable, so the only way to find out is to
+ * try it — and the preview text inside would be unselectable, which is
+ * infuriating when the thing you want is to copy what you wrote. One obvious
+ * target, and the rest of the row behaves like text because it is text.
  */
 export default async function MyTickets() {
   const { studioId } = await requireStudio();
@@ -50,18 +53,29 @@ export default async function MyTickets() {
             If something is not working or you cannot find an answer in the{" "}
             <Link href="/studio/help">Help Center</Link>, open one and we will help.
           </p>
+          <p style={{ marginTop: 18 }}>
+            <Link href="/studio/help/tickets/new" className="btn btn-primary">
+              Contact EventOS Support
+            </Link>
+          </p>
         </div>
       ) : (
         <div className="tk-lists">
           {live.length > 0 && (
             <section>
-              <h2 className="section-t">Open</h2>
+              <div className="sec-head">
+                <h2 className="sec-t">Open</h2>
+                <span className="meta">{live.length} still going</span>
+              </div>
               <TicketList tickets={live} />
             </section>
           )}
           {settled.length > 0 && (
             <section>
-              <h2 className="section-t">Previous</h2>
+              <div className="sec-head">
+                <h2 className="sec-t">Previous</h2>
+                <span className="meta">{settled.length} resolved or closed</span>
+              </div>
               <TicketList tickets={settled} />
             </section>
           )}
@@ -73,28 +87,64 @@ export default async function MyTickets() {
 
 type Row = Awaited<ReturnType<typeof listMyTickets>>[number];
 
+/** Trim to a preview without cutting a word in half. */
+function preview(body: string, max = 150) {
+  const flat = body.replace(/\s+/g, " ").trim();
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(" ") > 0 ? cut.lastIndexOf(" ") : max)}…`;
+}
+
 function TicketList({ tickets }: { tickets: Row[] }) {
   return (
     <ul className="tk-list">
-      {tickets.map(t => (
-        <li key={t.id}>
-          <Link href={`/studio/help/tickets/${t.id}`}>
-            <span className="tk-list-main">
-              <b>{t.subject}</b>
-              <em>
-                <TicketRef id={t.id} /> · {CATEGORY_LABELS[t.category]} ·{" "}
-                {t._count.messages} message{t._count.messages === 1 ? "" : "s"}
-              </em>
-            </span>
-            <span className="tk-list-side">
+      {tickets.map(t => {
+        const last = t.messages[0];
+        return (
+          <li key={t.id} className="card tk-row">
+            <div className="tk-row-top">
+              <h3 className="tk-row-subject">{t.subject}</h3>
               <TicketStatusChip status={t.status} />
-              <time className="meta" dateTime={t.lastMessageAt.toISOString()}>
-                {t.lastMessageAt.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+            </div>
+
+            <p className="tk-row-meta">
+              <TicketRef id={t.id} />
+              <span aria-hidden="true"> · </span>
+              {CATEGORY_LABELS[t.category]}
+              <span aria-hidden="true"> · </span>
+              opened{" "}
+              <time dateTime={t.createdAt.toISOString()}>
+                {t.createdAt.toLocaleDateString("en-US", {
+                  day: "numeric", month: "short", year: "numeric",
+                })}
               </time>
-            </span>
-          </Link>
-        </li>
-      ))}
+              <span aria-hidden="true"> · </span>
+              {t._count.messages} message{t._count.messages === 1 ? "" : "s"}
+            </p>
+
+            {last && (
+              <p className="tk-row-preview">
+                <b>{last.authorType === "ADMIN" ? "EventOS Support" : "You"}:</b>{" "}
+                {preview(last.body)}
+              </p>
+            )}
+
+            <div className="tk-row-foot">
+              <span className="meta">
+                Last updated{" "}
+                <time dateTime={t.lastMessageAt.toISOString()}>
+                  {t.lastMessageAt.toLocaleString("en-US", {
+                    day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+                  })}
+                </time>
+              </span>
+              <Link href={`/studio/help/tickets/${t.id}`} className="btn btn-primary btn-sm">
+                Open ticket <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

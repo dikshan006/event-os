@@ -2326,3 +2326,83 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .tk-list a{flex-direction:column;align-items:flex-start;gap:10px}
   .tk-cta{flex-direction:column;align-items:flex-start}
 }
+
+/* ══════════════════════════════════════ sections & planner overview ═══════
+   A page-level section rhythm, so a long admin page reads as a small number of
+   labelled parts rather than a run of cards. Used by the planner profile and
+   the planner's ticket list; nothing else is touched. */
+
+.sec{margin-bottom:40px}
+.sec:last-of-type{margin-bottom:0}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  flex-wrap:wrap;margin:0 0 14px}
+.sec-t{font-family:var(--serif);font-size:24px;font-weight:500;margin:0 0 14px}
+.sec-head .sec-t{margin:0}
+.sec .stats{margin-bottom:0;margin-top:16px}
+
+/* The identity strip: who this studio is, answered before anything else. */
+.ov{display:grid;gap:22px}
+.ov-id{display:flex;align-items:center;gap:16px}
+.ov-logo{inline-size:56px;block-size:56px;border-radius:14px;object-fit:contain;
+  background:var(--surface);border:1px solid var(--line);padding:6px}
+.ov-mono{inline-size:56px;block-size:56px;border-radius:14px;display:grid;place-items:center;
+  color:#fff;font-family:var(--serif);font-size:20px;font-weight:500;flex:none}
+.ov-name{display:grid;gap:2px;min-width:0}
+.ov-name b{font-family:var(--serif);font-size:22px;font-weight:500;line-height:1.2}
+.ov-swatch{inline-size:14px;block-size:14px;border-radius:99px;display:inline-block;
+  border:1px solid var(--line)}
+
+/* Account facts as a definition list: label above value, so the pairing is
+   structural rather than something the eye has to reconstruct from alignment. */
+.ov-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:18px 24px;margin:0;padding-top:20px;border-top:1px solid var(--line)}
+.ov-facts > div{display:grid;gap:3px;min-width:0}
+.ov-facts dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+  font-weight:600}
+.ov-facts dd{margin:0;font-size:14px}
+.ov-wrap{overflow-wrap:anywhere}
+
+/* Activity as a timeline rather than a stack of unlabelled paragraphs. */
+.act{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.act li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;position:relative}
+.act li::before{content:"";position:absolute;left:4px;top:16px;bottom:-16px;width:1px;
+  background:var(--line)}
+.act li:last-child::before{display:none}
+.act-dot{inline-size:9px;block-size:9px;border-radius:99px;background:var(--accent);
+  margin-top:5px;flex:none;position:relative;z-index:1;
+  box-shadow:0 0 0 3px var(--surface)}
+.act-what{font-size:13.5px;line-height:1.5}
+
+/* ─────────────────────────────────────── ticket rows: obviously openable ─── */
+/* Not a card wrapped in a link. A whole-card link is indistinguishable from a
+   card that does nothing until you try it, and it makes the preview text
+   unselectable — which is maddening when what you want is to copy what you
+   wrote. One explicit button; everything else behaves like the text it is. */
+.tk-row{padding:18px 20px;display:grid;gap:10px}
+.tk-row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.tk-row-subject{font-size:16px;font-weight:500;margin:0;line-height:1.35}
+.tk-row-meta{margin:0;font-size:12px;color:var(--soft)}
+.tk-row-preview{margin:0;font-size:13.5px;line-height:1.6;color:var(--soft);
+  padding:11px 14px;border-radius:10px;background:color-mix(in srgb,var(--ink) 3%,transparent);
+  overflow-wrap:anywhere}
+.tk-row-preview b{color:var(--ink);font-weight:600}
+.tk-row-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  flex-wrap:wrap;padding-top:4px}
+
+/* The state of the thread, above it, so it is read before the messages. */
+.tk-state{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  flex-wrap:wrap;padding:0 2px 14px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+
+/* The reply box gets a heading and a full-size button: this is the action the
+   page exists for and it should not look like a footnote under the thread. */
+.tk-reply{border-color:var(--line-strong)}
+.tk-reply-t{font-size:19px;margin:0}
+.tk-reply-foot{padding-top:2px}
+.btn-lg{padding:11px 20px;font-size:14px;border-radius:12px}
+
+@media (max-width:760px){
+  .tk-row-top{flex-direction:column;gap:8px}
+  .tk-row-foot{flex-direction:column;align-items:stretch}
+  .tk-row-foot .btn{justify-content:center}
+  .ov-facts{grid-template-columns:minmax(0,1fr)}
+}

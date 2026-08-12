@@ -90,6 +90,18 @@ export default async function TicketThread({
       )}
       {error && <div className="card pad tk-error" role="alert">{error}</div>}
 
+      <div className="tk-state">
+        <span className="meta">
+          {ticket.messages.length} message{ticket.messages.length === 1 ? "" : "s"} · last activity{" "}
+          <time dateTime={ticket.lastMessageAt.toISOString()}>
+            {ticket.lastMessageAt.toLocaleString("en-US", {
+              day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+            })}
+          </time>
+        </span>
+        <TicketStatusChip status={ticket.status} />
+      </div>
+
       <ol className="tk-stream">
         {ticket.messages.map(m => (
           <li key={m.id}>
@@ -105,10 +117,11 @@ export default async function TicketThread({
       </ol>
 
       <form action={reply} className="card pad tk-reply">
+        <h2 className="sec-t tk-reply-t">
+          {settled ? "Reply and reopen this ticket" : "Reply to ticket"}
+        </h2>
         <div className="field">
-          <label htmlFor="body">
-            {settled ? "Reply and reopen" : "Reply"}
-          </label>
+          <label htmlFor="body">Your message</label>
           <textarea
             id="body"
             name="body"
@@ -128,9 +141,11 @@ export default async function TicketThread({
             </span>
           )}
         </div>
-        <div className="row between">
-          <Link href="/studio/help" className="btn btn-ghost">Back to help</Link>
-          <button type="submit" className="btn btn-primary">Send reply</button>
+        <div className="row between tk-reply-foot">
+          <Link href="/studio/help/tickets" className="btn btn-ghost">All tickets</Link>
+          <button type="submit" className="btn btn-primary btn-lg">
+            Send reply <span aria-hidden="true">→</span>
+          </button>
         </div>
       </form>
 
