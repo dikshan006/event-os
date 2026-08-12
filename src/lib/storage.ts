@@ -9,6 +9,9 @@ import {
 } from "@aws-sdk/client-s3";
 import { put as blobPut, list as blobList, del as blobDel } from "@vercel/blob";
 import { UserError } from "./errors";
+import {
+  findBlobToken, blobConfigured, s3Configured, storageConfigured, storageEnvKeys,
+} from "./storage-config";
 
 /**
  * Object storage behind one small interface.
@@ -55,43 +58,21 @@ const {
   S3_PUBLIC_URL,
 } = process.env;
 
-/**
- * Find the Blob token however Vercel chose to name it.
- *
- * Connecting a store normally injects `BLOB_READ_WRITE_TOKEN`, but if an
- * environment-variable *prefix* was entered during setup the name becomes
- * `<PREFIX>_BLOB_READ_WRITE_TOKEN` — at which point a hard-coded lookup finds
- * nothing and the app reports "not configured" while the store sits there
- * perfectly connected. Matching on the suffix removes that whole failure mode.
- */
-function findBlobToken(): string | undefined {
-  const exact = process.env.BLOB_READ_WRITE_TOKEN;
-  if (exact) return exact;
-  const key = Object.keys(process.env).find(k => k.endsWith("BLOB_READ_WRITE_TOKEN"));
-  return key ? process.env[key] : undefined;
-}
-
 const BLOB_TOKEN = findBlobToken();
 
 /**
- * A connected Blob store does not necessarily mean a token.
+ * Snapshotted at import, exactly as before.
  *
- * Running on Vercel, the SDK authenticates over OIDC using the injected
- * `BLOB_STORE_ID` and the runtime's own identity token; `BLOB_READ_WRITE_TOKEN`
- * is only issued for code running *outside* Vercel. Gating availability on the
- * token therefore rejected a perfectly working store. Presence of either signal
- * is enough — the SDK resolves credentials itself when we pass no token.
+ * The detection itself now lives in `storage-config.ts` so that `/api/ready`
+ * and `lib/env.ts` can answer the same question without importing the AWS SDK,
+ * and so there is one definition rather than three. These constants keep their
+ * old names, values and evaluation timing — every existing caller is unaffected.
  */
-export const blobEnabled = Boolean(BLOB_TOKEN || process.env.BLOB_STORE_ID);
-export const s3Enabled = Boolean(S3_BUCKET && S3_ACCESS_KEY_ID && S3_SECRET_ACCESS_KEY);
-export const storageEnabled = blobEnabled || s3Enabled;
+export const blobEnabled = blobConfigured();
+export const s3Enabled = s3Configured();
+export const storageEnabled = storageConfigured();
 
-/** Names of the storage-related variables actually present — for diagnostics only, never values. */
-export function storageEnvKeys() {
-  return Object.keys(process.env)
-    .filter(k => k.includes("BLOB") || k.startsWith("S3_"))
-    .sort();
-}
+export { storageEnvKeys };
 
 /** Derivatives are content-addressed and never rewritten — cache them forever. */
 const IMMUTABLE_SECONDS = 31_536_000;

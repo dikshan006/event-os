@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { distributed } from "@/lib/ratelimit";
+import { storageConfigured } from "@/lib/storage-config";
 import { log } from "@/lib/logger";
 
 /**
@@ -35,11 +36,16 @@ export async function GET() {
     database: Boolean(process.env.DATABASE_URL),
     auth: Boolean(process.env.AUTH_SECRET),
     email: Boolean(process.env.RESEND_API_KEY),
-    storage: Boolean(
-      process.env.BLOB_READ_WRITE_TOKEN ||
-        Object.keys(process.env).some(k => k.endsWith("BLOB_READ_WRITE_TOKEN")) ||
-        process.env.S3_BUCKET,
-    ),
+    /**
+     * Asked of the same function `storage()` uses to choose a driver.
+     *
+     * This line used to carry its own copy of the rule and had drifted from it:
+     * it missed `BLOB_STORE_ID`, so a Blob store connected on Vercel over OIDC
+     * — no token issued, because none is needed there — reported `false` while
+     * uploads worked. It also accepted `S3_BUCKET` on its own, which would have
+     * reported `true` for a bucket with no credentials behind it.
+     */
+    storage: storageConfigured(),
     payments: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
     distributedRateLimit: distributed,
   };

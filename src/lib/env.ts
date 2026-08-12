@@ -1,5 +1,8 @@
 import "server-only";
 import { log } from "./logger";
+// Storage is satisfied by either provider, so it cannot be a flat name check.
+// One definition, shared with lib/storage.ts and /api/ready.
+import { storageConfigured } from "./storage-config";
 
 /**
  * What the application refuses to start without, and what it merely complains
@@ -37,14 +40,7 @@ const EXPECTED: { name: string; feature: string }[] = [
   { name: "STRIPE_WEBHOOK_SECRET", feature: "confirming payments" },
 ];
 
-/** Storage is satisfied by either provider, so it cannot be a flat name check. */
-const storageConfigured = () =>
-  Boolean(
-    process.env.BLOB_READ_WRITE_TOKEN ||
-      process.env.BLOB_STORE_ID ||
-      Object.keys(process.env).some(k => k.endsWith("BLOB_READ_WRITE_TOKEN")) ||
-      (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY),
-  );
+
 
 export type EnvReport = {
   ok: boolean;
