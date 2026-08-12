@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { requireStudio } from "@/server/services/context";
 import { PageHead } from "@/components/ui";
 import { HelpSearch } from "@/components/help/HelpSearch";
+import { StillNeedHelp } from "@/components/help/Ticket";
 import { HELP_CATEGORIES, HELP_ARTICLES, articlesIn } from "@/lib/help";
 
 export const metadata: Metadata = {
@@ -76,15 +77,7 @@ export default async function HelpIndex() {
         ))}
       </div>
 
-      <div className="card pad help-foot">
-        <div>
-          <b>Still stuck?</b>
-          <p className="meta">
-            If the answer is not here, tell us what you were trying to do and we
-            will help — and fix the guide that should have covered it.
-          </p>
-        </div>
-      </div>
+      <StillNeedHelp />
     </>
   );
 }

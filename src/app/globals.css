@@ -2230,3 +2230,99 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .help-toc a{grid-template-columns:auto 1fr;gap:12px}
   .help-toc-go{display:none}
 }
+
+/* ═══════════════════════════════════════════════════ support tickets ═══════
+   Same tokens, same components as the rest of the studio — .card, .btn, .chip,
+   .field. The thread is the only genuinely new shape here, and it borrows the
+   arrangement every messaging app has already taught people to read: the
+   viewer's own words on the right, the other side's on the left. */
+
+.ticket-ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+  letter-spacing:.02em;color:var(--soft)}
+
+/* ─────────────────────────────────────────────── still-need-help block ─── */
+.tk-cta{margin-top:40px;padding:22px 24px;border-radius:16px;
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);
+  display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap}
+.tk-cta b{display:block;margin-bottom:3px}
+.tk-cta .meta{max-width:56ch;line-height:1.6}
+.help-article .tk-cta{margin-top:36px}
+
+/* ─────────────────────────────────────────────────── planner ticket list ─── */
+.tk-lists{display:grid;gap:34px}
+.tk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tk-list a{display:flex;justify-content:space-between;align-items:center;gap:18px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:15px 20px;text-decoration:none;color:inherit;
+  transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.tk-list a:hover{border-color:var(--accent);transform:translateX(2px)}
+.tk-list-main{display:grid;gap:2px;min-width:0}
+.tk-list-main b{font-size:14.5px;font-weight:500}
+.tk-list-main em{font-style:normal;font-size:12px;color:var(--soft)}
+.tk-list-side{display:flex;align-items:center;gap:12px;flex:none}
+
+/* ────────────────────────────────────────────────────────── the thread ─── */
+.tk-thread{max-width:900px}
+.tk-stream{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:14px}
+.tk-msg{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:15px 18px;max-width:86%}
+/* The viewer's own messages, whichever side they are on. */
+.tk-msg.mine{margin-left:auto;background:var(--accent-soft);
+  border-color:color-mix(in srgb,var(--accent) 20%,transparent)}
+.tk-msg-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  margin-bottom:6px}
+.tk-msg-head b{font-size:12.5px;font-weight:600}
+.tk-msg-head time{font-size:11px;color:var(--faint)}
+/* pre-wrap rather than splitting on newlines: the text is escaped by React and
+   the planner's paragraph breaks survive without this component handling markup. */
+.tk-msg p{margin:0;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.tk-reply{display:grid;gap:14px}
+.tk-reply textarea{resize:vertical;min-height:96px}
+.tk-signed{margin-top:16px;text-align:center}
+.tk-ok{background:var(--sage-soft);border-color:transparent;margin-bottom:20px}
+.tk-error{background:var(--wine-soft);border-color:transparent;color:var(--wine);margin-bottom:20px}
+
+/* ──────────────────────────────────────────────────────── the new form ─── */
+.tk-form{display:grid;gap:16px}
+.tk-form textarea{resize:vertical;min-height:150px}
+.tk-aside b{display:block;margin-bottom:4px}
+.tk-aside .meta{line-height:1.65}
+.tk-aside hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+/* Attachments are not wired up; this states that rather than showing a control
+   that would fail. */
+.tk-attach{display:grid;gap:3px;padding:13px 16px;border-radius:12px;
+  border:1px dashed var(--line-strong);background:transparent}
+.tk-attach b{font-size:12.5px;font-weight:600;color:var(--soft)}
+.tk-attach span{font-size:12px;color:var(--faint);line-height:1.55}
+
+/* ─────────────────────────────────────────────────────── the admin queue ─── */
+.tk-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tk-count{margin-left:7px;font-size:11px;opacity:.7}
+.tk-search{display:flex;gap:8px;margin-bottom:22px;max-width:460px}
+.tk-search input{flex:1;border:1px solid var(--line-strong);border-radius:10px;
+  padding:9px 12px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink)}
+.tk-search input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.tk-search input::-webkit-search-decoration,
+.tk-search input::-webkit-search-cancel-button{-webkit-appearance:none}
+
+.tk-table-wrap{overflow-x:auto}
+.tk-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tk-table th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;padding:16px 16px 10px;border-bottom:1px solid var(--line);
+  white-space:nowrap}
+.tk-table td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+.tk-table tr:last-child td{border-bottom:0}
+.tk-table tbody tr:hover{background:var(--accent-soft)}
+.tk-table a{color:inherit;text-decoration:none}
+.tk-table a:hover{color:var(--accent)}
+.tk-table td b{display:block;font-weight:500}
+.tk-table td .meta{display:block;font-size:11.5px;margin-top:2px}
+.tk-email{overflow-wrap:anywhere}
+.tk-idlink .ticket-ref{color:var(--accent)}
+
+@media (max-width:760px){
+  .tk-msg{max-width:100%}
+  .tk-list a{flex-direction:column;align-items:flex-start;gap:10px}
+  .tk-cta{flex-direction:column;align-items:flex-start}
+}

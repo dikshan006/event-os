@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { requireStudio } from "@/server/services/context";
 import { articleBySlug, categoryBySlug, prevNext } from "@/lib/help";
 import { HELP_BODIES } from "@/components/help/articles";
+import { StillNeedHelp } from "@/components/help/Ticket";
 
 /**
  * One help article.
@@ -71,6 +72,8 @@ export default async function HelpArticle(
       <div className="help-body">
         <Body />
       </div>
+
+      <StillNeedHelp from={article.slug} />
 
       <nav className="help-nextprev" aria-label="More articles">
         {prev ? (

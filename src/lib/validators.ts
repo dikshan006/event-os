@@ -166,6 +166,32 @@ export const zAccessRequest = z.object({
 });
 export type AccessRequestInput = z.infer<typeof zAccessRequest>;
 
+/* ------------------------------------------------------------- support -- */
+
+export const TICKET_CATEGORIES = [
+  "GETTING_STARTED", "GUESTS_AND_RSVPS", "WEBSITE_AND_DESIGN",
+  "SCHEDULE_AND_SEATING", "BILLING", "SOMETHING_BROKEN", "OTHER",
+] as const;
+
+/**
+ * A new support ticket.
+ *
+ * Neither `studioId` nor `userId` appears here, and that is the point: both are
+ * taken from the session in the service. A schema that accepted them would make
+ * it possible to file a ticket into another studio by editing a form field, and
+ * the only reliable way to prevent that is for the parameter not to exist.
+ */
+export const zTicket = z.object({
+  subject: z.string().trim().min(4, "Give it a short subject so we can find it again.").max(140),
+  category: z.enum(TICKET_CATEGORIES),
+  body: z.string().trim().min(10, "Tell us a little more about what is happening.").max(5000),
+});
+export type TicketInput = z.infer<typeof zTicket>;
+
+export const zTicketReply = z.object({
+  body: z.string().trim().min(1, "Write a reply first.").max(5000),
+});
+
 /**
  * A coordinate typed into a text field, or nothing.
  *

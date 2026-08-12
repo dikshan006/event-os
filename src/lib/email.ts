@@ -40,7 +40,9 @@ export type EmailKind =
   | "GUEST_INVITATION" | "RSVP_CONFIRMATION" | "PLANNER_INVITE" | "CUSTOM_DESIGN_REQUEST"
   | "PAYMENT_RECEIPT" | "PASSWORD_RESET"
   | "ACCESS_REQUEST"
-  | "ACCESS_REQUEST_ACK";
+  | "ACCESS_REQUEST_ACK"
+  | "SUPPORT_TICKET_OPENED"
+  | "SUPPORT_TICKET_REPLY";
 
 type SendArgs = {
   to: string;
@@ -484,6 +486,64 @@ export const emails = {
           },
           ...(o.message ? ([{ t: "quote", text: o.message }] as const) : []),
           { t: "button", label: "Open the requests inbox", href: o.link },
+        ],
+      },
+    }),
+
+  /**
+   * A new support ticket, to the platform inbox.
+   *
+   * Carries the message body, because the recipient is us and the whole point
+   * is to be able to triage from a phone. `replyTo` is the planner, so hitting
+   * reply reaches them — though the answer should go through the ticket so the
+   * thread stays complete.
+   */
+  supportTicketOpened: (o: {
+    to: string; ref: string; studio: string; from: string; replyTo: string;
+    subject: string; category: string; body: string; link: string;
+  }) =>
+    sendEmail({
+      to: o.to,
+      kind: "SUPPORT_TICKET_OPENED",
+      subject: `Support ${o.ref} — ${o.subject}`,
+      replyTo: o.replyTo,
+      message: {
+        brand: "EventOS",
+        wordmark: true,
+        color: PLATFORM_COLOR,
+        preheader: `${o.studio} opened a support ticket.`,
+        blocks: [
+          { t: "p", text: `${o.from} at ${o.studio} opened a support ticket.` },
+          { t: "lines", items: [["Ticket", o.ref], ["Category", o.category], ["Subject", o.subject]] },
+          { t: "quote", text: o.body },
+          { t: "button", label: "Open the ticket", href: o.link },
+        ],
+      },
+    }),
+
+  /**
+   * A reply is waiting, to the planner.
+   *
+   * Deliberately does not carry the reply itself. Email is forwarded, quoted
+   * and left open on shared screens, and a support thread can contain a
+   * planner's own account details. The subject and a link are enough to bring
+   * them back; reading it requires their session.
+   */
+  supportTicketReply: (o: { to: string; name: string; ref: string; subject: string; link: string }) =>
+    sendEmail({
+      to: o.to,
+      kind: "SUPPORT_TICKET_REPLY",
+      subject: `Re: ${o.subject} (${o.ref})`,
+      replyTo: PLATFORM_REPLY_TO,
+      message: {
+        brand: "EventOS",
+        wordmark: true,
+        color: PLATFORM_COLOR,
+        preheader: `We have replied to ${o.ref}.`,
+        blocks: [
+          { t: "p", text: `${o.name.split(" ")[0] || o.name}, we have replied to your support ticket.` },
+          { t: "lines", items: [["Ticket", o.ref], ["Subject", o.subject]] },
+          { t: "button", label: "Read the reply", href: o.link },
         ],
       },
     }),

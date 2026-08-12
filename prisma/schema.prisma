@@ -98,6 +98,7 @@ model User {
   sessionsValidFrom DateTime?
   createdAt    DateTime  @default(now())
   resetTokens  PasswordResetToken[]
+  tickets      SupportTicket[]
 
   @@index([studioId])
 }
@@ -160,6 +161,7 @@ model Studio {
   users            User[]
   weddings         Wedding[]
   payments         Payment[]
+  tickets          SupportTicket[]
   createdAt        DateTime     @default(now())
 }
 
@@ -574,4 +576,119 @@ model IdempotencyKey {
 
   @@index([expiresAt])
   @@index([scope, studioId])
+}
+
+/**
+ * Support tickets.
+ *
+ * A ticket belongs to a studio and to the user who opened it. Both are stored:
+ * `studioId` is what every planner-side query filters on — it is the tenant
+ * boundary, and it is denormalised onto the ticket for the same reason Guest
+ * and Photo carry it, so an ownership check is one indexed column rather than
+ * a join. `userId` records who actually wrote it, which matters once a studio
+ * has more than one person in it.
+ *
+ * Both cascade. A deleted studio takes its tickets with it, exactly as it takes
+ * its weddings — a support thread about a wedding that no longer exists, owned
+ * by a studio that no longer exists, is not a record anyone wants kept.
+ *
+ * The conversation lives in TicketMessage rather than in a text column on the
+ * ticket, so the history is append-only by construction. There is no edit path
+ * and no update on a message anywhere in the service: a support thread that can
+ * be rewritten after the fact is not a record of what was said.
+ */
+model SupportTicket {
+  id       String @id @default(cuid())
+  studioId String
+  studio   Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  /** Who opened it. Kept even in a one-person studio, for when it is not one. */
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject  String
+  category TicketCategory
+  status   TicketStatus   @default(OPEN)
+  priority TicketPriority @default(NORMAL)
+
+  messages TicketMessage[]
+
+  /**
+   * When the thread last moved, in either direction.
+   *
+   * Denormalised so the queue can sort by activity without aggregating over
+   * every message on every load. `createdAt` answers "how old is this", which
+   * is a different and less useful question for a work queue.
+   */
+  lastMessageAt DateTime @default(now())
+  /** Set when an admin first picks it up, so response time is measurable. */
+  firstReplyAt  DateTime?
+  resolvedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /** The planner's own list: their tickets, newest activity first. */
+  @@index([studioId, lastMessageAt])
+  /** The admin queue: everything at one status, oldest first. */
+  @@index([status, createdAt])
+  /** A studio's tickets filtered by status, for the planner-side tabs. */
+  @@index([studioId, status])
+}
+
+/**
+ * One message in a thread.
+ *
+ * `authorType` rather than a nullable userId, because an admin is not a member
+ * of the studio and has no row that belongs to it. `authorName` is captured at
+ * write time so the thread still reads correctly after a person leaves — a
+ * historical record should not change because a row elsewhere did.
+ */
+model TicketMessage {
+  id       String        @id @default(cuid())
+  ticketId String
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorType TicketAuthor
+  /** Display name as it was when the message was written. Never re-resolved. */
+  authorName String
+  body       String       @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_PLANNER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketAuthor {
+  PLANNER
+  ADMIN
+}
+
+/**
+ * Deliberately coarse. A category exists to route a ticket to the right first
+ * response, not to build a taxonomy — six options someone picks correctly beat
+ * twenty they pick at random.
+ */
+enum TicketCategory {
+  GETTING_STARTED
+  GUESTS_AND_RSVPS
+  WEBSITE_AND_DESIGN
+  SCHEDULE_AND_SEATING
+  BILLING
+  SOMETHING_BROKEN
+  OTHER
 }
