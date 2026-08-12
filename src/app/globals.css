@@ -2250,16 +2250,16 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 
 /* ─────────────────────────────────────────────────── planner ticket list ─── */
 .tk-lists{display:grid;gap:34px}
-.tk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.tk-list a{display:flex;justify-content:space-between;align-items:center;gap:18px;
-  background:var(--surface);border:1px solid var(--line);border-radius:14px;
-  padding:15px 20px;text-decoration:none;color:inherit;
-  transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
-.tk-list a:hover{border-color:var(--accent);transform:translateX(2px)}
-.tk-list-main{display:grid;gap:2px;min-width:0}
-.tk-list-main b{font-size:14.5px;font-weight:500}
-.tk-list-main em{font-style:normal;font-size:12px;color:var(--soft)}
-.tk-list-side{display:flex;align-items:center;gap:12px;flex:none}
+.tk-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+/* Nothing styles `.tk-list a` here, and that is deliberate.
+   The first version of this list made the whole row a link, so it carried a
+   rule for `.tk-list a` giving every anchor a card's background, border and
+   padding. When the row became a block with an explicit button inside it, that
+   rule stayed behind — and `.tk-list a` (0,1,1) outranks `.btn-primary`
+   (0,1,0), so it repainted the button in the surface colour with inherited
+   text and pushed its label and arrow to opposite ends. The button was
+   rendering perfectly and looked like part of the card.
+   Buttons in this list are styled by `.btn` and nothing else. */
 
 /* ────────────────────────────────────────────────────────── the thread ─── */
 .tk-thread{max-width:900px}
@@ -2323,7 +2323,6 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
 
 @media (max-width:760px){
   .tk-msg{max-width:100%}
-  .tk-list a{flex-direction:column;align-items:flex-start;gap:10px}
   .tk-cta{flex-direction:column;align-items:flex-start}
 }
 
@@ -2406,3 +2405,8 @@ textarea.s-inp{resize:vertical;min-height:96px;line-height:1.7}
   .tk-row-foot .btn{justify-content:center}
   .ov-facts{grid-template-columns:minmax(0,1fr)}
 }
+
+/* The open control sits hard right in the admin queue, away from the row's
+   own links, so there is one obvious target rather than several. */
+.tk-open-cell{text-align:right;white-space:nowrap}
+.tk-table .tk-open-cell .btn{color:#fff}

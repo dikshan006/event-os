@@ -138,7 +138,9 @@ function TicketList({ tickets }: { tickets: Row[] }) {
                   })}
                 </time>
               </span>
-              <Link href={`/studio/help/tickets/${t.id}`} className="btn btn-primary btn-sm">
+              {/* Same weight as "Send reply" on the thread page: this is the
+                  one action the row exists for. */}
+              <Link href={`/studio/help/tickets/${t.id}`} className="btn btn-primary btn-lg">
                 Open ticket <span aria-hidden="true">→</span>
               </Link>
             </div>

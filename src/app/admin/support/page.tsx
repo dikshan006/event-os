@@ -109,6 +109,7 @@ export default async function AdminSupport({
                 <th>Opened</th>
                 <th>Status</th>
                 <th>Priority</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -139,6 +140,11 @@ export default async function AdminSupport({
                   </td>
                   <td><TicketStatusChip status={t.status} /></td>
                   <td><TicketPriorityChip priority={t.priority} /></td>
+                  <td className="tk-open-cell">
+                    <Link href={`/admin/support/${t.id}`} className="btn btn-primary btn-sm">
+                      Open <span aria-hidden="true">→</span>
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
