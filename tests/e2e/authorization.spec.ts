@@ -214,3 +214,71 @@ test("10 · an invite code cannot be replayed against another wedding", async ({
 
   await anon.close();
 });
+
+/* ─────────────────────────────────────── support tickets (12th area) ─── */
+
+/**
+ * Added after the Phase 2 support system shipped, because the E2E suite
+ * predated it and the checklist names support-ticket authorization as a
+ * required area. `tests/support.test.ts` covers the query shape against a fake
+ * client; this covers the route in front of it.
+ *
+ * The ticket id is created through the real form rather than seeded, so the
+ * whole path — action, session, service, page — is exercised.
+ */
+test("16 · planner A cannot open planner B's support ticket", async () => {
+  // B opens a ticket through the UI.
+  const open = await plannerB.request.post("/studio/help/tickets/new", {
+    form: {
+      subject: "Guests are not receiving invitations",
+      category: "GUESTS_AND_RSVPS",
+      body: "I pressed send invitations and nothing arrived for anyone.",
+    },
+    maxRedirects: 0,
+  });
+  // The action redirects to the new ticket; the id is in the Location header.
+  const location = open.headers()["location"] ?? "";
+  const ticketId = location.match(/tickets\/([^/?]+)/)?.[1];
+  expect(ticketId, `expected a ticket id in ${location || "(no redirect)"}`).toBeTruthy();
+
+  // B can read their own.
+  const mine = await plannerB.request.get(`/studio/help/tickets/${ticketId}`, { maxRedirects: 0 });
+  expect(mine.status(), "the owner must be able to open it").toBe(200);
+
+  // A must not — and must not be able to tell it exists.
+  const theirs = await plannerA.request.get(`/studio/help/tickets/${ticketId}`, { maxRedirects: 0 });
+  expect(theirs.status(), "a foreign ticket must 404, never 200 or 403").toBe(404);
+  const body = await theirs.text().catch(() => "");
+  expect(body).not.toContain("Guests are not receiving invitations");
+});
+
+test("17 · planner A cannot reply to planner B's ticket, or reach the admin queue", async () => {
+  const open = await plannerB.request.post("/studio/help/tickets/new", {
+    form: {
+      subject: "Second ticket for the reply test",
+      category: "OTHER",
+      body: "This body is long enough to pass validation.",
+    },
+    maxRedirects: 0,
+  });
+  const ticketId = (open.headers()["location"] ?? "").match(/tickets\/([^/?]+)/)?.[1];
+  expect(ticketId).toBeTruthy();
+
+  // A posts a reply to B's thread.
+  const reply = await plannerA.request.post(`/studio/help/tickets/${ticketId}`, {
+    form: { body: "I should not be able to write here." },
+    maxRedirects: 0,
+  });
+  expect(reply.status(), "writing into another studio's thread must not succeed").not.toBe(200);
+
+  // And the message must not have landed. Read as the owner and check.
+  const owner = await plannerB.request.get(`/studio/help/tickets/${ticketId}`);
+  expect(await owner.text()).not.toContain("I should not be able to write here.");
+
+  // The admin queue is closed to planners entirely.
+  for (const path of ["/admin/support", `/admin/support/${ticketId}`]) {
+    const { status, location } = await rawGet(plannerA.request, path);
+    expect(status, `${path} must not serve a planner`).toBeGreaterThanOrEqual(300);
+    expect(location).toContain("/login");
+  }
+});

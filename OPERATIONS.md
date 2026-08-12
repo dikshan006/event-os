@@ -50,45 +50,51 @@ wait for a support ticket.
 
 ## Backups
 
-### Configuration status — last checked 11 August 2026
+### Configuration status — last checked 12 August 2026
 
-**Nothing in this section is verified.** It is a hosting configuration, and this
-repository cannot see it. A connection string proves a database exists; it says
-nothing about whether anyone can get the data back. The targets below this
-heading are what we intend, not what is true — and the difference between the
-two is invisible until the morning it matters.
+**Recovery capability is a known limitation, not a verified control.**
 
-What the repository *does* prove:
+| Fact | Status | How established |
+|---|---|---|
+| Postgres on Neon, pooled endpoint | VERIFIED | `DATABASE_URL` / `DIRECT_URL`; `/api/health` returns `db: ok` |
+| Neon plan | **Free** | Stated by the operator |
+| History retention | **~6 hours** | Free-plan limit, stated by the operator |
+| Point-in-time recovery within that window | NOT VERIFIED | Never exercised |
+| Restore procedure rehearsed | **NO** | Never performed |
+| Production branch protection | **NOT ENABLED** | Requires a paid plan |
+| Separate staging branch | **NOT CONFIGURED** | Preview and production share one database |
 
-| Fact | How it was established |
-|---|---|
-| Postgres, reached through a pooled endpoint | `DATABASE_URL` / `DIRECT_URL` in `.env`, and the split is what `prisma migrate` needs |
-| The provider is Neon or Supabase | the connection string's host |
-| Migrations run at build time | `"build": "prisma generate && prisma migrate deploy && next build"` |
-| Deletes cascade widely | `onDelete: Cascade` from Studio → weddings → guests; one mistaken delete removes a great deal |
+**What ~6 hours actually means.** The most likely destructive event on this
+product is not a disk failure, it is a person: a planner deletes a wedding, or a
+studio is removed, and nobody notices until the couple asks. `onDelete: Cascade`
+runs from Studio through weddings, guests, RSVPs, seating and photographs, so one
+statement removes a great deal. A six-hour window covers a mistake noticed the
+same morning. It does not cover a mistake noticed the next day, and there is no
+soft-delete anywhere in the product to fall back on.
 
-That last row is the reason this matters more here than in an average
-application. Deleting a studio is a single statement that takes its weddings,
-guests, RSVPs, seating and photographs with it, and there is no soft-delete and
-no undo in the product.
+Treat the RPO and RTO below as **targets, not measurements**. The real current
+RPO is bounded by six hours and the real current RTO is unknown, because no
+restore has ever been performed.
 
-**Confirm these five things in the provider console, then replace this block
-with what you actually found — including the date and the plan name.** The
-answers change with the plan, so "it was on when we launched" is not durable.
+### Required before real users
 
-1. **Point-in-time recovery is enabled.** Neon: Console → Project → Settings →
-   *History retention*. Supabase: Dashboard → Database → *Backups*.
-2. **The retention window is at least 7 days.** Free tiers commonly give 24
-   hours or nothing, which does not cover the failure that actually happens — a
-   planner deletes a wedding and the couple asks about it a week later.
-3. **Who can perform a restore.** Names, not roles. If it is one person, that
-   person is a single point of failure on a fixed-date product.
-4. **Where the console is, and how to reach it without the app.** An incident
-   that takes out `APP_URL` should not also take out the runbook.
-5. **A restore has been performed at least once.** Not tested is not backed up.
+None of the following is done. They are listed here so the gap is written down
+rather than remembered.
 
-Until those are answered in writing, treat the RPO and RTO above as aspirations.
-The honest current position is: **recovery capability unknown.**
+1. **Upgrade the Neon plan** so history retention is at least **7 days**.
+2. **Enable protection on the production branch** so it cannot be deleted or
+   reset by accident.
+3. **Create a separate staging/development branch** and point Vercel's Preview
+   and Development environments at it. Today they may resolve to the same
+   database as production — see the Phase 6 note in `SECURITY_AUDIT.md`.
+4. **Perform a non-destructive restore drill**: branch from a past timestamp,
+   confirm a wedding, its guests and its RSVPs are intact, write down how long
+   it took, and put that number in this file as the measured RTO.
+5. **Record who can perform a restore**, by name. One person is a single point
+   of failure on a product with fixed, unmovable dates.
+
+Until item 4 is done, this document describes an intention. An untested backup
+is a belief.
 
 ### Postgres — the one that matters
 

@@ -555,3 +555,100 @@ one that matters is backups: everything else on this list is a control that
 reduces the chance of a bad day, and that one is the difference between a bad
 day and the end of the business. It is also the only item that cannot be
 verified from anywhere except a dashboard someone has to open.
+
+---
+---
+
+# Final verification pass — 12 August 2026
+
+Everything above is the 11 August hardening pass and is left unedited as the
+record of that day. This section supersedes it where they disagree, and is the
+current state.
+
+Run against commit `87e12a7` plus the uncommitted ticket-button fix. Production
+is deployment `dpl_EawDS1…` on `event-os-brown.vercel.app`.
+
+## VERIFIED NOW
+
+Each row was established by running something that would have failed if the
+claim were false.
+
+| Claim | Evidence |
+|---|---|
+| No production dependency vulnerabilities | `npm audit --omit=dev` → **found 0 vulnerabilities** |
+| 105 unit and service tests pass | `vitest run` → 7 files, 105 passed |
+| Lint clean | `eslint .` → 0 errors, 31 pre-existing warnings |
+| All 8 security headers live in production | Response headers on `/`, `/login`, `/api/ready`, `/api/health`, and a 500 page |
+| `x-powered-by` absent | Not present on any response inspected |
+| CSP not weakened | Live value still carries `default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`; no `'unsafe-eval'`, no wildcard |
+| Distributed rate limiting is live | `/api/ready` → `"distributedRateLimit": true` |
+| Database reachable from production | `/api/health` → `{"status":"ok","db":"ok"}` |
+| Redis failure cannot take the app down | `consume()` catches and falls back to the in-process limiter; the fallback is logged as `ratelimit.redis_unavailable` |
+| No secret is committed | `.env` never in git history; scan for Stripe/Resend/AWS/JWT/connection-string shapes across tracked files returns only `.env.example` placeholders |
+| No `NEXT_PUBLIC_*` anywhere | Zero hits in `src`, `tests`, `prisma`, `scripts`, `.env.example` |
+| No `process.env` in a client component | Every `"use client"` file checked |
+| Support-ticket authorization (query level) | 19 tests in `tests/support.test.ts`, including a sweep that fails if any planner-side query omits `studioId` |
+| Tenant isolation (query level) | `tests/tenancy.test.ts`, unchanged and passing |
+| Typecheck and build pass in CI | Vercel built `87e12a7` to READY. `next.config.mjs` sets neither `typescript.ignoreBuildErrors` nor `eslint.ignoreDuringBuilds`, so that build type-checked and linted for real |
+
+## NOT VERIFIED
+
+| Item | Why | What would settle it |
+|---|---|---|
+| `npm run typecheck` locally | 130 errors, **all** downstream of the Prisma client not being generated — 27 × TS2305 all naming `@prisma/client`, the rest implicit-`any` cascading from them. Prisma's engine download returns 403 in this sandbox | Run it on your machine after `prisma generate` |
+| `npm run build` locally | Same 403 at `prisma generate`, step one of the build script | Run it on your machine |
+| **The entire Playwright E2E suite** | No browser binary, no Postgres, no Prisma engine in this environment | `npx playwright install chromium` then `DATABASE_URL=<scratch> npm run test:e2e` |
+| Every E2E-level security assertion | Follows from the above. The 12 required areas are **written** and reviewed but **not executed** | The first green run |
+| Neon point-in-time recovery | Never exercised | A restore drill |
+| Preview/Development database isolation | Cannot read Vercel environment variables from here | Vercel → Settings → Environment Variables: confirm Preview and Development do not carry the production `DATABASE_URL` |
+| Upstash credentials scoping | `/api/ready` proves Production has them; it says nothing about Preview | Same place |
+| Uptime monitoring | No monitor is configured that I can observe | See below |
+
+## REQUIRES MANUAL CONFIGURATION
+
+1. **Point an uptime monitor at `/api/health`.** Alert on two consecutive
+   failures — one is a cold start. Any of Better Stack, UptimeRobot or Pingdom
+   has a free tier sufficient for this. Do not add an APM vendor first: the
+   endpoint already runs a real `SELECT 1`, so a single HTTP check is the whole
+   control.
+2. **Confirm Preview and Development environment variables in Vercel** do not
+   point at the production Neon branch.
+3. **Configure object storage.** `/api/ready` reports `storage: false`, so photo
+   and logo uploads have nowhere to write in production today. This is also the
+   blocker on ticket attachments (`SUPPORT.md`).
+4. **Configure Stripe.** `/api/ready` reports `payments: false`; publishing a
+   second wedding will not take payment.
+5. **Run the E2E suite once** against a scratch database and fix whatever drifts.
+
+## REQUIRED BEFORE REAL USERS
+
+Ranked by what would actually hurt.
+
+1. **Neon recovery.** Free plan, **~6 hours** of history. Cascade deletes run
+   from Studio through weddings, guests, RSVPs, seating and photographs, and
+   there is no soft-delete. Upgrade the plan, get retention to at least 7 days,
+   protect the production branch, separate staging, and **perform one restore
+   drill**. Details in `OPERATIONS.md`.
+2. **Run the E2E suite.** Sixteen authorization tests that have never executed
+   are an intention, not a control.
+3. **Uptime monitoring**, per above. Nothing currently notices an outage except
+   a person looking.
+4. **Object storage**, so uploads work at all.
+
+## KNOWN LIMITATIONS
+
+- **CSP retains `script-src 'unsafe-inline'`.** Accepted and unchanged. Next
+  inlines the RSC payload; removing it needs a per-request nonce from middleware,
+  which de-statics the marketing pages. The app renders no user-controlled HTML,
+  so React's escaping is the real defence. Revisit when rich text is introduced.
+- **Invite codes are ~49.5 bits** (10 characters, 31-symbol alphabet, CSPRNG).
+  Not brute-forceable against a rate-limited endpoint. Widen to 16 characters if
+  guest records ever hold more than a schedule.
+- **Ticket attachments are not implemented.** Deliberate — see `SUPPORT.md`.
+- **`MEMBER` role is defined and unreferenced.** Fails closed today; becomes a
+  vulnerability if team access is built without noticing.
+- **Photo storage is unversioned.** A delete is a delete.
+- **`bcryptjs` on 2.4.3** while 3.x exists. No known CVE.
+- **6 dev-only npm advisories** (`vitest`/`vite`/`esbuild` chain). The
+  substantive one is an esbuild dev-server issue; this project never runs
+  `vite dev`. Fixing them means `vitest@4`, a major bump, for no production gain.
