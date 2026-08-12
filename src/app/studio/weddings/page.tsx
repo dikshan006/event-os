@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { requireStudio } from "@/server/services/context";
 import { listWeddings, deleteWedding, duplicateWedding, unpublishWedding } from "@/server/services/weddings";
 import { startPublish } from "@/server/services/billing";
+import { UserError } from "@/lib/errors";
 import { PageHead, StatusChip } from "@/components/ui";
 import { fmtDate, TEMPLATES } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
-export default async function WeddingsPage({ searchParams }: { searchParams: Promise<{ published?: string; canceled?: string }> }) {
+export default async function WeddingsPage({ searchParams }: { searchParams: Promise<{ published?: string; canceled?: string; busy?: string }> }) {
   const { studioId } = await requireStudio();
   const weddings = await listWeddings(studioId);
   const sp = await searchParams;
@@ -18,8 +19,30 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
     // than from the render's closure: a server action is a separate request,
     // and everything it authorises on should be re-derived inside it.
     const { studioId, user } = await requireStudio();
-    const result = await startPublish(studioId, String(formData.get("id")), user.name);
-    if (!result.ok) redirect(result.checkoutUrl);
+
+    /**
+     * Handled with `.catch` rather than try/catch so that no `redirect()` call
+     * below ever sits inside a catch block. `redirect` works by throwing
+     * NEXT_REDIRECT, and a `catch` wrapped around it would swallow the
+     * navigation unless it remembered to rethrow — a trap that is invisible
+     * until the day someone adds a second catch clause.
+     *
+     * The only expected failure is a second press arriving while the first is
+     * still opening a Checkout session: `startPublish` refuses to open a second
+     * one, which is what stops a double-click becoming a double charge. There
+     * is no error boundary in this tree, so letting that bubble would replace
+     * the page with Next's default error screen — a banner is the proportionate
+     * answer to "you pressed it twice". Anything that is not a UserError is a
+     * real fault and still propagates.
+     */
+    const outcome = await startPublish(studioId, String(formData.get("id")), user.name)
+      .catch((err: unknown) => {
+        if (err instanceof UserError) return { busy: true as const };
+        throw err;
+      });
+
+    if ("busy" in outcome) redirect("/studio/weddings?busy=1");
+    if (!outcome.ok) redirect(outcome.checkoutUrl);
     revalidatePath("/studio/weddings");
   }
   async function unpublishAction(formData: FormData) {
@@ -56,6 +79,7 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
         actions={<Link className="btn btn-primary" href="/studio/weddings/new">New Wedding</Link>} />
       {sp.published && <div className="note" style={{ marginBottom: 20 }}>Payment confirmed — your wedding is being published. Refresh in a moment if it still shows as draft.</div>}
       {sp.canceled && <div className="note" style={{ marginBottom: 20 }}>Checkout canceled — the wedding stays in draft.</div>}
+      {sp.busy && <div className="note" style={{ marginBottom: 20 }}>That publish is already being set up — give it a moment and press Publish again.</div>}
       <div className="grid">
         {weddings.map(w => {
           const T = TEMPLATES[w.template];

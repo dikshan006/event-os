@@ -43,6 +43,30 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PricePlanKind {
+  /** Charged once, when a wedding is published. */
+  PER_WEDDING
+  MONTHLY
+  YEARLY
+}
+
+/**
+ * Mirrors Stripe's subscription statuses exactly, including the ones we hope
+ * never to see. Mapping several of Stripe's states onto one of ours would mean
+ * the webhook has to decide what `incomplete_expired` "really" means, and that
+ * decision is better made where it is read than where it is written.
+ */
+enum SubscriptionStatus {
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
 enum TemplateKey {
   BLUSH_ROMANCE
   MODERN_SAGE
@@ -162,6 +186,9 @@ model Studio {
   weddings         Wedding[]
   payments         Payment[]
   tickets          SupportTicket[]
+  /** Per-studio price overrides. Empty for a studio on the platform defaults. */
+  pricePlans       PricePlan[]
+  subscription     Subscription?
   createdAt        DateTime     @default(now())
 }
 
@@ -419,13 +446,141 @@ model Payment {
   description           String
   stripeSessionId       String?       @unique
   stripePaymentIntentId String?       @unique
+  /** Set for subscription invoices; null for one-time per-wedding charges. */
+  stripeInvoiceId       String?       @unique
+  /**
+   * Which price produced this amount. Nullable because every payment taken
+   * before price plans existed has no plan to point at, and backfilling a guess
+   * would put a number in the audit trail that nobody actually charged.
+   *
+   * `amountCents` above stays the authoritative record of what was charged.
+   * This is provenance, not a lookup — restrict on delete so a plan that has
+   * billed somebody can never be erased out from under its receipts.
+   */
+  pricePlanId           String?
+  pricePlan             PricePlan?    @relation(fields: [pricePlanId], references: [id], onDelete: Restrict)
   createdAt             DateTime      @default(now())
 
   @@index([studioId, createdAt])
+  @@index([pricePlanId])
+}
+
+/**
+ * One immutable version of one price.
+ *
+ * Rows here are never updated. Changing a price inserts a new row and archives
+ * the old one, which is what makes "changing the default must not change
+ * existing subscriptions" a property of the shape rather than a rule someone
+ * has to remember: a live subscription holds `pricePlanId`, so it keeps
+ * pointing at the row it was sold on no matter what the admin does afterwards.
+ *
+ * `studioId` null means this is the platform default for its kind; set means it
+ * is an override for that one studio. `resolvePrice()` prefers the override.
+ */
+model PricePlan {
+  id            String         @id @default(cuid())
+  kind          PricePlanKind
+  amountCents   Int
+  currency      String         @default("usd")
+  /** Null = platform default. Set = an override belonging to this studio. */
+  studioId      String?
+  studio        Studio?        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  /**
+   * The Stripe Price this plan was published as. Null for PER_WEDDING, which
+   * uses inline `price_data` because a one-time charge is never reused.
+   *
+   * Subscriptions cannot work that way: an inline price is archived the moment
+   * it is created and can be neither updated nor reused, so a subscription
+   * bound to one is invisible in the Dashboard and impossible to migrate.
+   */
+  stripePriceId String?        @unique
+  /**
+   * The uniqueness trick that makes "exactly one current price per scope" a
+   * database constraint rather than an application convention.
+   *
+   * Holds `"<kind>:<studioId>"` — or `"<kind>:GLOBAL"` — while this row is the
+   * current one, and NULL once it is archived. Postgres treats NULLs in a
+   * unique index as distinct, so any number of archived rows coexist happily
+   * while two rows can never claim the same live scope.
+   *
+   * This is a partial unique index expressed in a way Prisma can represent.
+   * Writing it as `@@index(...) WHERE active` would be raw SQL the schema
+   * cannot describe, and `prisma migrate dev` would then read it as drift and
+   * offer to reset the developer's database.
+   *
+   * Denormalised, and deliberately fail-closed: the only way to get it wrong is
+   * to leave it NULL, which hides a price rather than double-charging anyone.
+   */
+  activeKey     String?        @unique
+  createdAt     DateTime       @default(now())
+  archivedAt    DateTime?
+  /** Who set it, for the audit trail. Free text, same as AuditLog.actorName. */
+  createdBy     String?
+
+  payments      Payment[]
+  subscriptions Subscription[]
+
+  @@index([kind, studioId])
+}
+
+/**
+ * A studio's recurring plan, mirrored from Stripe.
+ *
+ * Stripe is the source of truth for status and period; this row exists so the
+ * product can answer "is this studio subscribed" without a network call on
+ * every page render. It is written only by the webhook.
+ *
+ * One per studio. A studio that cancels and later resubscribes overwrites this
+ * row — the money history lives in `Payment`, which is append-only.
+ */
+model Subscription {
+  id                   String             @id @default(cuid())
+  studioId             String             @unique
+  studio               Studio             @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  /** The price it was sold on. Unaffected by later changes to the default. */
+  pricePlanId          String
+  pricePlan            PricePlan          @relation(fields: [pricePlanId], references: [id], onDelete: Restrict)
+  stripeSubscriptionId String             @unique
+  stripeCustomerId     String
+  status               SubscriptionStatus
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([status])
+}
+
+/**
+ * Every Stripe event we have already acted on.
+ *
+ * Stripe redelivers on any non-2xx and will replay an event days later; a
+ * handler that credits a subscription or records a payment must therefore be
+ * safe to run twice. Inserting the event id first and letting the unique index
+ * reject the replay makes that safety structural, in the same way `runOnce`
+ * does for outbound effects.
+ */
+model ProcessedWebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+
+  @@index([processedAt])
 }
 
 model PlatformSetting {
   id                   Int     @id @default(1)
+  /**
+   * Superseded by the PER_WEDDING PricePlan, and no longer read anywhere.
+   *
+   * Kept rather than dropped so the migration that introduced price plans is
+   * purely additive and reversible by hand. The migration seeds the first
+   * PER_WEDDING plan from whatever value this held, so an admin who had already
+   * moved off $99 keeps their number.
+   *
+   * @deprecated Read `resolvePrice(studioId, "PER_WEDDING")` instead.
+   */
   pricePerWeddingCents Int     @default(9900)
   firstWeddingFree     Boolean @default(true)
 }

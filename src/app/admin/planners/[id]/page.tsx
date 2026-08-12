@@ -4,6 +4,11 @@ import { requireAdmin } from "@/server/services/context";
 import { prisma } from "@/lib/db";
 import { PageHead, StatusChip } from "@/components/ui";
 import { money, fmtDate, initials, TEMPLATES } from "@/lib/utils";
+import { resolveAllPrices } from "@/server/services/pricing";
+import { setPrice, clearStudioPrice } from "@/server/services/pricing-admin";
+import { studioSubscription } from "@/server/services/subscriptions";
+import { revalidatePath } from "next/cache";
+import type { PricePlanKind } from "@prisma/client";
 
 /**
  * One studio, as the platform owner sees it.
@@ -40,11 +45,46 @@ export default async function PlannerDetail({ params }: { params: Promise<{ id: 
     },
   });
   if (!studio) notFound();
-  const [guestCount, activity, emailStats] = await Promise.all([
+  const [guestCount, activity, emailStats, prices, subscription] = await Promise.all([
     prisma.guest.count({ where: { studioId: id } }),
     prisma.auditLog.findMany({ where: { studioId: id }, orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.emailLog.groupBy({ by: ["status"], where: { studioId: id }, _count: true }),
+    resolveAllPrices(id),
+    studioSubscription(id),
   ]);
+
+  /**
+   * Set or clear one custom price for this studio.
+   *
+   * `studioId` comes from the route rather than the form, and the amount is
+   * validated inside `setPrice`, which also requires an admin session of its
+   * own. Clearing archives the override rather than deleting it — a receipt or
+   * a live subscription may still point at that row.
+   */
+  async function savePrice(formData: FormData) {
+    "use server";
+    await requireAdmin();
+    const kind = String(formData.get("kind")) as PricePlanKind;
+    if (!["PER_WEDDING", "MONTHLY", "YEARLY"].includes(kind)) return;
+
+    const raw = String(formData.get("amount") ?? "").trim();
+    if (raw === "") {
+      await clearStudioPrice({ studioId: id, kind });
+    } else {
+      const dollars = Number(raw);
+      if (!Number.isFinite(dollars)) return;
+      await setPrice({ kind, amountCents: Math.round(dollars * 100), studioId: id });
+    }
+    revalidatePath(`/admin/planners/${id}`);
+  }
+
+  const PRICE_ROWS: Array<{ kind: PricePlanKind; label: string; unit: string }> = [
+    { kind: "PER_WEDDING", label: "Per published wedding", unit: "each" },
+    { kind: "MONTHLY", label: "Monthly subscription", unit: "/ month" },
+    { kind: "YEARLY", label: "Yearly subscription", unit: "/ year" },
+  ];
+  const planFor = (k: PricePlanKind) =>
+    k === "PER_WEDDING" ? prices.perWedding : k === "MONTHLY" ? prices.monthly : prices.yearly;
   const owner = studio.users.find(u => u.role === "PLANNER");
   const revenue = studio.payments.filter(p => p.status === "PAID").reduce((a, p) => a + p.amountCents, 0);
   const emailOf = (s: string) => emailStats.find(e => e.status === s)?._count ?? 0;
@@ -138,6 +178,87 @@ export default async function PlannerDetail({ params }: { params: Promise<{ id: 
             <div className="d">{emailOf("FAILED")} failed · {emailOf("SKIPPED")} skipped</div>
           </div>
         </div>
+      </section>
+
+      {/* ──────────────────────────────────────────── pricing & plan ─── */}
+      <section className="sec">
+        <div className="sec-head">
+          <h2 className="sec-t">Pricing &amp; plan</h2>
+          <span className="meta">
+            {subscription
+              ? `${subscription.pricePlan.kind === "YEARLY" ? "Yearly" : "Monthly"} subscription`
+              : "No subscription"}
+          </span>
+        </div>
+
+        {subscription && (
+          <div className="card pad" style={{ marginBottom: 14 }}>
+            <dl className="ov-facts">
+              <div><dt>Plan</dt><dd>{subscription.pricePlan.kind === "YEARLY" ? "Yearly" : "Monthly"}</dd></div>
+              <div>
+                <dt>Price they pay</dt>
+                <dd>{money(subscription.pricePlan.amountCents)}</dd>
+              </div>
+              <div><dt>Status</dt><dd><StatusChip s={subscription.status} /></dd></div>
+              <div>
+                <dt>{subscription.cancelAtPeriodEnd ? "Cancels" : "Renews"}</dt>
+                <dd>{subscription.currentPeriodEnd ? fmtDate(subscription.currentPeriodEnd) : "—"}</dd>
+              </div>
+            </dl>
+            {/*
+              The number above is the version of the price this studio actually
+              subscribed at, read from the plan the subscription points at — not
+              the current default. Those two drift apart the moment the default
+              changes, and showing the default here would quietly misreport what
+              a customer is being billed.
+            */}
+            <p className="meta" style={{ marginTop: 10 }}>
+              Locked at the price they subscribed on. Changing the default below
+              or on the settings page does not affect it.
+            </p>
+          </div>
+        )}
+
+        <div className="card tbl-scroll">
+          <table className="tbl">
+            <thead>
+              <tr><th>Charge</th><th>Effective price</th><th>Source</th><th>Custom price</th></tr>
+            </thead>
+            <tbody>
+              {PRICE_ROWS.map(row => {
+                const plan = planFor(row.kind);
+                const isCustom = plan.studioId === id;
+                return (
+                  <tr key={row.kind}>
+                    <td style={{ fontWeight: 500 }}>{row.label}</td>
+                    <td style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {money(plan.amountCents)} <span className="meta">{row.unit}</span>
+                    </td>
+                    <td className="meta">{isCustom ? "Custom for this studio" : "Platform default"}</td>
+                    <td>
+                      <form action={savePrice} className="row" style={{ gap: 8 }}>
+                        <input type="hidden" name="kind" value={row.kind} />
+                        <input
+                          className="inp" name="amount" type="number" step="1" min="0"
+                          style={{ maxWidth: 120 }}
+                          placeholder="default"
+                          defaultValue={isCustom ? plan.amountCents / 100 : ""}
+                          aria-label={`Custom ${row.label.toLowerCase()} price in dollars`}
+                        />
+                        <button className="btn btn-outline btn-sm" type="submit">Save</button>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="meta" style={{ marginTop: 8 }}>
+          Leave a box empty and save to remove the custom price and fall back to
+          the platform default. A change here applies to this studio&rsquo;s next
+          charge — it never reprices a subscription that is already running.
+        </p>
       </section>
 
       {/* ─────────────────────────────────────────────────── weddings ─── */}

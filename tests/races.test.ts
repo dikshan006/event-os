@@ -23,6 +23,15 @@ const db = {
   payment: { create: vi.fn() },
   registryItem: { findFirst: vi.fn(), updateMany: vi.fn(), findFirstOrThrow: vi.fn() },
   platformSetting: { findUnique: vi.fn() },
+  /**
+   * Both added when publishing learned about plans: it now checks for a live
+   * subscription before claiming the free wedding, and reads the price from a
+   * `PricePlan` row rather than the settings singleton. Neither assertion below
+   * changed — the fake client just has to describe the same database the
+   * service is now talking to.
+   */
+  subscription: { findUnique: vi.fn() },
+  pricePlan: { findMany: vi.fn() },
   auditLog: { create: vi.fn() },
   $transaction: vi.fn(async (arg: unknown) =>
     typeof arg === "function" ? (arg as (c: unknown) => unknown)(db) : arg),
@@ -40,6 +49,16 @@ beforeEach(() => {
   db.platformSetting.findUnique.mockResolvedValue({
     id: 1, firstWeddingFree: true, pricePerWeddingCents: 20000,
   });
+  // No subscription, so the free-wedding path below is the one under test.
+  // A subscriber publishes free without ever reaching it, which is its own
+  // case in `billing-subscriptions.test.ts`.
+  db.subscription.findUnique.mockResolvedValue(null);
+  // The same $200 that used to live on the settings row, now where the service
+  // actually reads it from.
+  db.pricePlan.findMany.mockResolvedValue([{
+    id: "plan-pw", kind: "PER_WEDDING", amountCents: 20000, currency: "usd",
+    studioId: null, activeKey: "PER_WEDDING:GLOBAL", stripePriceId: null,
+  }]);
 });
 
 /* ------------------------------------------------ the free wedding slot --- */

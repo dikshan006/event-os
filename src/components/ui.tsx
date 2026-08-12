@@ -23,12 +23,17 @@ export function PageHead({ eyebrow, title, sub, actions, back }: {
 }
 
 const toneMap: Record<string, string> = {
-  PUBLISHED: "sage", ACTIVE: "sage", PAID: "sage", ACCEPTED: "sage",
-  DRAFT: "", PENDING: "", AWAITING: "",
+  PUBLISHED: "sage", ACTIVE: "sage", PAID: "sage", ACCEPTED: "sage", TRIALING: "sage",
+  DRAFT: "", PENDING: "", AWAITING: "", INCOMPLETE: "",
   MAYBE: "wine", DECLINED: "wine", SUSPENDED: "wine", REFUNDED: "wine", FAILED: "wine",
+  PAST_DUE: "wine", UNPAID: "wine", CANCELED: "wine", INCOMPLETE_EXPIRED: "wine", PAUSED: "wine",
 };
 export function StatusChip({ s }: { s: string }) {
-  const label = s.charAt(0) + s.slice(1).toLowerCase();
+  // Underscores become spaces so PAST_DUE reads as "Past due" rather than
+  // "Past_due". No existing caller passes a value containing one — ticket
+  // statuses, which do, have their own chip — so this only affects the
+  // subscription statuses added alongside it.
+  const label = (s.charAt(0) + s.slice(1).toLowerCase()).replace(/_/g, " ");
   return <span className={`chip ${toneMap[s] ?? ""}`}><i className="dot" />{label}</span>;
 }
 
