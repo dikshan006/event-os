@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireStudio, ownWedding } from "@/server/services/context";
-import { listGuests, addGuest, updateGuest, importGuests, deleteGuest, sendInvitations, resendInvitation } from "@/server/services/guests";
+import { listGuests, addGuest, updateGuest, importGuests, deleteGuest } from "@/server/services/guests";
+import { resendInvitationOutcome, sendInvitationsOutcome, type InviteOutcome } from "@/server/services/invite-actions";
+import { InviteOneButton, SendAllButton } from "@/components/InviteButtons";
 import { PageHead, StatusChip } from "@/components/ui";
 import { zGuest } from "@/lib/validators";
 import { GROUPS, initials, fmtDate } from "@/lib/utils";
@@ -10,7 +12,7 @@ import { prisma } from "@/lib/db";
 
 export default async function GuestsPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string; group?: string; edit?: string; imported?: string; skipped?: string; sent?: string; failed?: string }>;
+  searchParams: Promise<{ q?: string; group?: string; edit?: string; imported?: string; skipped?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -48,18 +50,36 @@ export default async function GuestsPage({ params, searchParams }: {
     await deleteGuest(studioId, String(formData.get("guestId")));
     revalidatePath(`/studio/weddings/${String(formData.get("weddingId"))}/guests`);
   }
-  async function invite(formData: FormData) {
+  /**
+   * Both invitation actions return an outcome rather than throwing or
+   * redirecting.
+   *
+   * Throwing was the bug: `resendInvitation` raises a `UserError` when the
+   * per-guest hourly limit is reached, and an uncaught throw in a server action
+   * replaces the page with the error boundary — so a planner nudging a guest a
+   * fourth time was told "Something went wrong. This one is on us."
+   *
+   * Redirecting was the smaller half. `?sent=&failed=` in the URL survived
+   * reloads, could be typed by hand, and said nothing while the send was still
+   * running. The result now belongs to the button that started it.
+   *
+   * Tenant and actor still come from `requireStudio()` inside each action, and
+   * every rule about who may send what is unchanged in `guests.ts`.
+   */
+  async function invite(_prev: InviteOutcome | null, formData: FormData): Promise<InviteOutcome> {
     "use server";
     const { studioId, user } = await requireStudio();
     const weddingId = String(formData.get("weddingId"));
-    const { sent, failed } = await sendInvitations(studioId, weddingId, user.name);
-    redirect(`/studio/weddings/${weddingId}/guests?sent=${sent}&failed=${failed}`);
+    const outcome = await sendInvitationsOutcome(studioId, weddingId, user.name);
+    revalidatePath(`/studio/weddings/${weddingId}/guests`);
+    return outcome;
   }
-  async function resend(formData: FormData) {
+  async function resend(_prev: InviteOutcome | null, formData: FormData): Promise<InviteOutcome> {
     "use server";
     const { studioId, user } = await requireStudio();
-    await resendInvitation(studioId, String(formData.get("guestId")), user.name);
+    const outcome = await resendInvitationOutcome(studioId, String(formData.get("guestId")), user.name);
     revalidatePath(`/studio/weddings/${String(formData.get("weddingId"))}/guests`);
+    return outcome;
   }
 
   return (
@@ -69,18 +89,16 @@ export default async function GuestsPage({ params, searchParams }: {
         actions={
           <>
             <a className="btn btn-outline" href={`${base}/export`} download>Export CSV</a>
-            <form action={invite}>
-              <input type="hidden" name="weddingId" value={w.id} />
-              <button className="btn btn-primary" type="submit">Send invitations</button>
-            </form>
+            <SendAllButton action={invite} weddingId={w.id} />
           </>
         } />
 
-      {sp.sent !== undefined && (
-        <div className="note" style={{ marginBottom: 18 }}>
-          Invitations: {sp.sent} handed to the email provider{Number(sp.failed) > 0 ? `, ${sp.failed} failed — the failed guests stay un-invited so the next send retries them; details are in the email log.` : "."}
-        </div>
-      )}
+      {/*
+        The send result used to live here, put in the URL by a redirect. It now
+        appears beside the button that caused it — closer to the action, gone on
+        the next press, and impossible to arrive at by typing a query string.
+        The import banner below still redirects, so it stays as it was.
+      */}
       {sp.imported !== undefined && (
         <div className="note" style={{ marginBottom: 18 }}>
           Import complete: {sp.imported} guests added{Number(sp.skipped) > 0 ? `, ${sp.skipped} lines skipped (missing name or malformed email).` : "."}
@@ -119,11 +137,12 @@ export default async function GuestsPage({ params, searchParams }: {
                   <div className="row wrap" style={{ justifyContent: "flex-end" }}>
                     <a className="btn btn-outline btn-sm" href={`/invite/${g.inviteCode}`} target="_blank">Portal ↗</a>
                     {g.email && (
-                      <form action={resend}>
-                        <input type="hidden" name="guestId" value={g.id} />
-                        <input type="hidden" name="weddingId" value={w.id} />
-                        <button className="btn btn-outline btn-sm" type="submit">{g.invitedAt ? "Resend" : "Send"}</button>
-                      </form>
+                      <InviteOneButton
+                        action={resend}
+                        guestId={g.id}
+                        weddingId={w.id}
+                        alreadySent={!!g.invitedAt}
+                      />
                     )}
                     <Link className="btn btn-ghost btn-sm" href={`${base}?edit=${g.id}#guest-form`}>Edit</Link>
                     <form action={remove}>

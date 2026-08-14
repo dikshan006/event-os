@@ -143,8 +143,21 @@ test("13 · invitation resend is refused after the hourly limit", async ({ brows
     const row = page.locator("tr", { hasText: "Guest One" }).first();
     await expect(row, "the seeded guest must appear on the guest list").toBeVisible();
     await row.getByRole("button", { name: /^(Send|Resend)$/ }).click();
-    // The action revalidates the path; wait for the render that follows.
-    await page.waitForLoadState("networkidle");
+    /**
+     * Wait for the button to leave its sending state, not for the network to
+     * fall idle.
+     *
+     * This used to be a form that navigated, so `networkidle` was a fair proxy
+     * for "the send finished". It is now a client action: the click fires a
+     * request and the page never navigates, so `networkidle` can resolve while
+     * that request is still in flight — and the row count below would then be
+     * read mid-send and come back short.
+     *
+     * The button disables itself and reads "Sending…" for exactly the duration
+     * of the request, which makes its absence the precise signal this needs.
+     * Nothing about the assertion changes; only the thing it waits on.
+     */
+    await expect(page.getByRole("button", { name: "Sending…" })).toHaveCount(0, { timeout: 15_000 });
   };
 
   // Three are allowed in an hour. Attempts four and five must not get through.
