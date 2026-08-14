@@ -152,10 +152,67 @@ DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npm run db:deplo
 
 1. Stripe → Developers → **Webhooks → Add endpoint**
    - URL: `https://your-domain.com/api/webhooks/stripe`
-   - Event: `checkout.session.completed`
+   - Events: `checkout.session.completed`, `customer.subscription.created`,
+     `customer.subscription.updated`, `customer.subscription.deleted`,
+     `invoice.paid`, `invoice.payment_failed`
 2. Copy the signing secret (`whsec_…`) into `STRIPE_WEBHOOK_SECRET` on Vercel
    and redeploy.
 3. Test with a real publish, or Stripe's "Send test webhook".
+
+---
+
+## 6. Preview environments
+
+Preview points at its own Neon branch, with its own `DATABASE_URL` and
+`DIRECT_URL`. The branch must be **empty**, not a schema-only copy of
+production.
+
+A schema-only branch copies DDL and no rows. `_prisma_migrations` is an
+ordinary table, so the branch arrives with a fully built schema and an empty
+history — and `prisma migrate deploy`, reading that history, concludes nothing
+has been applied, starts at `init`, and fails on `CREATE TYPE "Role"` because
+the type is already there:
+
+```
+P3018  Migration 20260729203159_init failed
+       ERROR: type "Role" already exists (42710)
+```
+
+**Do not fix this with `prisma migrate resolve --applied`.** It makes the build
+pass and leaves the environment broken. `20260812120000_price_plans_and_subscriptions`
+is the one migration that seeds rows; schema-only copied the empty `PricePlan`
+table, and marking the migration applied means the seed never runs. Preview
+then has no prices, `resolvePrice` throws rather than invent an amount, and
+every billing page returns 500 — a green build hiding a broken deployment.
+
+Empty the branch instead, and let the deploy build the whole history:
+
+```bash
+# .env.preview holds ONLY the preview branch's DATABASE_URL and DIRECT_URL
+npx tsx --env-file=.env.preview scripts/reset-preview-db.ts        # dry run
+npx tsx --env-file=.env.preview scripts/reset-preview-db.ts --yes
+```
+
+The script refuses to touch a database containing any application rows, so
+pointing it at production stops with an error rather than doing damage.
+
+`.env.preview` holds a database connection string and must never be committed.
+`.gitignore` covers `.env*` for exactly this reason — a bare `.env` entry does
+not match `.env.preview`. Confirm before your first commit:
+
+```bash
+git check-ignore -v .env.preview   # must print a .gitignore line
+```
+
+Then redeploy Preview. All migrations apply from zero, the price plans seed,
+and the history matches the repository exactly. Preview also becomes a genuine
+test of the migration chain, which a schema-only copy never was.
+
+Creating a fresh preview branch later: create it **empty** rather than
+schema-only and no reset is needed. Copy-on-write branches (which do carry
+`_prisma_migrations`) also work, but they bring production data — including
+guest names and email addresses — into an environment protected only by a
+preview URL.
 
 The publish flow: first wedding per studio is free, after that publishing
 redirects to Stripe Checkout and the webhook flips the wedding to PUBLISHED.

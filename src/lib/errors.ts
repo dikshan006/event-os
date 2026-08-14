@@ -10,9 +10,22 @@
  * could not be processed".
  */
 export class UserError extends Error {
-  constructor(message: string) {
+  /**
+   * An optional stable tag for callers that need to tell two expected failures
+   * apart without matching on prose.
+   *
+   * Publishing can fail because the button was pressed twice or because billing
+   * is not configured, and those want different words on the page. Branching on
+   * `err.message` would work until somebody rewords a sentence, at which point
+   * the wrong banner appears and nothing fails. Optional, so every existing
+   * `new UserError("…")` keeps working untouched.
+   */
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
     super(message);
     this.name = "UserError";
+    this.code = code;
   }
 }
 

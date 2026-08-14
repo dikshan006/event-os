@@ -1,6 +1,10 @@
 node_modules
 .next
-.env
+# Every env file, not just `.env` — a bare `.env` line does not match
+# `.env.preview` or `.env.local`, and those hold database connection strings
+# for other environments. The template is the one exception and is committed.
+.env*
+!.env.example
 *.tsbuildinfo
 
 # Local-storage-driver uploads (dev only; production uses the S3 driver)

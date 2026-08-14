@@ -31,7 +31,18 @@ const stripeMock = {
 
 vi.mock("@/lib/db", () => ({ prisma: db }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/stripe", () => ({ stripe: stripeMock, stripeEnabled: true }));
+/**
+ * `billingUnavailableInProduction` is part of this module's surface now, and a
+ * mock that omits it makes every import of `billing.ts` fail. False here
+ * because Stripe *is* enabled in this suite — the fail-closed path is covered
+ * on its own in `production-hardening.test.ts`.
+ */
+vi.mock("@/lib/stripe", () => ({
+  stripe: stripeMock,
+  stripeEnabled: true,
+  isLiveDeployment: () => false,
+  billingUnavailableInProduction: () => false,
+}));
 vi.mock("@/server/services/audit", () => ({ logAudit: vi.fn(async () => {}) }));
 vi.mock("@/lib/email", () => ({ emails: { paymentReceipt: vi.fn(async () => true) } }));
 /**

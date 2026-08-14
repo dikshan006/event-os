@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { slugify, inviteCode } from "@/lib/utils";
 import { emails } from "@/lib/email";
+import { storage } from "@/lib/storage";
+import { log } from "@/lib/logger";
 import { logAudit } from "./audit";
 import { issueResetToken, INVITE_TOKEN_TTL_MS, revokeSessionsOp } from "./passwordReset";
 
@@ -109,9 +111,80 @@ export async function setPlannerStatus(studioId: string, status: "ACTIVE" | "SUS
   await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", studioId, action: `${status === "SUSPENDED" ? "Suspended" : "Reactivated"} planner \u201C${studio.name}\u201D` });
 }
 
+/**
+ * Everything belonging to one studio lives under this prefix.
+ *
+ * Photos are written to `studios/<id>/weddings/<id>/<uuid>` and logos to
+ * `studios/<id>/brand/<uuid>`, so one prefix covers both. The trailing slash is
+ * not cosmetic: without it `studios/abc` would also match `studios/abcdef`, and
+ * a delete that reaches into a second studio's files is the worst possible
+ * failure of a function whose entire job is deleting things.
+ */
+const studioBlobPrefix = (studioId: string) => `studios/${studioId}/`;
+
+/**
+ * Delete a studio and everything that belongs to it.
+ *
+ * Three kinds of data, three different treatments.
+ *
+ * The relational rows go with a cascade, which the schema already handles for
+ * users, weddings, guests, photos and payments.
+ *
+ * `EmailLog`, `AuditLog` and `IdempotencyKey` carry `studioId` as a plain
+ * column with no foreign key \u2014 deliberately, so a log entry outlives the thing
+ * it describes \u2014 which means the cascade does not touch them. That is right for
+ * a wedding and wrong for a deleted account: `EmailLog.toEmail` holds guest
+ * addresses, and keeping those after \u201Cdelete all of its data\u201D makes the
+ * sentence untrue. They are removed explicitly, each scoped to this studio.
+ *
+ * The uploaded files are what nothing was cleaning up. Blobs are stored with
+ * public access and stable URLs, so a photograph from somebody's wedding stayed
+ * fetchable indefinitely after the account that owned it was erased.
+ *
+ * Order matters: database first, blobs after. A storage outage must not be able
+ * to block an account deletion \u2014 that would leave a person unable to remove
+ * their data because a third party is down \u2014 so the blob pass is best-effort
+ * and reports what it could not do rather than throwing. The audit entry then
+ * states which of the two actually happened, because an entry that claims more
+ * than took place is worse than no entry at all.
+ */
 export async function deletePlanner(studioId: string) {
   const studio = await prisma.studio.findUnique({ where: { id: studioId } });
-  if (!studio) return;
-  await prisma.studio.delete({ where: { id: studioId } }); // cascades users, weddings, guests, payments…
-  await logAudit({ actorType: "ADMIN", actorName: "Platform Owner", action: `Deleted planner \u201C${studio.name}\u201D and all of its data` });
+  if (!studio) return { blobsDeleted: true };
+
+  const prefix = studioBlobPrefix(studioId);
+
+  await prisma.$transaction([
+    prisma.emailLog.deleteMany({ where: { studioId } }),
+    prisma.idempotencyKey.deleteMany({ where: { studioId } }),
+    prisma.auditLog.deleteMany({ where: { studioId } }),
+    prisma.studio.delete({ where: { id: studioId } }), // cascades users, weddings, guests, payments…
+  ]);
+
+  let blobsDeleted = true;
+  try {
+    await storage().deletePrefix(prefix);
+  } catch (err) {
+    blobsDeleted = false;
+    log.error("studio.blob_cleanup_failed", {
+      studioId,
+      prefix,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  /**
+   * Written after the deletion and deliberately without `studioId`, so it is
+   * not swept up by the `auditLog.deleteMany` above and survives as the record
+   * that this happened at all.
+   */
+  await logAudit({
+    actorType: "ADMIN",
+    actorName: "Platform Owner",
+    action: blobsDeleted
+      ? `Deleted planner \u201C${studio.name}\u201D \u2014 database records and uploaded files removed`
+      : `Deleted planner \u201C${studio.name}\u201D \u2014 database records removed; uploaded files could NOT be deleted and need manual cleanup of ${prefix}`,
+  });
+
+  return { blobsDeleted };
 }

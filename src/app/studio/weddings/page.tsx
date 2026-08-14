@@ -8,7 +8,7 @@ import { PageHead, StatusChip } from "@/components/ui";
 import { fmtDate, TEMPLATES } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
-export default async function WeddingsPage({ searchParams }: { searchParams: Promise<{ published?: string; canceled?: string; busy?: string }> }) {
+export default async function WeddingsPage({ searchParams }: { searchParams: Promise<{ published?: string; canceled?: string; problem?: string }> }) {
   const { studioId } = await requireStudio();
   const weddings = await listWeddings(studioId);
   const sp = await searchParams;
@@ -37,11 +37,24 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
      */
     const outcome = await startPublish(studioId, String(formData.get("id")), user.name)
       .catch((err: unknown) => {
-        if (err instanceof UserError) return { busy: true as const };
+        /**
+         * Mapped to a fixed code, never to the error's own text.
+         *
+         * The message is put in a URL and rendered back, and echoing arbitrary
+         * server text through a query parameter is how a page becomes a place
+         * to display attacker-chosen words. React escapes it, so this is not
+         * script injection — but "your account has been suspended, call this
+         * number" rendered inside the real product is a good enough phish
+         * without any script at all. A closed set of codes cannot say anything
+         * the page does not already know how to say.
+         */
+        if (err instanceof UserError) {
+          return { problem: err.code === "BILLING_UNAVAILABLE" ? "billing" : "busy" } as const;
+        }
         throw err;
       });
 
-    if ("busy" in outcome) redirect("/studio/weddings?busy=1");
+    if ("problem" in outcome) redirect(`/studio/weddings?problem=${outcome.problem}`);
     if (!outcome.ok) redirect(outcome.checkoutUrl);
     revalidatePath("/studio/weddings");
   }
@@ -79,7 +92,13 @@ export default async function WeddingsPage({ searchParams }: { searchParams: Pro
         actions={<Link className="btn btn-primary" href="/studio/weddings/new">New Wedding</Link>} />
       {sp.published && <div className="note" style={{ marginBottom: 20 }}>Payment confirmed — your wedding is being published. Refresh in a moment if it still shows as draft.</div>}
       {sp.canceled && <div className="note" style={{ marginBottom: 20 }}>Checkout canceled — the wedding stays in draft.</div>}
-      {sp.busy && <div className="note" style={{ marginBottom: 20 }}>That publish is already being set up — give it a moment and press Publish again.</div>}
+      {sp.problem === "busy" && <div className="note" style={{ marginBottom: 20 }}>That publish is already being set up — give it a moment and press Publish again.</div>}
+      {sp.problem === "billing" && (
+        <div className="note" style={{ marginBottom: 20 }}>
+          Publishing is temporarily unavailable while billing is being set up.
+          Your wedding is safe as a draft — please contact EventOS support.
+        </div>
+      )}
       <div className="grid">
         {weddings.map(w => {
           const T = TEMPLATES[w.template];

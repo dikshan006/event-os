@@ -58,13 +58,29 @@ async function login(formData: FormData) {
       await recordSecurityEvent("SECURITY.LOGIN_FAILED", { email, ip });
       redirect("/login?error=1");
     }
-    throw err; // NEXT_REDIRECT passes through
-  }
 
-  // Unreachable on success — `signIn` redirects by throwing NEXT_REDIRECT —
-  // but kept correct so that if the redirect behaviour ever changes, the
-  // counters are still cleared rather than silently accumulating.
-  await clearLoginFailures(subject, ip);
+    /**
+     * A successful sign-in leaves by throwing, so this is where success lands.
+     *
+     * `signIn` with `redirectTo` navigates the only way a server action can —
+     * by throwing NEXT_REDIRECT — which meant the counter reset that used to
+     * sit after this block was unreachable. Failed attempts therefore
+     * accumulated for the full fifteen-minute window even after the person
+     * got their password right, and somebody who fumbled it ten times stayed
+     * locked out while holding a valid session.
+     *
+     * Detected by the digest rather than by "anything that is not an
+     * AuthError", so a genuine fault — the database falling over inside
+     * `authorize`, say — does not clear anybody's counter on its way past.
+     * Only the redirect that signals success does, which keeps the limiter's
+     * behaviour on failure exactly as it was.
+     */
+    const digest = (err as { digest?: unknown }).digest;
+    if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) {
+      await clearLoginFailures(subject, ip);
+    }
+    throw err;
+  }
 }
 
 export default async function LoginPage({

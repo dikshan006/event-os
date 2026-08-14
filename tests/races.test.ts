@@ -39,7 +39,19 @@ const db = {
 
 vi.mock("@/lib/db", () => ({ prisma: db }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/stripe", () => ({ stripe: {}, stripeEnabled: false }));
+/**
+ * Stripe absent, and this suite is not the live deployment — so publishing
+ * takes the dev path, which is what these race assertions have always
+ * exercised. `billingUnavailableInProduction` is new on this module and must be
+ * present or importing `billing.ts` fails; returning false keeps the behaviour
+ * under test exactly as it was.
+ */
+vi.mock("@/lib/stripe", () => ({
+  stripe: {},
+  stripeEnabled: false,
+  isLiveDeployment: () => false,
+  billingUnavailableInProduction: () => false,
+}));
 vi.mock("@/lib/email", () => ({ emails: {}, PLATFORM_INBOX: null }));
 vi.mock("@/lib/ratelimit", () => ({ rateLimit: vi.fn(async () => true) }));
 

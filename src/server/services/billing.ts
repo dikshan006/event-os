@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { stripe, stripeEnabled } from "@/lib/stripe";
+import { stripe, stripeEnabled, billingUnavailableInProduction } from "@/lib/stripe";
+import { log } from "@/lib/logger";
 import { getSettings } from "./settings";
 import { logAudit } from "./audit";
 import { resolvePrice } from "./pricing";
@@ -113,6 +114,66 @@ export async function startPublish(studioId: string, weddingId: string, actorNam
   const plan = await resolvePrice(studioId, "PER_WEDDING");
   const amountCents = plan.amountCents;
 
+  /**
+   * A price of zero is not a payment, so it does not need a payment processor.
+   *
+   * This is the shape of the launch while charging is paused: the platform
+   * per-wedding price is set to $0, and publishing works without Stripe being
+   * configured at all. It is also simply correct — routing a $0 charge through
+   * Checkout would ask a planner to confirm paying nothing, and would fail for
+   * want of credentials that cannot affect the outcome either way.
+   *
+   * The `PAID` row is honest here in a way it is not below: nothing was owed
+   * and nothing is outstanding, which is the same reasoning that lets the free
+   * first wedding record a zero-amount payment. `freeWeddingUsed` is
+   * deliberately left alone — a publish that cost nothing should not consume
+   * the one free wedding a studio gets when prices come back.
+   */
+  if (amountCents === 0) {
+    await prisma.$transaction([
+      prisma.wedding.update({ where: { id: wedding.id }, data: { status: "PUBLISHED", publishedAt: new Date() } }),
+      prisma.payment.create({
+        data: {
+          studioId, weddingId: wedding.id, amountCents: 0, status: "PAID",
+          pricePlanId: plan.id, description: `Publish \u2014 ${couple} (no charge)`,
+        },
+      }),
+    ]);
+    await logAudit({
+      actorType: "PLANNER", actorName, studioId,
+      action: `Published \u201C${couple}\u201D \u2014 no charge`, targetId: wedding.id,
+    });
+    return { ok: true as const };
+  }
+
+  /**
+   * With no Stripe key, publishing is free \u2014 which is a convenience locally and
+   * a giveaway in front of customers.
+   *
+   * The branch below publishes the wedding and writes a `PAID` payment for the
+   * full amount without any money moving. On a laptop that is exactly what is
+   * wanted; on the live deployment it hands over the product and then records
+   * in the billing history that it was paid for, which is worse than simply
+   * failing because it destroys the evidence that anything went wrong.
+   *
+   * So the live deployment refuses instead. `billingUnavailableInProduction()`
+   * is fail-closed: an absent or unrecognised `VERCEL_ENV` counts as live, so a
+   * variable that goes missing costs a publish rather than a payment.
+   */
+  if (billingUnavailableInProduction()) {
+    log.error("billing.not_configured", { studioId, weddingId: wedding.id });
+    await logAudit({
+      actorType: "SYSTEM", studioId,
+      action: `Publish refused \u2014 Stripe is not configured on this deployment`,
+      targetId: wedding.id,
+    });
+    throw new UserError(
+      "Publishing is temporarily unavailable while billing is being set up. " +
+        "Your wedding is safe as a draft \u2014 please contact EventOS support.",
+      "BILLING_UNAVAILABLE",
+    );
+  }
+
   if (!stripeEnabled) {
     await prisma.$transaction([
       prisma.wedding.update({ where: { id: wedding.id }, data: { status: "PUBLISHED", publishedAt: new Date() } }),
@@ -181,7 +242,10 @@ export async function startPublish(studioId: string, weddingId: string, actorNam
   if (outcome.status === "in_flight") {
     // Another request holds the claim and has not finished creating the
     // session. Nothing to send them to yet; asking again in a moment is right.
-    throw new UserError("That publish is already being set up \u2014 give it a second and try again.");
+    throw new UserError(
+      "That publish is already being set up \u2014 give it a second and try again.",
+      "PUBLISH_IN_FLIGHT",
+    );
   }
   if (!outcome.result?.url) {
     throw new Error("Checkout session was claimed but produced no URL");
