@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, type SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasAcceptedCurrentLegal } from "@/server/services/legal";
 
 /**
  * One cell of CSV, safe to open in a spreadsheet.
@@ -34,6 +35,26 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   if (!user || user.role !== "PLANNER" || !user.studioId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  /**
+   * The legal gate, repeated here because this route cannot inherit it.
+   *
+   * Every other planner surface is covered by `requireStudio()`, which the
+   * studio layout and each page call. A route handler runs neither — Next does
+   * not execute layouts for them — so without this line the guest list, which
+   * is every guest's name and email address, would be the one thing an
+   * un-accepted planner could still download.
+   *
+   * 403 rather than a redirect: this endpoint answers a fetch, and redirecting
+   * it to an HTML page would hand the caller a CSV-shaped file full of markup.
+   */
+  if (!(await hasAcceptedCurrentLegal(user.id))) {
+    return NextResponse.json(
+      { error: "Accept the Terms of Service and Privacy Policy to continue." },
+      { status: 403 },
+    );
+  }
+
   const { id } = await ctx.params;
   const wedding = await prisma.wedding.findFirst({ where: { id, studioId: user.studioId } });
   if (!wedding) return NextResponse.json({ error: "Not found" }, { status: 404 });

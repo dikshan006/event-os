@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { TERMS_VERSION, PRIVACY_VERSION } from "../../src/lib/legal";
 import bcrypt from "bcryptjs";
 
 /**
@@ -37,7 +38,9 @@ export const IDS = {
    * nothing for another test to read, list or collide with.
    */
   studioThrottle: "e2e-studio-throttle",
+  studioUnaccepted: "e2e-studio-unaccepted",
   throttle: "e2e-user-throttle",
+  unaccepted: "e2e-user-unaccepted",
   weddingA: "e2e-wedding-a",
   weddingB: "e2e-wedding-b",
   guestA: "e2e-guest-a",
@@ -53,6 +56,7 @@ export const EMAILS = {
   admin: "admin@e2e.invalid",
   /** Case 14 only. Must never be used to sign in successfully anywhere else. */
   throttle: "throttle@e2e.invalid",
+  unaccepted: "unaccepted@e2e.invalid",
 } as const;
 
 /** Invite codes are the guest credential; fixed here so tests can address them. */
@@ -72,7 +76,9 @@ function assertTestDatabase() {
 }
 
 /** Every studio this suite owns. Used by the cleanup below and by nothing else. */
-const OUR_STUDIOS = [IDS.studioA, IDS.studioB, IDS.studioThrottle];
+const OUR_STUDIOS = [IDS.studioA, IDS.studioB, IDS.studioThrottle, IDS.studioUnaccepted];
+// LegalAcceptance rows need no entry here: they cascade from User, and the
+// users are deleted by email below.
 
 export async function reset() {
   assertTestDatabase();
@@ -99,6 +105,31 @@ export async function reset() {
   await prisma.user.deleteMany({ where: { email: { in: Object.values(EMAILS) } } });
 }
 
+/**
+ * Agreement to the current Terms and Privacy Policy, for the seeded planners.
+ *
+ * `requireStudio()` now redirects a planner who has not accepted to
+ * /accept-terms, which would send all thirteen authorization tests to a consent
+ * screen instead of the thing they are asserting about. The fixture therefore
+ * records agreement for the planners who are supposed to be working normally.
+ *
+ * `IDS.unaccepted` is deliberately left without a row — that account exists to
+ * prove the gate actually closes, in `legal.spec.ts`.
+ *
+ * The versions come from `src/lib/legal.ts` rather than being written out here,
+ * so bumping a constant does not quietly leave the fixture agreeing to a
+ * version that no longer exists.
+ */
+async function acceptLegalFor(userId: string) {
+  await prisma.legalAcceptance.createMany({
+    data: [
+      { userId, document: "TERMS", version: TERMS_VERSION },
+      { userId, document: "PRIVACY", version: PRIVACY_VERSION },
+    ],
+    skipDuplicates: true,
+  });
+}
+
 export async function seed() {
   await reset();
   const passwordHash = await bcrypt.hash(PASSWORD, 12);
@@ -113,6 +144,7 @@ export async function seed() {
     await prisma.user.create({
       data: { id: userId, email, name: `Planner ${slug}`, passwordHash, role: "PLANNER", studioId },
     });
+    await acceptLegalFor(userId);
   }
 
   await prisma.user.create({
@@ -142,6 +174,26 @@ export async function seed() {
     data: {
       id: IDS.throttle, email: EMAILS.throttle, name: "Throttle Target",
       passwordHash, role: "PLANNER", studioId: IDS.studioThrottle,
+    },
+  });
+  await acceptLegalFor(IDS.throttle);
+
+  /**
+   * The account that has never agreed to anything.
+   *
+   * Its own studio containing nothing, for the same containment reason as the
+   * throttle account. It exists so `legal.spec.ts` can prove the gate closes: a
+   * planner in this state must reach neither the dashboard nor the guest CSV,
+   * and asserting that needs an account which is genuinely un-accepted rather
+   * than one doctored halfway through a run.
+   */
+  await prisma.studio.create({
+    data: { id: IDS.studioUnaccepted, name: "E2E unaccepted", slug: "e2e-unaccepted", status: "ACTIVE" },
+  });
+  await prisma.user.create({
+    data: {
+      id: IDS.unaccepted, email: EMAILS.unaccepted, name: "Unaccepted Planner",
+      passwordHash, role: "PLANNER", studioId: IDS.studioUnaccepted,
     },
   });
 

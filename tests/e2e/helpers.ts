@@ -10,7 +10,24 @@ import { PASSWORD, EMAILS } from "./seed";
  * name that middleware has to agree with. A helper that forged a cookie would
  * skip exactly the code most worth exercising.
  */
-export async function signIn(browser: Browser, email: string): Promise<BrowserContext> {
+export type SignInOptions = {
+  /**
+   * The account has not accepted the current Terms and Privacy Policy, so
+   * `/studio` will redirect. Probe the consent screen instead.
+   *
+   * An option rather than a guess, because "the dashboard did not return 200"
+   * is exactly what a broken session looks like — and silently accepting it
+   * would undo the check that stopped four tenancy tests passing while proving
+   * nothing.
+   */
+  expectAcceptTerms?: boolean;
+};
+
+export async function signIn(
+  browser: Browser,
+  email: string,
+  opts: SignInOptions = {},
+): Promise<BrowserContext> {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto("/login");
@@ -21,7 +38,7 @@ export async function signIn(browser: Browser, email: string): Promise<BrowserCo
     page.click('button[type="submit"]'),
   ]);
   await page.close();
-  await assertSessionUsable(context, email);
+  await assertSessionUsable(context, email, opts);
   return context;
 }
 
@@ -39,7 +56,11 @@ export async function signIn(browser: Browser, email: string): Promise<BrowserCo
  * and require a 200. A broken cookie now fails at the helper, naming the
  * account, instead of surfacing three tests later as a mysterious 307.
  */
-export async function assertSessionUsable(context: BrowserContext, email: string) {
+export async function assertSessionUsable(
+  context: BrowserContext,
+  email: string,
+  opts: SignInOptions = {},
+) {
   /**
    * Probe the tree the account is actually allowed into.
    *
@@ -47,7 +68,11 @@ export async function assertSessionUsable(context: BrowserContext, email: string
    * studio — is redirected away from `/studio` exactly as a stranger would be.
    * Probing there would make a perfectly good admin session look broken.
    */
-  const probe = email === EMAILS.admin ? "/admin" : "/studio";
+  const probe = opts.expectAcceptTerms
+    ? "/accept-terms"
+    : email === EMAILS.admin
+      ? "/admin"
+      : "/studio";
   const res = await context.request.get(probe, { maxRedirects: 0 });
   expect(
     res.status(),
@@ -114,7 +139,7 @@ export async function expectBouncedFromStudioResource(
  * page itself, and re-using one page per actor is what makes a click sequence
  * read like a session rather than a series of unrelated visits.
  */
-export async function signInAs(browser: Browser, email: string) {
+export async function signInAs(browser: Browser, email: string, opts: SignInOptions = {}) {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto("/login");
@@ -124,7 +149,7 @@ export async function signInAs(browser: Browser, email: string) {
     page.waitForURL(url => !url.pathname.startsWith("/login"), { timeout: 15_000 }),
     page.click('button[type="submit"]'),
   ]);
-  await assertSessionUsable(context, email);
+  await assertSessionUsable(context, email, opts);
   return { context, page };
 }
 

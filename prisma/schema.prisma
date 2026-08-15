@@ -123,6 +123,7 @@ model User {
   createdAt    DateTime  @default(now())
   resetTokens  PasswordResetToken[]
   tickets      SupportTicket[]
+  legalAcceptances LegalAcceptance[]
 
   @@index([studioId])
 }
@@ -846,4 +847,48 @@ enum TicketCategory {
   BILLING
   SOMETHING_BROKEN
   OTHER
+}
+
+/**
+ * Which document was agreed to.
+ *
+ * Two rows per acceptance rather than one combined record, because the two
+ * documents version independently: a privacy policy can change because a
+ * sub-processor changed, without a word of the terms moving. Storing them
+ * together would force a re-acceptance of both every time either one did.
+ */
+enum LegalDocument {
+  TERMS
+  PRIVACY
+}
+
+/**
+ * A planner's agreement to one version of one legal document.
+ *
+ * Append-only. A new version produces a new row and the old one stays, so the
+ * question "what had this person actually agreed to on the day they did X" has
+ * an answer — which is the entire reason to record consent rather than just set
+ * a boolean flag.
+ *
+ * The unique constraint makes acceptance idempotent: pressing the button twice,
+ * or a retried request, cannot write two rows for the same agreement. Bumping a
+ * version constant in `src/lib/legal.ts` therefore re-gates every planner
+ * automatically, because the row they hold no longer matches the current
+ * version and no row for the new one exists yet.
+ *
+ * Deliberately no IP address or user-agent column. They are the obvious things
+ * to add for evidentiary weight, and they are also personal data this product
+ * has no other reason to hold — the userId, the document, the version and the
+ * timestamp are what was asked for and what is kept.
+ */
+model LegalAcceptance {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   LegalDocument
+  version    String
+  acceptedAt DateTime      @default(now())
+
+  @@unique([userId, document, version])
+  @@index([userId])
 }
