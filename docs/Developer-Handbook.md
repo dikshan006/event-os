@@ -1,8 +1,7 @@
 # EventOS Developer Handbook
 
-**Version:** derived from the working tree on top of commit `eb056b3` (`origin/main`),
-including the Terms and Privacy acceptance system, which is implemented and verified but
-not yet committed. See [22.3](#223-commit-provenance).
+**Version:** derived from the repository at commit `f912143` (`origin/main`).
+See [22.3](#223-commit-provenance).
 **Generated:** 14 August 2026
 **Scope:** the `wedding-planner-os` repository as it exists today
 
@@ -1927,15 +1926,18 @@ Remotion. *(verified against `package.json`.)*
 
 ## 22.3 Commit provenance
 
-This handbook documents the **working tree on top of `eb056b3`** (the head of
-`origin/main` at the time of writing).
+This handbook documents **`f912143`**, the head of `origin/main`.
 
-The Terms and Privacy acceptance system described throughout — `LegalAcceptance`,
-`src/lib/legal.ts`, `src/server/services/legal.ts`, `/terms`, `/privacy`,
-`/accept-terms`, the `requireStudio()` gate and migration
-`20260814120000_legal_acceptance` — is implemented and verified (214 unit tests,
-29 E2E) but **not yet committed**. When it is, this line and the header should
-name the new commit; nothing else in this document needs to change.
+That commit added the Terms and Privacy acceptance system described throughout:
+`LegalAcceptance`, `src/lib/legal.ts`, `src/server/services/legal.ts`, `/terms`,
+`/privacy`, `/accept-terms`, the `requireStudio()` gate and migration
+`20260814120000_legal_acceptance`.
+
+One later change is presentation only and does not affect anything documented
+here: the legal documents were moved off the marketing site's dark `.m-plate`
+onto a light, high-contrast document layout (`.legal` in
+`src/app/(marketing)/marketing.css`). The legal text, the version constants and
+the acceptance logic were not touched.
 
 The commit immediately before it, `fe20a8b` ("Harden production launch"), differs by
 exactly five files — the invitation resend fix:
@@ -1954,7 +1956,7 @@ Unit test counts at each point, so a mismatch tells you which state you are look
 |---|---|---|
 | `fe20a8b` | 180 across 11 files | 23 |
 | `eb056b3` | 193 across 12 files | 23 |
-| working tree (this document) | **214 across 13 files** | **29** |
+| `f912143` (this document) | **214 across 13 files** | **29** |
 
 If you are ever reading this handbook against `fe20a8b`,
 [3.5](#35-forms-and-server-actions), [9.3](#93-sending) and

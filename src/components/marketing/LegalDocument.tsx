@@ -4,13 +4,19 @@ import { LEGAL_REVIEW_NOTICE } from "@/lib/legal";
 /**
  * The shell both legal documents are set in.
  *
- * Shared so the two cannot drift apart in presentation, and so the review
- * notice is impossible to publish a document without — it is part of the
- * wrapper rather than something each page remembers to include.
+ * Shared so the two cannot drift apart, and so the review notice is impossible
+ * to publish a document without — it belongs to the wrapper rather than to each
+ * page remembering to include it.
  *
- * A plain prose column rather than the marketing site's layered plates. These
- * are documents; someone reading one is reading it, not being sold to, and the
- * only jobs the page has are legibility and a stated version.
+ * This deliberately does **not** use the marketing site's `.m-plate` layout.
+ * That component paints `--ink` because it exists to sit behind a photograph,
+ * and setting a long legal document on it produced near-black text on a
+ * near-black panel. The rest of the site is an argument, with layered plates
+ * and text that arrives as you scroll; a legal document is not. Somebody is
+ * here to read one specific clause, usually because they are about to agree to
+ * it. So the page is white, the measure is narrow, and nothing moves.
+ *
+ * Styles live in `src/app/(marketing)/marketing.css` under `.legal`.
  */
 export function LegalDocument({
   title,
@@ -24,45 +30,40 @@ export function LegalDocument({
   children: React.ReactNode;
 }) {
   return (
-    <div className="m-plate" data-hero-tone="light">
-      <section>
-        <div
-          className="m-wrap m-chapter"
-          style={{ paddingTop: "calc(var(--m-nav-h, 4.25rem) + var(--m-chapter))" }}
-        >
-          <div style={{ maxWidth: "44rem", margin: "0 auto" }}>
-            <span className="m-eyebrow">Legal</span>
-            <h1 className="m-display" style={{ marginBottom: ".4em" }}>{title}</h1>
+    <div className="legal">
+      <article className="legal-wrap">
+        <p className="legal-brand">EventOS</p>
 
-            <p className="meta" style={{ marginBottom: "1.6rem" }}>
-              Version {version} · Effective {effective}
-            </p>
+        <p className="legal-kicker">Legal</p>
+        <h1>{title}</h1>
 
-            {/*
-              Stated on the document itself rather than in a README. These were
-              written from what the software actually does, which makes them
-              truthful; it does not make them sufficient, and the person relying
-              on them is the one who needs to know that.
-            */}
-            <div className="note" style={{ marginBottom: "2.2rem" }}>
-              <b>{LEGAL_REVIEW_NOTICE}</b>
-            </div>
+        {/* Findable when someone goes looking for it, quiet until then. */}
+        <p className="legal-meta">
+          Version {version} · Effective {effective}
+        </p>
 
-            <div className="legal-prose">{children}</div>
+        {/*
+          Stated on the document rather than in a README. These were written
+          from what the software actually does, which makes them truthful; it
+          does not make them sufficient, and the person relying on them is the
+          one who needs to know that.
+        */}
+        <div className="legal-notice">{LEGAL_REVIEW_NOTICE}</div>
 
-            <p className="meta" style={{ marginTop: "3rem" }}>
-              Questions about this document? Write to us from the Help Center inside
-              your EventOS account, or reply to any email we have sent you.
-            </p>
+        <div className="legal-prose">{children}</div>
 
-            <p style={{ marginTop: "2rem" }}>
-              <Link href="/terms">Terms of Service</Link>
-              {" · "}
-              <Link href="/privacy">Privacy Policy</Link>
-            </p>
-          </div>
-        </div>
-      </section>
+        <footer className="legal-footer">
+          <p>
+            Questions about this document? Write to us from the Help Center inside
+            your EventOS account, or reply to any email we have sent you.
+          </p>
+          <p>
+            <Link href="/terms">Terms of Service</Link>
+            {" · "}
+            <Link href="/privacy">Privacy Policy</Link>
+          </p>
+        </footer>
+      </article>
     </div>
   );
 }

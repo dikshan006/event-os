@@ -1595,3 +1595,160 @@ a.m-product:hover > h3 { text-decoration: underline; text-underline-offset: 0.18
   .m-film-open .m-play { transition-duration: 1ms; }
   .m-lightbox-loading > span { animation: none; }
 }
+
+/* ============================================================================
+   Legal documents — /terms and /privacy
+   ============================================================================
+
+   These pages had been dropped onto `.m-plate`, which paints `--ink` (#0a0c10)
+   because it exists to sit behind a photograph. The body text inherited the
+   marketing site's dark-surface colours and the result was near-black on
+   near-black: technically complete, practically unreadable.
+
+   The rest of the marketing site is an argument — layered plates, a fixed
+   photograph, text that arrives as you scroll. A legal document is not an
+   argument. Somebody is here to read a specific clause, probably because they
+   are about to agree to it or have just been told they already did. So this
+   section deliberately opts out of the site's visual language and does one
+   thing: sets long-form text on a light surface at a size and measure that can
+   be read without effort.
+
+   The numbers are not arbitrary. 17px at 1.7 line height with a 42rem measure
+   lands at roughly 70 characters a line, which is the range typography research
+   keeps returning to for sustained reading. The palette is the existing
+   `--paper-*` tokens, so it is still EventOS — just the paper half of it.
+   ------------------------------------------------------------------------- */
+
+.legal {
+  background: #fff;
+  color: var(--paper-ink);
+  min-height: 100vh;
+}
+
+.legal-wrap {
+  max-width: 42rem;              /* ~672px of text; ~700px with padding */
+  margin: 0 auto;
+  padding: calc(var(--m-nav-h, 4.25rem) + 3.5rem) 1.5rem 6rem;
+}
+
+/* -- masthead ------------------------------------------------------------- */
+
+.legal-brand {
+  font-family: var(--font-display), serif;
+  font-size: 1.05rem;
+  letter-spacing: .02em;
+  color: var(--paper-ink);
+  margin: 0 0 1.75rem;
+}
+
+.legal-kicker {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--paper-soft);
+  margin: 0 0 .5rem;
+}
+
+/* Sized to lead the page, not to shout at it. The document title is the most
+   important line here; it is not a hero. */
+.legal h1 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2rem, 4.5vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+  color: var(--paper-ink);
+  margin: 0 0 .6rem;
+}
+
+/* Present, findable, and deliberately quiet — the version matters when you go
+   looking for it and not before. */
+.legal-meta {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: .875rem;
+  color: var(--paper-soft);
+  margin: 0 0 2rem;
+}
+
+/* -- the review notice ---------------------------------------------------- */
+
+.legal-notice {
+  background: #f6f6f4;
+  border: 1px solid var(--paper-rule);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  margin: 0 0 3rem;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: .9375rem;
+  line-height: 1.6;
+  color: #3f444b;
+}
+
+/* -- the document itself -------------------------------------------------- */
+
+.legal-prose {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.0625rem;          /* 17px */
+  line-height: 1.7;
+  color: #1d2126;                /* ~13:1 on white */
+}
+
+.legal-prose h2 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--paper-ink);
+  margin: 3rem 0 .85rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--paper-rule);
+}
+
+.legal-prose h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+.legal-prose p { margin: 0 0 1.15rem; }
+.legal-prose ul { margin: 0 0 1.15rem; padding-left: 1.35rem; }
+.legal-prose li { margin-bottom: .5rem; }
+.legal-prose strong, .legal-prose b { font-weight: 600; color: var(--paper-ink); }
+
+/* Underlined rather than colour-only: a link that is distinguished by hue
+   alone is invisible to a good number of readers, and this is a document
+   where following a reference matters. */
+.legal-prose a,
+.legal-footer a {
+  color: #8a4a52;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.legal-prose a:hover,
+.legal-footer a:hover { color: var(--paper-ink); }
+
+.legal-footer {
+  margin-top: 3.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--paper-rule);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: .9375rem;
+  line-height: 1.65;
+  color: var(--paper-soft);
+}
+.legal-footer p { margin: 0 0 .75rem; }
+
+/* -- narrow screens ------------------------------------------------------- */
+
+@media (max-width: 34rem) {
+  .legal-wrap { padding: calc(var(--m-nav-h, 4.25rem) + 2rem) 1.25rem 4rem; }
+  .legal-prose { font-size: 1rem; line-height: 1.65; }
+  .legal-prose h2 { font-size: 1.25rem; margin-top: 2.25rem; padding-top: 1.5rem; }
+}
+
+/* Printing a legal document is a normal thing to want to do. */
+@media print {
+  .legal { background: #fff; }
+  .legal-wrap { max-width: none; padding: 0; }
+  .legal-notice { border: 1px solid #ccc; }
+  .legal-prose a { color: inherit; text-decoration: none; }
+}
