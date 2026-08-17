@@ -16,9 +16,9 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: "owner@weddingos.app" },
+    where: { email: "owner@eventos.app" },
     update: {},
-    create: { email: "owner@weddingos.app", name: "Platform Owner", role: "ADMIN", passwordHash: pw },
+    create: { email: "owner@eventos.app", name: "Platform Owner", role: "ADMIN", passwordHash: pw },
   });
 
   const studio = await prisma.studio.upsert({
@@ -129,7 +129,7 @@ async function main() {
   }
 
   const codes = await prisma.guest.findMany({ where: { studioId: studio.id }, select: { name: true, inviteCode: true } });
-  console.log("Seeded. Logins: owner@weddingos.app / sarah@prestigeweddings.com (password123)");
+  console.log("Seeded. Logins: owner@eventos.app / sarah@prestigeweddings.com (password123)");
   console.log("Guest invite codes:", codes);
 }
 

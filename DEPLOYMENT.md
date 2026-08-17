@@ -14,7 +14,7 @@ Everything below is configuration, not code changes.
 from the build verification. Restore it:
 
 ```bash
-cd ~/Desktop/wedding-planner-os
+cd ~/Developer/event-os
 npm install
 npx prisma generate
 npx prisma migrate dev      # applies the photos migration to your dev database
@@ -35,7 +35,7 @@ Variables**, scoped to *Production* (and *Preview*, if you want previews to work
 | `AUTH_SECRET` | yes | `openssl rand -base64 32`. Generate a **new** one for production — do not reuse the dev value. |
 | `AUTH_TRUST_HOST` | yes | `true` |
 | `APP_URL` | yes | `https://your-app.vercel.app` (or your custom domain). No trailing slash. Every emailed invite link is built from this. |
-| `S3_BUCKET` | yes | R2 bucket name, e.g. `weddingos-photos` |
+| `S3_BUCKET` | yes | R2 bucket name, e.g. `eventos-photos` |
 | `S3_ACCESS_KEY_ID` | yes | R2 → Manage API Tokens → Object Read & Write |
 | `S3_SECRET_ACCESS_KEY` | yes | same token |
 | `S3_ENDPOINT` | yes for R2 | `https://<account-id>.r2.cloudflarestorage.com` (leave empty for AWS S3) |
@@ -120,7 +120,7 @@ DATABASE_URL="<neon pooled url>" DIRECT_URL="<neon direct url>" npm run db:deplo
 
 ## 3. Photo storage (Cloudflare R2)
 
-1. R2 → Create bucket (e.g. `weddingos-photos`).
+1. R2 → Create bucket (e.g. `eventos-photos`).
 2. **Settings → Public access**: either enable `r2.dev` (fine to start) or
    connect a custom domain like `photos.yourdomain.com` (better — stable URL,
    your own TLS). Whatever you end up with is `S3_PUBLIC_URL`.
@@ -227,8 +227,8 @@ Git is initialised and the first commit exists. Create an empty repo on GitHub
 (no README, no .gitignore), then:
 
 ```bash
-cd ~/Desktop/wedding-planner-os
-git remote add origin https://github.com/<you>/wedding-planner-os.git
+cd ~/Developer/event-os
+git remote add origin https://github.com/KenZenLabs/EventOS.git
 git push -u origin main
 ```
 

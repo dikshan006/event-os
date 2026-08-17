@@ -1,5 +1,9 @@
 # EventOS
 
+**The operating system for modern events.** Built by [KenZen Labs](https://kenzenlab.com).
+
+**Live:** [event-os-brown.vercel.app](https://event-os-brown.vercel.app)
+
 Multi-tenant SaaS for professional wedding planners: a platform owner creates
 white-labeled **Planner Studios**; planners build weddings from three fixed
 luxury templates; every guest gets a **unique invitation link** with a
@@ -43,7 +47,7 @@ Seeded logins (password for both: `password123`):
 
 | Role            | Email                       | Lands on  |
 |-----------------|-----------------------------|-----------|
-| Platform Admin  | owner@weddingos.app         | `/admin`  |
+| Platform Admin  | owner@eventos.app         | `/admin`  |
 | Planner         | sarah@prestigeweddings.com  | `/studio` |
 
 The seed also prints **guest invite codes** — open `/invite/<CODE>` in a
@@ -137,11 +141,20 @@ planners get studio invites and payment receipts.
 - Photo reordering is up/down buttons rather than drag-and-drop: it works
   without JavaScript, on touch, and with a keyboard. Drag can be layered on.
 
-## Honest caveat
+## Status
 
-This codebase was written in a sandbox **without network access**, so it has
-not been `npm install`-ed or executed. It follows current stable APIs
-(Next 15 async params, Auth.js v5 beta, Prisma 6), but expect the usual
-first-run wrinkles — a missing type, an import path, a Prisma nullability —
-of the kind `npm run dev` surfaces immediately. Point Claude Code at the
-repo and it will clear those in minutes.
+Deployed on Vercel at [event-os-brown.vercel.app](https://event-os-brown.vercel.app).
+Dependencies are locked (`package-lock.json`), the schema is managed by Prisma
+migrations, and `npm run db:seed` provisions a complete demo tenant — admin,
+studio, wedding, guests and invite codes.
+
+Test coverage is Playwright for end-to-end flows, including a dedicated security
+suite covering tenant isolation, and Vitest for units.
+
+Access is invite-only by design: `/request-access` is the only public write path
+and there is no self-serve signup. The V1 simplifications listed above are
+deliberate, and each is documented at the point in the code where it applies.
+
+---
+
+EventOS is a product of **KenZen Labs**.

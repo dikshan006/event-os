@@ -1,6 +1,13 @@
 {
-  "name": "wedding-planner-os",
+  "name": "eventos",
   "version": "1.0.0",
+  "description": "EventOS — the operating system for modern events. Built by KenZen Labs.",
+  "author": "KenZen Labs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KenZenLabs/EventOS.git"
+  },
+  "homepage": "https://event-os-brown.vercel.app",
   "private": true,
   "engines": {
     "node": ">=20.0.0"

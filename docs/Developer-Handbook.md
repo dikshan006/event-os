@@ -3,7 +3,7 @@
 **Version:** derived from the repository at commit `f912143` (`origin/main`).
 See [22.3](#223-commit-provenance).
 **Generated:** 14 August 2026
-**Scope:** the `wedding-planner-os` repository as it exists today
+**Scope:** the EventOS repository as it exists today
 
 ---
 
@@ -247,7 +247,7 @@ Read from `package.json`:
 ## 2.1 Top level
 
 ```
-wedding-planner-os/
+EventOS/
 ├── prisma/              schema, migrations, seed, operational scripts
 ├── public/              static assets served verbatim (incl. the launch film)
 ├── scripts/             one-off developer scripts
@@ -1014,7 +1014,7 @@ Migrations run automatically: `"build": "prisma generate && prisma migrate deplo
 ## 6.7 Seed data
 
 `prisma/seed.ts` (`npm run db:seed`) creates development demo data: admin
-`owner@weddingos.app`, studio "Prestige Weddings", planner `sarah@prestigeweddings.com`,
+`owner@eventos.app`, studio "Prestige Weddings", planner `sarah@prestigeweddings.com`,
 one wedding `sarah-and-james`, with the shared password `password123`.
 
 **Never run this against production or any internet-reachable database.** The credentials

@@ -40,7 +40,7 @@ export function SiteFooter() {
         </div>
 
         <div className="m-foot-bottom">
-          <span>© {new Date().getFullYear()} EventOS</span>
+          <span>© {new Date().getFullYear()} EventOS · Built by KenZen Labs</span>
           <span>Built for planners who are trusted with one day.</span>
         </div>
       </div>
